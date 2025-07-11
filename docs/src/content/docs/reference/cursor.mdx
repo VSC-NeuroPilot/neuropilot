@@ -1,0 +1,19 @@
+---
+title: Virtual cursor
+description: Neuro's virtual cursor.
+---
+
+import { Aside } from '@#astrojs/starlight/components'
+
+Neuro's virtual cursor is a pink cursor decoration that is visible whenever Neuro has any level of access to [editing the active document](/neuropilot/reference/permissions#edit-active-document).
+This virtual cursor is controlled almost entirely by Neuro, and is used in place of the real cursor which the user can control independently.
+
+This cursor is important as it allows separation of cursors in actions such as inserting text. This allows the user to move the cursor while still benefitting from Neuro asking to insert text/look around her cursor position based on where she wants to look.
+
+The user can manually move Neuro's cursor using the [Move Neuro's Cursor Here](/neuropilot/reference/commands#move-neuros-cursor-here), and can also let her sync the real cursor with the virtual cursor using the [Cursor Follows Neuro](/neuropilot/reference/settings#cursor-follows-neuro) setting.
+
+<Aside>
+
+The cursor will not appear while Edit Active Document is set to 'Off'.
+
+</Aside>

@@ -1,2 +1,3 @@
+npm run types
 npx eslint
 cd docs && npm run check
