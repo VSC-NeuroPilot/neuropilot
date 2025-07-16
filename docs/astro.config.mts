@@ -71,6 +71,7 @@ export default defineConfig({
                         { label: 'Commands', slug: 'reference/commands' },
                         { label: 'Context', slug: 'reference/auto-context' },
                         { label: 'Cookies', slug: 'reference/cookies' },
+                        { label: 'Cursor', slug: 'reference/cursor' },
                         { label: 'Permissions', slug: 'reference/permissions' },
                         { label: 'RCE', slug: 'reference/rce' },
                         { label: 'Settings', slug: 'reference/settings' },

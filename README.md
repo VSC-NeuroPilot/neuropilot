@@ -242,7 +242,7 @@ Only registered if the [*Files: Auto Save*](vscode://settings/files.autoSave) se
 
 Creates a new file in the workspace.
 If [*Permission: Open Files*](vscode://settings/neuropilot.permission.openFiles) is given, the file is immediately opened.
-The file name cannot start with a dot, and cannot be created in a folder that starts with a dot.
+The file name cannot start with a dot, and cannot be created in a folder that starts with a dot, unless [*Allow Unsafe Paths*](vscode://settings/neuropilot.allowUnsafePaths) is activated.
 
 #### `create_folder`
 
@@ -297,6 +297,7 @@ Removes a file from Git's staging index.
 *Requires Permission: [Git Operations](vscode://settings/neuropilot.permission.gitOperations).*
 
 Makes a commit. Messages are prefixed to differentiate between Neuro committing and the user committing.
+Note that if commit signing is enabled, Neuro will be unable to input the SSH/GPG passkey to sign commits.
 
 #### `git_status`
 
@@ -316,6 +317,7 @@ Returns the diff between files.
 
 Merges another branch into the current branch.
 If the branch cannot be merged cleanly, [`abort_merge`](#abort_merge) is registered.
+Note that if commit signing is enabled, Neuro will be unable to input the SSH/GPG passkey to sign the merge commit.
 
 #### `abort_merge`
 
@@ -341,6 +343,7 @@ Returns commit attributions for each line in a file.
 *Requires Permission: [Git Operations](vscode://settings/neuropilot.permission.gitOperations) & [Git Tags](vscode://settings/neuropilot.permission.gitTags).*
 
 Tags the commit currently at HEAD.
+Note that if tag signing is enabled, Neuro will be unable to input the SSH/GPG passkey to sign tags.
 
 #### `delete_tag`
 
@@ -475,7 +478,7 @@ Note that this only returns diagnostics of files that are loaded in the current 
 
 This extension uses the [TypeScript/JavaScript SDK](https://github.com/AriesAlex/typescript-neuro-game-sdk) by [AriesAlex](https://github.com/AriesAlex).
 
-Documentation by @KTrain5169.
+Documentation by [@KTrain5169](https://github.com/KTrain5169).
 
 Extension icon by Xaendril.
 
@@ -483,7 +486,11 @@ Extension icon by Xaendril.
 
 Assuming the [Edit Active Document](vscode://settings/neuropilot.permission.editActiveDocument) permission isn't set to `Off`, Neuro gains her own cursor, indicated by the pink cursor in text documents. This cursor will only appear in files she has access to (which is affected by the `Allow Unsafe Paths` and `Include`/`Exclude` Patterns settings.) and you can also move the cursor yourself using the aforementioned `Move Neuro's Cursor Here` command. This allows her to work on the same file as the programmer but without having to rely on the normal cursor, which solves some problems relating to their respective actions.
 
-If you enable the [Cursor Follows Neuro](vscode://settings/neuropilot.cursorFollowsNeuro) setting, the normal cursor will automatically be moved to Neuro's cursor if she moves it.
+Neuro's cursor will be indicated with a cursor decoration inside the text editor itself, but you can also identify the line it's on by looking to the side and looking for this icon:
+
+![NeuroPilot v1 icon (pink)](assets/heart.png)
+
+If you enable the [Cursor Follows Neuro](vscode://settings/neuropilot.cursorFollowsNeuro) setting, the normal cursor will automatically be moved to Neuro's cursor if she moves it. This replicates the behaviour exhibited in earlier versions of the extension.
 
 ### "Why is there a file named rce.ts in it??? Is there an intentional RCE inside this extension???" <!-- had to add this just in case -->
 

@@ -1,0 +1,13 @@
+name: "Get Package Version"
+description: "Reads the version key from a package.json file and sets it as an output or environment variable."
+inputs:
+  path:
+    description: "Path to the directory containing the package.json file."
+    required: false
+    default: "."
+outputs:
+  version:
+    description: "The version value from the package.json file."
+runs:
+  using: "node20"
+  main: "dist/index.js"

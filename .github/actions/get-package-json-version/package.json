@@ -1,0 +1,20 @@
+{
+  "name": "get-package-json-version",
+  "version": "1.0.0",
+  "description": "Gets the version from a package.json and makes it available as an output.",
+  "license": "MIT",
+  "author": "KTrain5369",
+  "type": "commonjs",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "echo \"no test specified\"",
+    "compile": "tsc",
+    "build": "npm run compile"
+  },
+  "dependencies": {
+    "@actions/core": "^1.11.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}
