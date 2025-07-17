@@ -21,3 +21,10 @@ tony/
 docs/**
 !docs/public/*.gif
 !docs/public/*.png
+
+# Coverage
+/coverage
+
+# Integration testing
+test-playground/
+.vscode-test.mjs
