@@ -1,8 +1,9 @@
 import * as vscode from 'vscode';
 
 import { NEURO } from './constants';
-import { assert, filterFileContents, logOutput, simpleFileName } from './utils';
+import { filterFileContents, logOutput, simpleFileName } from './utils';
 import { CONFIG } from './config';
+import assert from 'node:assert';
 
 interface Participant {
     id: string;
@@ -40,23 +41,23 @@ let lastChatResponse = '';
 
 export function registerChatResponseHandler() {
     NEURO.client?.onAction((actionData) => {
-        if(actionData.name === 'chat') {
+        if (actionData.name === 'chat') {
             NEURO.actionHandled = true;
 
             const answer = actionData.params?.answer;
-            if(answer === undefined) {
+            if (answer === undefined) {
                 NEURO.client?.sendActionResult(actionData.id, false, 'Missing required parameter "answer"');
                 return;
             }
 
             NEURO.client?.unregisterActions(['chat']);
 
-            if(NEURO.cancelled) {
+            if (NEURO.cancelled) {
                 NEURO.client?.sendActionResult(actionData.id, true, 'Request was cancelled');
                 NEURO.waiting = false;
                 return;
             }
-            if(!NEURO.waiting) {
+            if (!NEURO.waiting) {
                 NEURO.client?.sendActionResult(actionData.id, true, 'Not currently waiting for a chat response');
                 return;
             }
@@ -71,19 +72,23 @@ export function registerChatResponseHandler() {
     });
 }
 
-export function registerChatParticipant(context: vscode.ExtensionContext) {
-    const handler: vscode.ChatRequestHandler = async (request: vscode.ChatRequest, context: vscode.ChatContext, stream: vscode.ChatResponseStream, token: vscode.CancellationToken): Promise<NeuroChatResult> => {
+export function registerChatParticipant() {
+    const handler: vscode.ChatRequestHandler = async (
+        request: vscode.ChatRequest,
+        context: vscode.ChatContext,
+        stream: vscode.ChatResponseStream,
+        token: vscode.CancellationToken,
+    ): Promise<NeuroChatResult> => {
         let prefix = '';
         const currentAPI = CONFIG.currentlyAsNeuroAPI;
 
-        if(request.command === 'fix') {
+        if (request.command === 'fix') {
             prefix = 'Vedal wants you to fix the following error(s):\n';
-        }
-        else if(request.command === 'explain') {
+        } else if (request.command === 'explain') {
             prefix = 'Vedal wants you to explain the following:\n';
         }
 
-        if(!NEURO.connected) {
+        if (!NEURO.connected) {
             stream.markdown('Not connected to Neuro API.');
             stream.button({
                 command: 'neuropilot.reconnect',
@@ -92,7 +97,7 @@ export function registerChatParticipant(context: vscode.ExtensionContext) {
             });
             return { metadata: { command: '' } };
         }
-        if(NEURO.waiting) {
+        if (NEURO.waiting) {
             stream.markdown(`Already waiting for a response from ${currentAPI}.`);
 
             stream.button({
@@ -108,8 +113,8 @@ export function registerChatParticipant(context: vscode.ExtensionContext) {
         stream.progress('Collecting references...');
 
         const references: NeuroChatContext[] = [];
-        for(const ref of request.references) {
-            if(ref.value instanceof vscode.Location) {
+        for (const ref of request.references) {
+            if (ref.value instanceof vscode.Location) {
                 await vscode.workspace.openTextDocument(ref.value.uri).then((document) => {
                     assert(ref.value instanceof vscode.Location);
                     const text = filterFileContents(document.getText(ref.value.range));
@@ -119,8 +124,7 @@ export function registerChatParticipant(context: vscode.ExtensionContext) {
                         text: text,
                     });
                 });
-            }
-            else if(ref.value instanceof vscode.Uri) {
+            } else if (ref.value instanceof vscode.Uri) {
                 await vscode.workspace.openTextDocument(ref.value).then((document) => {
                     assert(ref.value instanceof vscode.Uri);
                     const text = filterFileContents(document.getText());
@@ -129,13 +133,11 @@ export function registerChatParticipant(context: vscode.ExtensionContext) {
                         text: text,
                     });
                 });
-            }
-            else if(typeof ref.value === 'string') {
+            } else if (typeof ref.value === 'string') {
                 references.push({
                     text: filterFileContents(ref.value),
                 });
-            }
-            else {
+            } else {
                 logOutput('ERROR', 'Invalid reference type');
             }
         }
@@ -143,7 +145,11 @@ export function registerChatParticipant(context: vscode.ExtensionContext) {
         // Query Neuro API
         stream.progress(`Waiting for ${currentAPI} to respond...`);
 
-        const answer = await requestChatResponse(prefix + request.prompt, JSON.stringify({ references: references }), token);
+        const answer = await requestChatResponse(
+            prefix + request.prompt,
+            JSON.stringify({ references: references }),
+            token,
+        );
 
         stream.markdown(answer);
 
@@ -152,23 +158,28 @@ export function registerChatParticipant(context: vscode.ExtensionContext) {
 
     for (const participant of NEURO_PARTICIPANTS) {
         const chatter = vscode.chat.createChatParticipant(participant.id, handler);
-        chatter.iconPath = vscode.Uri.joinPath(context.extensionUri, participant.relativeIconPath);
+        chatter.iconPath = vscode.Uri.joinPath(NEURO.context!.extensionUri, participant.relativeIconPath);
 
-        context.subscriptions.push(chatter.onDidReceiveFeedback((feedback: vscode.ChatResultFeedback) => {
-            if(feedback.kind === vscode.ChatResultFeedbackKind.Helpful) {
-                logOutput('INFO', 'Answer was deemed helpful');
-                NEURO.client?.sendContext('Vedal found your answer helpful.');
-            }
-            else {
-                logOutput('INFO', 'Answer was deemed unhelpful');
-                logOutput('DEBUG', JSON.stringify(feedback));
-                NEURO.client?.sendContext('Vedal found your answer unhelpful.');
-            }
-        }));
+        NEURO.context!.subscriptions.push(
+            chatter.onDidReceiveFeedback((feedback: vscode.ChatResultFeedback) => {
+                if (feedback.kind === vscode.ChatResultFeedbackKind.Helpful) {
+                    logOutput('INFO', 'Answer was deemed helpful');
+                    NEURO.client?.sendContext('Vedal found your answer helpful.');
+                } else {
+                    logOutput('INFO', 'Answer was deemed unhelpful');
+                    logOutput('DEBUG', JSON.stringify(feedback));
+                    NEURO.client?.sendContext('Vedal found your answer unhelpful.');
+                }
+            }),
+        );
     }
 }
 
-async function requestChatResponse(prompt: string, state: string, token: vscode.CancellationToken): Promise<string> {
+async function requestChatResponse(
+    prompt: string,
+    state: string,
+    token: vscode.CancellationToken,
+): Promise<string> {
     logOutput('INFO', 'Requesting chat response from Neuro');
 
     NEURO.waiting = true;
@@ -177,7 +188,7 @@ async function requestChatResponse(prompt: string, state: string, token: vscode.
     NEURO.client?.registerActions([
         {
             name: 'chat',
-            description: // TODO: https://github.com/VedalAI/neuro-game-sdk/issues/43
+            description:
                 'Provide an answer to Vedal\'s request.' +
                 ' Use markdown to format your response.' +
                 ' You may additionally include code blocks by using triple backticks.' +
@@ -193,12 +204,7 @@ async function requestChatResponse(prompt: string, state: string, token: vscode.
         },
     ]);
 
-    NEURO.client?.forceActions(
-        prompt,
-        ['chat'],
-        state,
-        false,
-    );
+    NEURO.client?.forceActions(prompt, ['chat'], state, false);
 
     token.onCancellationRequested(() => {
         logOutput('INFO', 'Cancelled request');
@@ -209,7 +215,7 @@ async function requestChatResponse(prompt: string, state: string, token: vscode.
     const timeout = new Promise<string>((_, reject) => setTimeout(() => reject('Request timed out'), timeoutMs));
     const response = new Promise<string>((resolve) => {
         const interval = setInterval(() => {
-            if(!NEURO.waiting) {
+            if (!NEURO.waiting) {
                 clearInterval(interval);
                 resolve(lastChatResponse);
             }
@@ -218,13 +224,12 @@ async function requestChatResponse(prompt: string, state: string, token: vscode.
 
     try {
         return await Promise.race([timeout, response]);
-    } catch(erm) {
-        if(typeof erm === 'string') {
+    } catch (erm) {
+        if (typeof erm === 'string') {
             logOutput('ERROR', erm);
             NEURO.cancelled = true;
             return erm;
-        }
-        else {
+        } else {
             throw erm;
         }
     }
@@ -233,6 +238,6 @@ async function requestChatResponse(prompt: string, state: string, token: vscode.
 export function cancelChatRequest() {
     NEURO.cancelled = true;
     NEURO.waiting = false;
-    if(!NEURO.client) return;
+    if (!NEURO.client) return;
     NEURO.client.unregisterActions(['chat']);
 }

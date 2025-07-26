@@ -1,0 +1,8 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "lib": ["ES2024"]
+    },
+    "include": ["src/desktop/**/*"],
+    "exclude": ["src/web"]
+}

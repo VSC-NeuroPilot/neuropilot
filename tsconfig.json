@@ -3,11 +3,9 @@
 		"module": "commonjs",
 		"esModuleInterop": true,
 		"target": "es2020",
-		"lib": ["es2020"],
 		"outDir": "out",
 		"sourceMap": true,
 		"strict": true,
-		"rootDir": "src"
 	},
-	"exclude": ["node_modules", ".vscode-test", "playground", "docs"]
+	"exclude": ["node_modules", ".vscode-test", "playground", "docs", "project-files"]
 }

@@ -94,6 +94,7 @@ class Config {
     get cursorFollowsNeuro(): boolean { return get('cursorFollowsNeuro')!; }
     get currentlyAsNeuroAPI(): string { return get('currentlyAsNeuroAPI')!; }
     get docsURL(): string { return get('docsURL')!; }
+    get defaultOpenDocsWindow(): string { return get('defaultOpenDocsWindow')!; }
 
     get terminals(): { name: string; path: string; args?: string[]; }[] { return get('terminals')!; }
 }

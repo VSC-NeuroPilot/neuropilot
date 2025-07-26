@@ -14,6 +14,8 @@ node_modules
 
 # build output
 dist/
+# ignore the action's dist folder
+!.github/actions/get-package-json-version/dist/
 # generated astro types
 .astro/
 .cache/

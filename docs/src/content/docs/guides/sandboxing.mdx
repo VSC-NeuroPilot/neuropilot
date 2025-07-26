@@ -59,3 +59,15 @@ If you're comfortable with not having internet access in the VM, you can stay in
 9. Add the host IP address and port that you spawned your Neuro API server on, in the scheme of `ws://(host):(port)`.
 
 10. Now, [attempt to reconnect](/neuropilot/reference/commands#reconnect). This should now connect to your Neuro API server as expected.
+
+## Web environment
+
+As of v2.2.0, NeuroPilot now has a separate Web build. It acts partially the same as the desktop mode, but loses access to certain features that cannot be ran in the Web environment.
+
+This includes:
+
+- Terminals & tasks
+- Git access (it *is* activated in certain situations, but debugging this in a test environment is impossible and also it functions slightly differently, therefore, for stability, it has been disabled.)
+- Copilot Chat window & inline completions (dependency extension can't be ran in the web environment)
+
+To use the web version, go to [vscode.dev](https://vscode.dev) (or any web build of VS Code, such as `github.dev`), and install NeuroPilot.

@@ -19,7 +19,9 @@
 	"activationEvents": [
 		"*"
 	],
-	"main": "./out/extension.js",
+	"qna": false,
+	"main": "./out/desktop/extension.js",
+	"browser": "./out/web/extension.js",
 	"contributes": {
 		"chatParticipants": [
 			{
@@ -136,6 +138,11 @@
 			{
 				"command": "neuropilot.switchNeuroAPIUser",
 				"title": "Switch Neuro API user name",
+				"category": "NeuroPilot"
+			},
+			{
+				"command": "neuropilot.refreshExtensionDependencyState",
+				"title": "Refresh extension dependencies (workaround, will be deprecated soon)",
 				"category": "NeuroPilot"
 			},
 			{
@@ -538,7 +545,7 @@
 					"neuropilot.sendSaveNotifications": {
 						"type": "boolean",
 						"default": true,
-						"markdownDescription": "Automatically send save notifications to Neuro, as long as the auto-save setting is set to a value other than `off`."
+						"markdownDescription": "Automatically send save notifications to Neuro."
 					},
 					"neuropilot.requestExpiryTimeout": {
 						"type": "number",
@@ -554,6 +561,26 @@
 						"type": "boolean",
 						"default": false,
 						"markdownDescription": "Make the real cursor follow Neuro's cursor."
+					},
+					"neuropilot.defaultOpenDocsWindow": {
+						"type": "string",
+						"default": "ask",
+						"enum": [
+							"ask",
+							"alwaysBrowser",
+							"alwaysWebView"
+						],
+						"enumItemLabels": [
+							"Ask where to open",
+							"Always open in browser",
+							"Always open in a WebView"
+						],
+						"enumDescriptions": [
+							"Always ask where to open the docs",
+							"Always open docs in your browser",
+							"Always open docs in a new WebView window"
+						],
+						"markdownDescription": "Choose where to open docs links.\n\nThis applies to both docs commands."
 					}
 				}
 			}
@@ -575,17 +602,46 @@
 			}
 		}
 	},
-	"scripts": {
-		"vscode:prepublish": "npm run compile",
-		"compile": "tsc -p ./",
-		"lint": "eslint --fix",
-		"watch": "tsc -watch -p ./",
-		"test": "vscode-test",
-		"prepare": "husky"
+	"capabilities": {
+		"virtualWorkspaces": {
+			"supported": "limited",
+			"description": "In certain virtual workspace scenarios (namely Web), Terminal, Tasks, Git support and Copilot Chat mode is not available."
+		},
+		"untrustedWorkspaces": {
+			"supported": "limited",
+			"description": "Terminals and Tasks access will be forcefully disabled for Neuro. She will also be unable to access Neuro-unsafe paths and won't have all tasks registered.",
+			"restrictedConfigurations": [
+				"neuropilot.permission.directTerminalAccess",
+				"neuropilot.permission.runTasks",
+				"neuropilot.terminals",
+				"neuropilot.allowRunningAllTasks",
+				"neuropilot.allowUnsafePaths"
+			]
+		}
 	},
-	"extensionDependencies": [
-		"vscode.git"
-	],
+	"scripts": {
+		"vscode:prepublish": "npm run build",
+		"build": "npm run types && node esbuild.mjs",
+		"compile": "cross-env NODE_ENV=0 npm run build",
+		"package": "cross-env NODE_ENV=1 npm run build",
+		"lint": "eslint --fix",
+		"test": "vscode-test",
+		"prepare": "husky",
+		"types": "npm-run-all -p build:*:tsc",
+		"types:watch": "npm-run-all -p watch:*:tsc",
+		"build:web": "npm-run-all -p build:web:*",
+		"build:desktop": "npm-run-all -p build:desktop:*",
+		"build:web:esbuild": "node esbuild.mjs --mode web",
+		"build:web:tsc": "tsc --noEmit --project tsconfig.web.json",
+		"build:desktop:esbuild": "node esbuild.mjs --mode desktop",
+		"build:desktop:tsc": "tsc --noEmit --project tsconfig.app.json",
+		"watch:web": "npm-run-all -p watch:web:*",
+		"watch:desktop": "npm-run-all -p watch:desktop:*",
+		"watch:web:esbuild": "node esbuild.mjs --watch --mode web",
+		"watch:web:tsc": "tsc --noEmit --watch --project tsconfig.web.json",
+		"watch:desktop:esbuild": "node esbuild.mjs --watch --mode desktop",
+		"watch:desktop:tsc": "tsc --noEmit --watch --project tsconfig.app.json"
+	},
 	"devDependencies": {
 		"@eslint/js": "^9.13.0",
 		"@stylistic/eslint-plugin": "^2.9.0",
@@ -594,9 +650,16 @@
 		"@types/node": "^20",
 		"@types/vscode": "^1.95.0",
 		"@types/ws": "^8.18.0",
+		"@vscode/vsce": "^3.6.0",
+		"chalk": "^5.4.1",
+		"cross-env": "^7.0.3",
+		"esbuild": "^0.25.5",
+		"esbuild-plugin-polyfill-node": "^0.3.0",
 		"eslint": "^9.13.0",
-		"eslint-plugin-unicorn": "^59.0.1",
+		"eslint-plugin-unicorn": "^60.0.0",
 		"husky": "^9.1.7",
+		"npm-run-all": "^4.1.5",
+		"ts-loader": "^9.5.2",
 		"typescript": "^5.8.2",
 		"typescript-eslint": "^8.26.0"
 	},

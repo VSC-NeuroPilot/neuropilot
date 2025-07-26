@@ -1,0 +1,66 @@
+name: Build extension
+
+on:
+    push:
+        branches-ignore:
+            - master
+        paths-ignore:
+            - ".github/"
+            - ".vscode/"
+            - ".husky/"
+            - "playground/"
+            - "docs/"
+            - "tony/"
+    pull_request:
+        paths-ignore:
+            - ".github/"
+            - ".vscode/"
+            - ".husky/"
+            - "playground/"
+            - "docs/"
+            - "tony/"
+    workflow_dispatch:
+        inputs:
+            prod:
+                type: choice
+                description: Whether to override to build in production mode. Use 0 for dev and 1 for prod.
+                required: false
+                default: "0"
+                options: ["0", "1"]
+
+jobs:
+    build:
+        name: Build extension
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout source repository
+              uses: actions/checkout@v4
+              with:
+                ref: ${{ github.sha }}
+            
+            - name: Setup Node.js
+              uses: actions/setup-node@v4.4.0
+              with:
+                node-version: 22.x.x
+                cache: 'npm'
+                cache-dependency-path: './package-lock.json'
+            
+            - name: Cache node_modules
+              uses: actions/cache@v4
+              with:
+                path: node_modules/
+                key: neuropilot-build
+            
+            - name: Install dependencies
+              run: npm install
+            
+            - name: Package extension
+              env:
+                NODE_ENV: ${{ inputs.prod || '0' }}
+              run: npx @vscode/vsce package --allow-star-activation
+            
+            - name: Upload builds
+              uses: actions/upload-artifact@v4
+              with:
+                path: neuropilot-*.vsix
+                name: NeuroPilot (Non-Production) Build ${{ github.sha }}
