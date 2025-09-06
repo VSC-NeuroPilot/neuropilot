@@ -84,9 +84,6 @@ jobs:
     name: Publish to VS Marketplace
     runs-on: ubuntu-latest
     needs: build
-    environment:
-      name: Visual Studio Marketplace
-      url: https://marketplace.visualstudio.com/item?itemName=Pasu4.neuropilot
     steps:
       - name: Checkout repo # why
         uses: actions/checkout@v4
