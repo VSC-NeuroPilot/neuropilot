@@ -73,6 +73,14 @@ export function setupCommonEventHandlers() {
         vscode.extensions.onDidChange(obtainExtensionState),
     ];
 
+    vscode.window.showErrorMessage('pasu4.neuropilot is deprecated. Please uninstall pasu4.neuropilot and use vsc-neuropilot.neuropilot-base instead.', 'View vsc-neuropilot.neuropilot-base').then(
+        (value) => {
+            if (value) {
+                vscode.commands.executeCommand('extension.open', 'vsc-neuropilot.neuropilot-base');
+            }
+        },
+    );
+
     return handlers;
 }
 
