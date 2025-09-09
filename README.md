@@ -1,5 +1,11 @@
 # <img src="assets/heart-xaendril.png" width="32" style="vertical-align:middle;horizontal-align:middle;"> NeuroPilot
 
+> [!WARNING]
+> This extension namespace has been deprecated. It will no longer receive updates
+> Please uninstall this and install `vsc-neuropilot.neuropilot-base` instead.
+>
+> `pasu4.neuropilot` will remain up for historical reasons.
+
 As seen on TV (dev stream)!
 
 **Disclaimer: For simplicity, all mentions of Neuro also apply to Evil unless otherwise stated.**
