@@ -1,0 +1,21 @@
+name: Remind about changelog & docs on PRs
+
+on:
+  pull_request_target:
+    branches: [dev]
+    types: [opened, reopened]
+
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post reminder comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.payload.pull_request.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: "## Reminder\n\nPlease remember to update the changelog (in the CHANGELOG.md file) and documentation (over at [VSC-NeuroPilot/docs](https://github.com/VSC-NeuroPilot/docs)) if necessary. Thank you!"
+            })

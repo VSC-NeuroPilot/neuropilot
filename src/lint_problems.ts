@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
-import { NEURO } from '~/constants';
-import { normalizePath, getWorkspacePath, logOutput, isPathNeuroSafe } from '~/utils';
-import { PERMISSIONS, getPermissionLevel, CONFIG } from '~/config';
-import { ActionData, actionValidationAccept, actionValidationFailure, ActionValidationResult, RCEAction, contextFailure, stripToActions } from '~/neuro_client_helper';
+import { NEURO } from '@/constants';
+import { normalizePath, getWorkspacePath, logOutput, isPathNeuroSafe, getWorkspaceUri } from '@/utils';
+import { PERMISSIONS, getPermissionLevel, CONFIG, isActionEnabled } from '@/config';
+import { ActionData, actionValidationAccept, actionValidationFailure, ActionValidationResult, RCEAction, contextFailure, stripToActions } from '@/neuro_client_helper';
 import assert from 'node:assert';
 
 /**
@@ -15,12 +15,16 @@ async function validatePath(path: string, directoryType: string): Promise<Action
     if (path === '') {
         return actionValidationFailure('No file path specified.', true);
     };
-    const absolutePath = getWorkspacePath() + '/' + normalizePath(path).replace(/^\/|\/$/g, '');
+    const workspaceUri = getWorkspaceUri();
+    if (!workspaceUri) {
+        return actionValidationFailure('Unable to get current workspace.');
+    }
+    const absolutePath = normalizePath(workspaceUri.fsPath + '/' + path.replace(/^\/|\/$/g, ''));
     if (!isPathNeuroSafe(absolutePath)) {
         return actionValidationFailure(`You are not allowed to access this ${directoryType}.`);
     }
 
-    const existence = await getPathExistence(absolutePath);
+    const existence = await getUriExistence(workspaceUri.with({ path: absolutePath }));
     if (existence === false) {
         return actionValidationFailure(`${directoryType} "${path}" does not exist.`);
     }
@@ -28,10 +32,9 @@ async function validatePath(path: string, directoryType: string): Promise<Action
     return actionValidationAccept();
 };
 
-async function getPathExistence(absolutePath: string): Promise<boolean> {
-    const pathAsUri = vscode.Uri.file(absolutePath);
+async function getUriExistence(uri: vscode.Uri): Promise<boolean> {
     try {
-        await vscode.workspace.fs.stat(pathAsUri);
+        await vscode.workspace.fs.stat(uri);
         return true;
     } catch {
         return false;
@@ -68,6 +71,7 @@ export const lintActions = {
                 file: { type: 'string' },
             },
             required: ['file'],
+            additionalProperties: false,
         },
         permissions: [PERMISSIONS.accessLintingAnalysis],
         handler: handleGetFileLintProblems,
@@ -83,6 +87,7 @@ export const lintActions = {
                 folder: { type: 'string' },
             },
             required: ['folder'],
+            additionalProperties: false,
         },
         permissions: [PERMISSIONS.accessLintingAnalysis],
         handler: handleGetFolderLintProblems,
@@ -112,7 +117,7 @@ export function registerLintActions() {
             lintActions.get_file_lint_problems,
             lintActions.get_folder_lint_problems,
             lintActions.get_workspace_lint_problems,
-        ]));
+        ]).filter(isActionEnabled));
     }
 }
 
@@ -167,13 +172,12 @@ export function getFormattedDiagnosticsForFile(filePath: string, diagnostics: vs
 // Handle diagnostics for a single file
 export function handleGetFileLintProblems(actionData: ActionData): string | undefined {
     const relativePath = actionData.params.file;
-    const workspacePath = getWorkspacePath();
-    assert(workspacePath);
+    const workspaceUri = getWorkspaceUri()!;
 
     try {
-        const normalizedPath = normalizePath(workspacePath + '/' + relativePath);
+        const normalizedPath = normalizePath(workspaceUri.fsPath + '/' + relativePath);
 
-        const rawDiagnostics = vscode.languages.getDiagnostics(vscode.Uri.file(normalizedPath));
+        const rawDiagnostics = vscode.languages.getDiagnostics(workspaceUri.with({ path: normalizedPath }));
         if (rawDiagnostics.length === 0) {
             return `No linting problems found for file ${relativePath}.`;
         }

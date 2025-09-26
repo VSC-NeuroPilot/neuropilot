@@ -44,6 +44,12 @@ export default tseslint.config(
                 },
             ],
         },
+        languageOptions: {
+            parserOptions: {
+                tsconfigRootDir: import.meta.dirname,
+                project: './tsconfig.json',
+            },
+        },
     },
     {
         files: ['**/*.{js,mjs,cjs,ts}'],

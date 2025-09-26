@@ -7,18 +7,5 @@
         "neuropilot",
         "Pasu",
         "sama"
-    ],
-    "github.copilot.enable": {
-        "*": true,
-        "plaintext": false,
-        "markdown": false,
-        "scminput": false,
-        "latex": false,
-        "properties": false,
-        "feature": false,
-        "ignore": false,
-        "jsonc": false,
-        "hjson": false,
-        "json": true
-    }
+    ]
 }

@@ -4,11 +4,11 @@
  */
 
 import * as vscode from 'vscode';
-import { ActionData, RCEAction } from '~/neuro_client_helper';
-import { NEURO } from '~/constants';
-import { checkWorkspaceTrust, logOutput } from '~/utils';
-import { CONFIG, getPermissionLevel, PermissionLevel, PERMISSIONS } from '~/config';
-import { handleRunTask } from '~/tasks';
+import { ActionData, RCEAction, stripToAction } from '@/neuro_client_helper';
+import { NEURO } from '@/constants';
+import { checkVirtualWorkspace, checkWorkspaceTrust, logOutput } from '@/utils';
+import { CONFIG, getPermissionLevel, isActionEnabled, PermissionLevel, PERMISSIONS } from '@/config';
+import { handleRunTask } from '@/tasks';
 import { validate } from 'jsonschema';
 
 /**
@@ -252,12 +252,21 @@ export async function RCEActionHandler(actionData: ActionData, actionList: Recor
                 description: task.description,
                 permissions: [PERMISSIONS.runTasks],
                 handler: handleRunTask,
-                validator: [checkWorkspaceTrust],
+                validator: [checkVirtualWorkspace, checkWorkspaceTrust],
                 promptGenerator: () => `run the task "${task.id}".`,
             };
         }
 
-        const effectivePermission = action.permissions.length > 0 ? getPermissionLevel(...action.permissions) : action.defaultPermission ?? PermissionLevel.COPILOT;
+        // 1. If the action is not enabled, permission is always OFF.
+        // 2. Otherwise, if the action has permissions, use the lowest permission level.
+        // 3. Otherwise, if the action has a default permission, use the default permission.
+        // 4. Otherwise, fall back to COPILOT.
+        const effectivePermission = isActionEnabled(action)
+            ? action.permissions.length > 0
+                ? getPermissionLevel(...action.permissions) // 2.
+                : action.defaultPermission                  // 3.
+                ?? PermissionLevel.COPILOT                  // 4.
+            : PermissionLevel.OFF;                          // 1.
         if (effectivePermission === PermissionLevel.OFF) {
             const offPermission = action.permissions.find(permission => getPermissionLevel(permission) === PermissionLevel.OFF);
             NEURO.client?.sendActionResult(actionData.id, true, `Action failed: You don't have permission to ${offPermission?.infinitive ?? 'execute this action'}.`);
@@ -307,7 +316,7 @@ export async function RCEActionHandler(actionData: ActionData, actionList: Recor
             );
 
             NEURO.statusBarItem!.tooltip = new vscode.MarkdownString(prompt);
-            NEURO.client?.registerActions([cancelRequestAction]);
+            NEURO.client?.registerActions([stripToAction(cancelRequestAction)]);
             NEURO.statusBarItem!.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
             NEURO.statusBarItem!.color = new vscode.ThemeColor('statusBarItem.warningForeground');
 

@@ -16,42 +16,116 @@ on:
           - 'minor'
           - 'patch'
           - 'none'
-      update_docs:
-        type: boolean
-        description: 'Docs are up to date'
-        required: true
-        default: false
 
 jobs:
-  publish:
+  build:
+    name: Build VSIX file
     runs-on: ubuntu-latest
-
+    outputs:
+      VERSION: ${{ steps.build.outputs.VERSION }}
     steps:
     - uses: actions/checkout@v4
+
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 10.14.0
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: 'latest'
+        cache: 'pnpm'
+        cache-dependency-path: './pnpm-lock.yaml'
 
     - name: Install deps
-      run: npm install
+      run: pnpm install --frozen-lockfile
       
     - name: Configure Git
       run: |
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
     
-    - name: Publish extension
+    - name: Bump version
+      if: inputs.version != 'none'
+      run: |
+        pnpm version ${{ inputs.version }}
+    
+    - name: Build extension
+      id: build
       env:
         NODE_ENV: 1
-      run: npx @vscode/vsce publish ${{inputs.version}} -p ${{secrets.MARKETPLACE_TOKEN}} --allow-star-activation
+      run: |
+        echo VERSION=$(pnpm show ./ version) >> $GITHUB_OUTPUT
+        pnpm vsce package --no-dependencies
+    
+    - name: Upload VSIX file
+      uses: actions/upload-artifact@v4
+      with:
+        name: NeuroPilot ${{ steps.build.outputs.VERSION }}
+        path: neuropilot-base-${{ steps.build.outputs.VERSION }}.vsix
 
     - name: Commit and push version change
       run: |
         git push --follow-tags https://VSC-NeuroPilot:${{secrets.GITHUB_TOKEN}}:@github.com/VSC-NeuroPilot/neuropilot
     
-    - name: Rebuild docs site
-      if: ${{ inputs.update_docs }}
-      run: gh workflow run bump.yml -f check=${{ inputs.update_docs }} --repo VSC-NeuroPilot/docs
+    - name: Update docs
+      env:
+        GH_TOKEN: ${{ secrets.DOCUMENTATION_WORKFLOW_TOKEN }}
+      run: gh workflow run bump.yml -f version=${{ inputs.version }} -R VSC-NeuroPilot/docs
+  
+  vsce-publish:
+    name: Publish to VS Marketplace
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: Visual Studio Marketplace
+      url: https://marketplace.visualstudio.com/item?itemName=vsc-neuropilot.neuropilot-base
+    steps:
+      - name: Checkout repo # why
+        uses: actions/checkout@v4
 
+      - name: Download VSIX
+        id: vsce-vsix-down
+        uses: actions/download-artifact@v4
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.14.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'latest'
+      
+      - name: Publish VSIX to VS Marketplace
+        run: ls && pnpm dlx @vscode/vsce publish -p ${{ secrets.MARKETPLACE_TOKEN }} --packagePath "${{ steps.vsce-vsix-down.outputs.download-path }}/NeuroPilot ${{ needs.build.outputs.VERSION }}/neuropilot-base-${{ needs.build.outputs.VERSION }}.vsix"
+  
+  ovsx-publish:
+    name: Publish to Open VSX
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: Open VSX Registry
+      url: https://open-vsx.org/extension/vsc-neuropilot/neuropilot-base
+    steps:
+      - name: Checkout repo # why
+        uses: actions/checkout@v4
+      
+      - name: Download VSIX
+        id: ovsx-vsix-down
+        uses: actions/download-artifact@v4
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.14.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'latest'
+      
+      - name: Publish VSIX to Open VSX
+        run: ls && pnpm dlx ovsx publish -p ${{ secrets.REGISTRY_TOKEN }} --packagePath "${{ steps.ovsx-vsix-down.outputs.download-path }}/NeuroPilot ${{ needs.build.outputs.VERSION }}/neuropilot-base-${{ needs.build.outputs.VERSION }}.vsix"

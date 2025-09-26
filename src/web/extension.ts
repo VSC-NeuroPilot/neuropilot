@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-import { createClient, isPathNeuroSafe, setVirtualCursor } from '~/utils';
-import { NEURO } from '~/constants';
+import { createClient, isPathNeuroSafe, setVirtualCursor } from '@/utils';
+import { NEURO } from '@/constants';
 import {
     initializeCommonState,
     setupCommonProviders,
@@ -9,14 +9,14 @@ import {
     setupClientConnectedHandlers,
     createStatusBarItem,
     deactivate as commonDeactivate,
-    obtainExtensionState,
-    getDecorationRenderOptions,
+    getCursorDecorationRenderOptions,
+    getDiffRemovedDecorationRenderOptions,
+    getDiffModifiedDecorationRenderOptions,
+    getDiffAddedDecorationRenderOptions,
     reloadPermissions,
+    getHighlightDecorationRenderOptions,
 } from '@shared/extension';
-import { registerDocsLink } from '@shared/docs';
 import { registerUnsupervisedActions, registerUnsupervisedHandlers } from './unsupervised';
-
-export { registerDocsLink };
 
 export function activate(context: vscode.ExtensionContext) {
     // Initialize common state
@@ -39,14 +39,17 @@ export function activate(context: vscode.ExtensionContext) {
     // Create status bar item
     createStatusBarItem();
 
-    // Extension state
-    obtainExtensionState();
+    // We don't obtain extension state here automatically
 
     // Create client
     createClient();
 
     // Create cursor decoration (web-specific)
-    NEURO.cursorDecorationType = vscode.window.createTextEditorDecorationType(getDecorationRenderOptions());
+    NEURO.cursorDecorationType = vscode.window.createTextEditorDecorationType(getCursorDecorationRenderOptions());
+    NEURO.diffAddedDecorationType = vscode.window.createTextEditorDecorationType(getDiffAddedDecorationRenderOptions());
+    NEURO.diffRemovedDecorationType = vscode.window.createTextEditorDecorationType(getDiffRemovedDecorationRenderOptions());
+    NEURO.diffModifiedDecorationType = vscode.window.createTextEditorDecorationType(getDiffModifiedDecorationRenderOptions());
+    NEURO.highlightDecorationType = vscode.window.createTextEditorDecorationType(getHighlightDecorationRenderOptions());
 
     // Set initial virtual cursor
     if (vscode.window.activeTextEditor && isPathNeuroSafe(vscode.window.activeTextEditor.document.fileName)) {

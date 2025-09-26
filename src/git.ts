@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
-import { EXTENSIONS, NEURO } from '~/constants';
+import { EXTENSIONS, NEURO } from '@/constants';
 import type { Change, CommitOptions, Commit, Repository, API } from '@typing/git.d';
 import { ForcePushMode } from '@typing/git.d';
 import { StatusStrings, RefTypeStrings } from '@typing/git_status';
-import { logOutput, simpleFileName, isPathNeuroSafe, normalizePath, getWorkspacePath } from '~/utils';
-import { ActionData, ActionValidationResult, actionValidationAccept, actionValidationFailure, RCEAction, contextFailure, stripToActions } from '~/neuro_client_helper';
-import { PERMISSIONS, getPermissionLevel } from '~/config';
+import { logOutput, simpleFileName, isPathNeuroSafe, normalizePath, getWorkspacePath } from '@/utils';
+import { ActionData, ActionValidationResult, actionValidationAccept, actionValidationFailure, RCEAction, contextFailure, stripToActions, actionValidationRetry } from '@/neuro_client_helper';
+import { PERMISSIONS, getPermissionLevel, isActionEnabled } from '@/config';
 import assert from 'node:assert';
 
 /* All actions located in here requires neuropilot.permission.gitOperations to be enabled. */
@@ -15,11 +15,13 @@ let git: API | null = null;
 let repo: Repository | null = null;
 
 export function getGitExtension() {
+    NEURO.client?.unregisterActions(Object.keys(gitActions));
     if (EXTENSIONS.git) {
         git = EXTENSIONS.git.getAPI(1);
         logOutput('DEBUG', 'Git extension obtained.');
         repo = git.repositories[0];
-        logOutput('DEBUG', 'Git repo obtained.');
+        logOutput('DEBUG', 'Git repo obtained (if any).');
+        registerGitActions();
     } else {
         git = null;
         repo = null;
@@ -82,7 +84,7 @@ function gitDiffValidator(actionData: ActionData): ActionValidationResult {
             if (actionData.params?.ref1 && actionData.params?.ref2) {
                 return actionValidationAccept('Only "ref1" is needed for the "diffWith" diff type.');
             } else if (!actionData.params?.ref1) {
-                return actionValidationFailure('"ref1" is required for the diff type of "diffWith"', true);
+                return actionValidationRetry('"ref1" is required for the diff type of "diffWith"');
             } else {
                 return actionValidationAccept();
             }
@@ -95,13 +97,13 @@ function gitDiffValidator(actionData: ActionData): ActionValidationResult {
             if (actionData.params?.ref1 && actionData.params?.ref2) {
                 return actionValidationAccept('Only "ref1" is needed for the "diffIndexWith" diff type.');
             } else if (!actionData.params?.ref1) {
-                return actionValidationFailure('"ref1" is required for the diff type of "diffIndexWith"', true);
+                return actionValidationRetry('"ref1" is required for the diff type of "diffIndexWith"');
             } else {
                 return actionValidationAccept();
             }
         case 'diffBetween':
             if (!actionData.params?.ref1 || !actionData.params?.ref2) {
-                return actionValidationFailure('"ref1" AND "ref2" is required for the diff type of "diffWith"', true);
+                return actionValidationRetry('"ref1" AND "ref2" is required for the diff type of "diffWith"');
             } else {
                 return actionValidationAccept();
             }
@@ -141,6 +143,7 @@ export const gitActions = {
                 },
             },
             required: ['filePath'],
+            additionalProperties: false,
         },
         permissions: [PERMISSIONS.gitOperations],
         handler: handleAddFileToGit,
@@ -160,6 +163,7 @@ export const gitActions = {
                 },
             },
             required: ['message'],
+            additionalProperties: false,
         },
         permissions: [PERMISSIONS.gitOperations],
         handler: handleMakeGitCommit,
@@ -175,6 +179,7 @@ export const gitActions = {
                 ref_to_merge: { type: 'string' },
             },
             required: ['ref_to_merge'],
+            additionalProperties: false,
         },
         permissions: [PERMISSIONS.gitOperations],
         handler: handleGitMerge,
@@ -203,6 +208,7 @@ export const gitActions = {
                 },
             },
             required: ['filePath'],
+            additionalProperties: false,
         },
         permissions: [PERMISSIONS.gitOperations],
         handler: handleRemoveFileFromGit,
@@ -219,6 +225,7 @@ export const gitActions = {
                 force: { type: 'boolean' },
             },
             required: ['branchName'],
+            additionalProperties: false,
         },
         permissions: [PERMISSIONS.gitOperations],
         handler: handleDeleteGitBranch,
@@ -234,6 +241,7 @@ export const gitActions = {
                 branchName: { type: 'string' },
             },
             required: ['branchName'],
+            additionalProperties: false,
         },
         permissions: [PERMISSIONS.gitOperations],
         handler: handleSwitchGitBranch,
@@ -249,6 +257,7 @@ export const gitActions = {
                 branchName: { type: 'string' },
             },
             required: ['branchName'],
+            additionalProperties: false,
         },
         permissions: [PERMISSIONS.gitOperations],
         handler: handleNewGitBranch,
@@ -266,6 +275,7 @@ export const gitActions = {
                 filePath: { type: 'string' },
                 diffType: { type: 'string', enum: ['diffWithHEAD', 'diffWith', 'diffIndexWithHEAD', 'diffIndexWith', 'diffBetween', 'fullDiff'] },
             },
+            additionalProperties: false,
         },
         permissions: [PERMISSIONS.gitOperations],
         handler: handleDiffFiles,
@@ -283,6 +293,7 @@ export const gitActions = {
                     minimum: 1,
                 },
             },
+            additionalProperties: false,
         },
         permissions: [PERMISSIONS.gitOperations],
         handler: handleGitLog,
@@ -298,6 +309,7 @@ export const gitActions = {
                 filePath: { type: 'string' },
             },
             required: ['filePath'],
+            additionalProperties: false,
         },
         permissions: [PERMISSIONS.gitOperations],
         handler: handleGitBlame,
@@ -316,6 +328,7 @@ export const gitActions = {
                 upstream: { type: 'string' },
             },
             required: ['name', 'upstream'],
+            additionalProperties: false,
         },
         permissions: [PERMISSIONS.gitOperations, PERMISSIONS.gitTags],
         handler: handleTagHEAD,
@@ -331,6 +344,7 @@ export const gitActions = {
                 name: { type: 'string' },
             },
             required: ['name'],
+            additionalProperties: false,
         },
         permissions: [PERMISSIONS.gitOperations, PERMISSIONS.gitTags],
         handler: handleDeleteTag,
@@ -349,6 +363,7 @@ export const gitActions = {
                 value: { type: 'string' },
             },
             required: ['key', 'value'],
+            additionalProperties: false,
         },
         permissions: [PERMISSIONS.gitOperations, PERMISSIONS.gitConfigs],
         handler: handleSetGitConfig,
@@ -363,6 +378,7 @@ export const gitActions = {
             properties: {
                 key: { type: 'string' },
             },
+            additionalProperties: false,
         },
         permissions: [PERMISSIONS.gitOperations, PERMISSIONS.gitConfigs],
         handler: handleGetGitConfig,
@@ -380,6 +396,7 @@ export const gitActions = {
                 remoteName: { type: 'string' },
                 branchName: { type: 'string' },
             },
+            additionalProperties: false,
         },
         permissions: [PERMISSIONS.gitOperations, PERMISSIONS.gitRemotes],
         handler: handleFetchGitCommits,
@@ -412,6 +429,7 @@ export const gitActions = {
                 branchName: { type: 'string' },
                 forcePush: { type: 'boolean' },
             },
+            additionalProperties: false,
         },
         permissions: [PERMISSIONS.gitOperations, PERMISSIONS.gitRemotes],
         handler: handlePushGitCommits,
@@ -439,6 +457,7 @@ export const gitActions = {
                 remoteURL: { type: 'string' },
             },
             required: ['remoteName', 'remoteURL'],
+            additionalProperties: false,
         },
         permissions: [PERMISSIONS.gitOperations, PERMISSIONS.gitRemotes, PERMISSIONS.editRemoteData],
         handler: handleAddGitRemote,
@@ -454,6 +473,7 @@ export const gitActions = {
                 remoteName: { type: 'string' },
             },
             required: ['remoteName'],
+            additionalProperties: false,
         },
         permissions: [PERMISSIONS.gitOperations, PERMISSIONS.gitRemotes, PERMISSIONS.editRemoteData],
         handler: handleRemoveGitRemote,
@@ -470,10 +490,12 @@ export const gitActions = {
                 newRemoteName: { type: 'string' },
             },
             required: ['oldRemoteName', 'newRemoteName'],
+            additionalProperties: false,
         },
         permissions: [PERMISSIONS.gitOperations, PERMISSIONS.gitRemotes, PERMISSIONS.editRemoteData],
         handler: handleRenameGitRemote,
         promptGenerator: (actionData: ActionData) => `rename the remote "${actionData.params.oldRemoteName}" to "${actionData.params.newRemoteName}".`,
+        validator: [gitValidator],
     },
     abort_merge: {
         name: 'abort_merge',
@@ -498,7 +520,7 @@ export function registerGitActions() {
         if (getPermissionLevel(PERMISSIONS.gitOperations)) {
             NEURO.client?.registerActions(stripToActions([
                 gitActions.init_git_repo,
-            ]));
+            ]).filter(isActionEnabled));
 
             const root = vscode.workspace.workspaceFolders?.[0].uri;
             if (!root) return;
@@ -524,20 +546,20 @@ export function registerGitActions() {
                         gitActions.diff_files,
                         gitActions.git_log,
                         gitActions.git_blame,
-                    ]));
+                    ]).filter(isActionEnabled));
 
                     if (getPermissionLevel(PERMISSIONS.gitTags)) {
                         NEURO.client?.registerActions(stripToActions([
                             gitActions.tag_head,
                             gitActions.delete_tag,
-                        ]));
+                        ]).filter(isActionEnabled));
                     }
 
                     if (getPermissionLevel(PERMISSIONS.gitConfigs)) {
                         NEURO.client?.registerActions(stripToActions([
                             gitActions.set_git_config,
                             gitActions.get_git_config,
-                        ]));
+                        ]).filter(isActionEnabled));
                     }
 
                     if (getPermissionLevel(PERMISSIONS.gitRemotes)) {
@@ -545,14 +567,14 @@ export function registerGitActions() {
                             gitActions.fetch_git_commits,
                             gitActions.pull_git_commits,
                             gitActions.push_git_commits,
-                        ]));
+                        ]).filter(isActionEnabled));
 
                         if (getPermissionLevel(PERMISSIONS.editRemoteData)) {
                             NEURO.client?.registerActions(stripToActions([
                                 gitActions.add_git_remote,
                                 gitActions.remove_git_remote,
                                 gitActions.rename_git_remote,
-                            ]));
+                            ]).filter(isActionEnabled));
                         }
                     }
                 }

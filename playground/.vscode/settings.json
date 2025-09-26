@@ -10,7 +10,6 @@
     "neuropilot.permission.gitTags": "Copilot",
     "neuropilot.permission.gitOperations": "Copilot",
     "neuropilot.permission.gitConfigs": "Copilot",
-    "neuropilot.allowUnsafePaths": false,
     "neuropilot.showTimeOnTerminalStart": true,
     "neuropilot.permission.terminalAccess": "Copilot",
     "neuropilot.permission.accessLintingAnalysis": "Copilot",

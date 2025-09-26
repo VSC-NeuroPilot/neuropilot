@@ -63,11 +63,13 @@ switch (mode.toLowerCase()) {
     default:
         outDir = './out';
 }
+
+const directoryPlural = outDir.length === 1 || outDir.length === -1 ? 'directory' : 'directories';
 if (fs.existsSync(outDir)) {
-    console.log(chalk.yellow(`🗑️  Output directory ${outDir} already exists, removing dir...`));
+    console.log(chalk.yellow(`🗑️  Output ${directoryPlural} ${outDir} already exists, removing dir...`));
     fs.rmSync(outDir, {recursive: true});
 } else {
-    console.log(chalk.dim(`📁  Output directory ${outDir} doesn't exist, skipping removal step.`));
+    console.log(chalk.dim(`📁  Output ${directoryPlural} ${outDir} doesn't exist, skipping removal step.`));
 }
 
 try {

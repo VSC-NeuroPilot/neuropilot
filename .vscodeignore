@@ -15,6 +15,9 @@ project-files/
 esbuild.{m,c,}js
 esbuild-configs/
 
+# Other meta scripts
+sort-enums.ts
+
 # Krita
 *.kra
 *.*~

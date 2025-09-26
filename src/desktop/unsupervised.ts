@@ -1,12 +1,12 @@
-import { NEURO } from '~/constants';
-import { registerTaskActions, taskHandlers } from '~/tasks';
-import { fileActions, registerFileActions } from '~/file_actions';
-import { gitActions, registerGitActions } from '~/git';
-import { editingActions, registerEditingActions } from '~/editing';
-import { ActionData, RCEAction } from '~/neuro_client_helper';
-import { registerTerminalActions, terminalAccessHandlers } from '~/pseudoterminal';
-import { lintActions, registerLintActions } from '~/lint_problems';
-import { cancelRequestAction, RCEActionHandler } from '~/rce';
+import { NEURO } from '@/constants';
+import { registerTaskActions, taskHandlers } from '@/tasks';
+import { fileActions, registerFileActions } from '@/file_actions';
+import { gitActions, registerGitActions } from '@/git';
+import { editingActions, registerEditingActions } from '@/editing';
+import { ActionData, RCEAction } from '@/neuro_client_helper';
+import { registerTerminalActions, terminalAccessHandlers } from '@/pseudoterminal';
+import { lintActions, registerLintActions } from '@/lint_problems';
+import { cancelRequestAction, RCEActionHandler } from '@/rce';
 
 /**
  * Register unsupervised actions with the Neuro API.

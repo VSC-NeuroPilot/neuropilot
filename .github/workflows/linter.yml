@@ -1,25 +1,53 @@
-name: ESLinter
+name: Quick checks
 
 on:
     push:
     pull_request:
 
 jobs:
+    type-check:
+      name: Type checker
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v4
+        
+        - name: Setup pnpm
+          uses: pnpm/action-setup@v4
+          with:
+            version: 10.14.0
+        
+        - name: Setup Node.js
+          uses: actions/setup-node@v4
+          with:
+            node-version: 22.14.0
+            cache: 'pnpm'
+            cache-dependency-path: './pnpm-lock.yaml'
+        
+        - name: clean-install deps
+          run: pnpm install --frozen-lockfile
+
+        - name: type check
+          run: pnpm types
     lint-check:
-        name: Lint checker
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v4
-            
-            - name: Setup Node.js
-              uses: actions/setup-node@v4
-              with:
-                node-version: 22.14.0
-                cache: 'npm'
-                cache-dependency-path: './package-lock.json'
+      name: Lint checker
+      runs-on: ubuntu-latest
+      steps:
+          - uses: actions/checkout@v4
 
-            - name: clean-install deps
-              run: npm ci
+          - name: Setup pnpm
+            uses: pnpm/action-setup@v4
+            with:
+              version: 10.14.0
 
-            - name: lint check
-              run: npx eslint src/
+          - name: Setup Node.js
+            uses: actions/setup-node@v4
+            with:
+              node-version: 22.14.0
+              cache: 'pnpm'
+              cache-dependency-path: './pnpm-lock.yaml'
+
+          - name: clean-install deps
+            run: pnpm install --frozen-lockfile
+
+          - name: lint check
+            run: pnpm eslint src/

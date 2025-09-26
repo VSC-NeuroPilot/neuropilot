@@ -1,12 +1,12 @@
 import * as vscode from 'vscode';
 
-import { getFence, logOutput, simpleFileName } from '~/utils';
-import { NEURO } from '~/constants';
-import { PERMISSIONS, getPermissionLevel } from '~/config';
+import { getFence, logOutput, simpleFileName } from '@/utils';
+import { NEURO } from '@/constants';
+import { PERMISSIONS, getPermissionLevel, isActionEnabled } from '@/config';
 
 export function sendCurrentFile() {
     const editor = vscode.window.activeTextEditor;
-    if(!editor) {
+    if (!editor) {
         logOutput('ERROR', 'No active text editor');
         vscode.window.showErrorMessage('No active text editor.');
         return;
@@ -16,7 +16,7 @@ export function sendCurrentFile() {
     const language = document.languageId;
     const text = document.getText();
 
-    if(!NEURO.connected) {
+    if (!NEURO.connected) {
         logOutput('ERROR', 'Attempted to send current file while disconnected');
         vscode.window.showErrorMessage('Not connected to Neuro API.');
         return;
@@ -24,13 +24,13 @@ export function sendCurrentFile() {
 
     logOutput('INFO', 'Sending current file to Neuro API');
     const fence = getFence(text);
-    NEURO.client?.sendContext(`Current file: ${fileName}\n\nContent:\n\n${fence}${language}\n${text}\n${fence}`);
+    NEURO.client?.sendContext(`Vedal sent you the contents of the file ${fileName}.\n\nContent:\n\n${fence}${language}\n${text}\n${fence}`);
 }
 
 export function registerRequestCookieAction() {
     NEURO.client?.unregisterActions(['request_cookie']);
 
-    if(!getPermissionLevel(PERMISSIONS.requestCookies))
+    if (!getPermissionLevel(PERMISSIONS.requestCookies) || !isActionEnabled('request_cookie'))
         return;
 
     NEURO.client?.registerActions([
@@ -42,6 +42,7 @@ export function registerRequestCookieAction() {
                 properties: {
                     flavor: { type: 'string' },
                 },
+                additionalProperties: false,
             },
         },
     ]);
@@ -49,14 +50,14 @@ export function registerRequestCookieAction() {
 
 export function registerRequestCookieHandler() {
     NEURO.client?.onAction((actionData) => {
-        if(actionData.name === 'request_cookie') {
+        if (actionData.name === 'request_cookie') {
             NEURO.actionHandled = true;
 
-            if(!getPermissionLevel(PERMISSIONS.requestCookies)) {
+            if (!getPermissionLevel(PERMISSIONS.requestCookies)) {
                 logOutput('WARNING', 'Neuro attempted to request a cookie, but permission is disabled');
                 NEURO.client?.sendActionResult(actionData.id, true, 'Permission to request cookies is disabled.');
             }
-            if(NEURO.waitingForCookie) {
+            if (NEURO.waitingForCookie) {
                 logOutput('INFO', 'Already waiting for a cookie');
                 NEURO.client?.sendActionResult(actionData.id, true, 'You already asked for a cookie.');
                 return;
@@ -69,9 +70,9 @@ export function registerRequestCookieHandler() {
                 'Give',
                 'Deny',
             ).then((value) => {
-                if(value === 'Give') {
+                if (value === 'Give') {
                     giveCookie(true, actionData.params?.flavor);
-                } else if(value === 'Deny' || value === undefined) {
+                } else if (value === 'Deny' || value === undefined) {
                     denyCookie();
                 }
                 NEURO.waitingForCookie = false;
@@ -82,7 +83,7 @@ export function registerRequestCookieHandler() {
 
 export function giveCookie(isRequested = false, defaultFlavor = 'Chocolate Chip') {
     NEURO.waitingForCookie = false;
-    if(!NEURO.connected) {
+    if (!NEURO.connected) {
         logOutput('ERROR', 'Attempted to give cookie while disconnected');
         vscode.window.showErrorMessage('Not connected to Neuro API.');
         return;
@@ -94,9 +95,9 @@ export function giveCookie(isRequested = false, defaultFlavor = 'Chocolate Chip'
         value: defaultFlavor,
         title: `Give ${NEURO.currentController} a cookie`,
     }).then((flavor) => {
-        if(!flavor) {
+        if (!flavor) {
             logOutput('INFO', 'No flavor given, canceling cookie');
-            if(isRequested)
+            if (isRequested)
                 NEURO.client?.sendContext("Vedal couldn't decide on a flavor for your cookie.");
             return;
         }
@@ -107,7 +108,7 @@ export function giveCookie(isRequested = false, defaultFlavor = 'Chocolate Chip'
 
 export function denyCookie() {
     NEURO.waitingForCookie = false;
-    if(!NEURO.connected) {
+    if (!NEURO.connected) {
         logOutput('ERROR', 'Attempted to deny cookie while disconnected');
         vscode.window.showErrorMessage('Not connected to Neuro API.');
         return;

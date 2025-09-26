@@ -1,9 +1,9 @@
-import { NEURO } from '~/constants';
-import { fileActions, registerFileActions } from '~/file_actions';
-import { editingActions, registerEditingActions } from '~/editing';
-import { ActionData, RCEAction } from '~/neuro_client_helper';
-import { lintActions, registerLintActions } from '~/lint_problems';
-import { cancelRequestAction, RCEActionHandler } from '~/rce';
+import { NEURO } from '@/constants';
+import { fileActions, registerFileActions } from '@/file_actions';
+import { editingActions, registerEditingActions } from '@/editing';
+import { ActionData, RCEAction } from '@/neuro_client_helper';
+import { lintActions, registerLintActions } from '@/lint_problems';
+import { cancelRequestAction, RCEActionHandler } from '@/rce';
 
 /**
  * Register unsupervised actions with the Neuro API.

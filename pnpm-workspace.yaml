@@ -1,0 +1,5 @@
+onlyBuiltDependencies:
+  - '@playwright/browser-chromium'
+  - '@vscode/vsce-sign'
+  - esbuild
+  - keytar

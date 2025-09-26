@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
-import { reloadTasks, taskEndedHandler } from '~/tasks';
-import { emergencyTerminalShutdown } from '~/pseudoterminal';
-import { createClient, isPathNeuroSafe, setVirtualCursor } from '~/utils';
-import { NEURO } from '~/constants';
+import { handleTerminateTask, reloadTasks, taskEndedHandler } from '@/tasks';
+import { emergencyTerminalShutdown } from '@/pseudoterminal';
+import { createClient, isPathNeuroSafe, setVirtualCursor } from '@/utils';
+import { NEURO } from '@/constants';
 import {
     initializeCommonState,
     setupCommonProviders,
@@ -11,15 +11,16 @@ import {
     setupClientConnectedHandlers,
     createStatusBarItem,
     deactivate as commonDeactivate,
-    getDecorationRenderOptions,
+    getCursorDecorationRenderOptions,
+    getDiffAddedDecorationRenderOptions,
+    getDiffRemovedDecorationRenderOptions,
+    getDiffModifiedDecorationRenderOptions,
     obtainExtensionState,
     reloadPermissions,
+    getHighlightDecorationRenderOptions,
 } from '@shared/extension';
-import { registerDocsLink } from '@shared/docs';
-import { registerChatParticipant } from '~/chat';
+import { registerChatParticipant } from '@/chat';
 import { registerUnsupervisedActions, registerUnsupervisedHandlers } from './unsupervised';
-
-export { registerDocsLink };
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -49,14 +50,18 @@ export function activate(context: vscode.ExtensionContext) {
     // Create status bar item
     createStatusBarItem();
 
-    // Extension state
-    obtainExtensionState();
+    // Extension state (delaying this by 5000ms so that the git extension has some time to activate)
+    setTimeout(obtainExtensionState, 5000);
 
     // Create client
     createClient();
 
     // Create cursor decoration (desktop-specific)
-    NEURO.cursorDecorationType = vscode.window.createTextEditorDecorationType(getDecorationRenderOptions());
+    NEURO.cursorDecorationType = vscode.window.createTextEditorDecorationType(getCursorDecorationRenderOptions());
+    NEURO.diffAddedDecorationType = vscode.window.createTextEditorDecorationType(getDiffAddedDecorationRenderOptions());
+    NEURO.diffRemovedDecorationType = vscode.window.createTextEditorDecorationType(getDiffRemovedDecorationRenderOptions());
+    NEURO.diffModifiedDecorationType = vscode.window.createTextEditorDecorationType(getDiffModifiedDecorationRenderOptions());
+    NEURO.highlightDecorationType = vscode.window.createTextEditorDecorationType(getHighlightDecorationRenderOptions());
 
     // Set initial virtual cursor
     if (vscode.window.activeTextEditor && isPathNeuroSafe(vscode.window.activeTextEditor.document.fileName)) {
@@ -66,6 +71,10 @@ export function activate(context: vscode.ExtensionContext) {
 
 export function deactivate() {
     emergencyTerminalShutdown();
+    handleTerminateTask({
+        id: 'none',
+        name: 'terminate_task',
+    });
     commonDeactivate();
 }
 

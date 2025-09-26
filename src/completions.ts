@@ -1,9 +1,9 @@
 import { NeuroClient } from 'neuro-game-sdk';
 import * as vscode from 'vscode';
-import { NEURO } from '~/constants';
-import { logOutput, simpleFileName, getPositionContext } from '~/utils';
+import { NEURO } from '@/constants';
+import { logOutput, simpleFileName, getPositionContext } from '@/utils';
 import assert from 'node:assert';
-import { CONFIG } from '~/config';
+import { CONFIG } from '@/config';
 
 let lastSuggestions: string[] = [];
 
@@ -63,6 +63,7 @@ export function requestCompletion(beforeContext: string, afterContext: string, f
                     },
                 },
                 required: ['suggestions'],
+                additionalProperties: false,
             },
         },
     ]);

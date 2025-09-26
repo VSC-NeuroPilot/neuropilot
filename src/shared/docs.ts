@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
-import { logOutput } from '~/utils';
-import { CONFIG } from '~/config';
+import { logOutput } from '@/utils';
+import { CONFIG } from '@/config';
 
 // Shared docs management
 export const docsOptions: Record<string, string> = {
     'NeuroPilot': CONFIG.docsURL,
-    'NeuroPilot (Local Dev Default)': 'http://127.0.0.1:4321/neuropilot',
+    'NeuroPilot (Local Dev Default)': 'http://127.0.0.1:4321/docs',
 };
 export let docsItems: string[] = Object.keys(docsOptions);
 

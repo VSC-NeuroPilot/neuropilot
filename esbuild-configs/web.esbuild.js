@@ -1,4 +1,3 @@
-/* eslint-disable no-undef */
 // @ts-check
 import { context } from 'esbuild';
 import { polyfillNode } from 'esbuild-plugin-polyfill-node';

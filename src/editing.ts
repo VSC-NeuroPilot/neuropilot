@@ -1,14 +1,124 @@
 import * as vscode from 'vscode';
 
-import { NEURO } from '~/constants';
-import { escapeRegExp, getFence, getPositionContext, getVirtualCursor, isPathNeuroSafe, logOutput, NeuroPositionContext, setVirtualCursor, substituteMatch } from '~/utils';
-import { ActionData, actionValidationAccept, actionValidationFailure, ActionValidationResult, RCEAction, contextFailure, stripToActions } from '~/neuro_client_helper';
-import { PERMISSIONS, getPermissionLevel, CONFIG } from '~/config';
+import { NEURO } from '@/constants';
+import { DiffRangeType, escapeRegExp, getDiffRanges, getFence, getPositionContext, getProperty, getVirtualCursor, showDiffRanges, isPathNeuroSafe, logOutput, NeuroPositionContext, setVirtualCursor, simpleFileName, substituteMatch, clearDecorations } from '@/utils';
+import { ActionData, actionValidationAccept, actionValidationFailure, ActionValidationResult, RCEAction, contextFailure, stripToActions, actionValidationRetry, contextNoAccess } from '@/neuro_client_helper';
+import { PERMISSIONS, getPermissionLevel, CONFIG, isActionEnabled } from '@/config';
+import type { JSONSchema7 } from 'json-schema';
 
 const CONTEXT_NO_ACCESS = 'You do not have permission to access this file.';
 const CONTEXT_NO_ACTIVE_DOCUMENT = 'No active document to edit.';
 
+type MatchOptions = 'firstInFile' | 'lastInFile' | 'firstAfterCursor' | 'lastBeforeCursor' | 'allInFile';
 const MATCH_OPTIONS: string[] = ['firstInFile', 'lastInFile', 'firstAfterCursor', 'lastBeforeCursor', 'allInFile'] as const;
+const POSITION_SCHEMA: JSONSchema7 = {
+    type: 'object',
+    properties: {
+        line: { type: 'integer' },
+        column: { type: 'integer' },
+        type: {
+            type: 'string',
+            enum: ['relative', 'absolute'],
+        },
+    },
+    additionalProperties: false,
+    required: ['line', 'column', 'type'],
+};
+interface Position {
+    line: number;
+    column: number;
+    type: 'relative' | 'absolute';
+}
+const LINE_RANGE_SCHEMA: JSONSchema7 = {
+    type: 'object',
+    properties: {
+        startLine: { type: 'integer', minimum: 1 },
+        endLine: { type: 'integer', minimum: 1 },
+    },
+    additionalProperties: false,
+    required: ['startLine', 'endLine'],
+};
+interface LineRange {
+    startLine: number;
+    endLine: number;
+}
+
+/**
+ * Create a generic string validator that checks type and character limits.
+ * @param paramPaths Array of parameter paths to validate (e.g., ['text', 'content'])
+ * @param maxLength Maximum character length (default: 100,000)
+ * @returns A function that validates the specified string parameters
+ */
+function createStringValidator(paramPaths: string[], maxLength = 100000) {
+    return (actionData: ActionData): ActionValidationResult => {
+        for (const path of paramPaths) {
+            const value = getProperty(actionData.params, path);
+
+            // Check if parameter exists and is a string
+            if (value !== undefined && typeof value !== 'string') {
+                return actionValidationRetry(`${path} must be a string.`);
+            }
+
+            // Check character limit if parameter exists
+            if (value !== undefined && value.length > maxLength) {
+                return actionValidationRetry(`${path} is too large, send less than ${maxLength.toLocaleString()} characters.`);
+            }
+        }
+
+        return actionValidationAccept();
+    };
+}
+
+/**
+ * Create a position validator for the specified path.
+ * The validator checks if the position is within the bounds of the document.
+ * @param path The path to the position object. For the root pass an empty string.
+ * @returns A function that validates the position in the action data.
+ */
+function createPositionValidator(path = '') {
+    return (actionData: ActionData): ActionValidationResult => {
+        const position = getProperty(actionData.params, path) as Position | undefined;
+
+        // If position is undefined, it is not required by the schema (otherwise the schema check would fail first)
+        if (position === undefined)
+            return actionValidationAccept();
+
+        const document = vscode.window.activeTextEditor?.document;
+        if (document === undefined)
+            return actionValidationFailure(CONTEXT_NO_ACTIVE_DOCUMENT);
+        if (!isPathNeuroSafe(document.fileName))
+            return actionValidationFailure(CONTEXT_NO_ACCESS);
+
+        let { line, column } = position;
+        const type = position.type;
+
+        let basedLine: number; // The one-based line number
+
+        if (type === 'relative') {
+            const cursor = getVirtualCursor()!;
+            line += cursor.line;
+            column += cursor.character;
+
+            basedLine = line + 1;
+        } else { // type === 'absolute'
+            basedLine = line;
+            line -= 1;
+            column -= 1;
+        }
+
+        // Additional checks for better feedback
+        if (type === 'absolute' && (position.line === 0 || position.column === 0))
+            return actionValidationRetry('Line and column numbers are one-based, so the first line and column are 1, not 0.');
+
+        // Check if the line and column are in-bounds
+        if (line >= document.lineCount || line < 0)
+            return actionValidationRetry(`Line ${basedLine} is out of bounds, the last line of the document is ${document.lineCount}.`);
+        if (column > document.lineAt(line).text.length || column < 0)
+            return actionValidationRetry(`Column ${column + 1} is out of bounds, the last column of line ${basedLine} is ${document.lineAt(line).text.length + 1}.`);
+
+        return actionValidationAccept();
+    };
+}
 
 function checkCurrentFile(_actionData: ActionData): ActionValidationResult {
     const document = vscode.window.activeTextEditor?.document;
@@ -20,53 +130,140 @@ function checkCurrentFile(_actionData: ActionData): ActionValidationResult {
     return actionValidationAccept();
 }
 
+/**
+ * Creates a line range validator for the specified path.
+ * The validator checks that the `startLine` and `endLine` properties are valid and in-bounds.
+ * @param path The path to the line range object. For the root pass an empty string.
+ * @returns A function that validates the line range in the action data.
+ */
+function createLineRangeValidator(path = '') {
+    return (actionData: ActionData) => {
+        const range = getProperty(actionData.params, path) as LineRange | undefined;
+
+        // If it's undefined it's not required
+        if (!range) return actionValidationAccept();
+
+        const { startLine, endLine } = range;
+        const document = vscode.window.activeTextEditor?.document;
+
+        // Recheck if there is an active document, because it is later needed to check if the line range is out of bounds. This in case this validator is used on its own.
+        if (!document) return actionValidationFailure(CONTEXT_NO_ACTIVE_DOCUMENT);
+
+        // Check line number validity
+        if (startLine <= 0 || endLine <= 0) {
+            return actionValidationRetry('Line numbers must be positive integers (1-based).');
+        }
+
+        if (startLine > endLine) {
+            return actionValidationRetry(`Start line (${startLine}) cannot be greater than end line (${endLine}).`);
+        }
+
+        if (startLine > document.lineCount || endLine > document.lineCount) {
+            return actionValidationRetry(`Line range ${startLine}-${endLine} is out of bounds. File has ${document.lineCount} lines.`);
+        }
+
+        return actionValidationAccept();
+    };
+}
+
 export const editingActions = {
     place_cursor: {
         name: 'place_cursor',
-        description: 'Place the cursor in the current file. Absolute line and column numbers are one-based.',
-        schema: {
-            type: 'object',
-            properties: {
-                line: { type: 'integer' },
-                column: { type: 'integer' },
-                type: { type: 'string', enum: ['relative', 'absolute'] },
-            },
-            required: ['line', 'column', 'type'],
-        },
+        description: 'Place the cursor in the current file at the specified position. Line and column numbers are one-based for "absolute" and zero-based for "relative".',
+        schema: POSITION_SCHEMA,
         permissions: [PERMISSIONS.editActiveDocument],
         handler: handlePlaceCursor,
-        validator: [checkCurrentFile],
-        promptGenerator: (actionData: ActionData) => `place the cursor at (${actionData.params.line}:${actionData.params.column}).`,
+        validator: [checkCurrentFile, createPositionValidator()],
+        promptGenerator: (actionData: ActionData) => `${actionData.params.type === 'absolute' ? 'place the cursor at' : 'move the cursor by'} (${actionData.params.line}:${actionData.params.column}).`,
     },
     get_cursor: {
         name: 'get_cursor',
-        description: 'Get the current cursor position and the text surrounding it',
+        description: 'Get the current cursor position and the text surrounding it.',
         permissions: [PERMISSIONS.editActiveDocument],
         handler: handleGetCursor,
         validator: [checkCurrentFile],
         promptGenerator: 'get the current cursor position and the text surrounding it.',
     },
+    get_content: {
+        name: 'get_content',
+        description: 'Get the contents of the current file.',
+        permissions: [PERMISSIONS.editActiveDocument],
+        handler: handleGetContent,
+        promptGenerator: 'get the current file\'s contents.',
+        validator: [checkCurrentFile],
+    },
     insert_text: {
         name: 'insert_text',
-        description: 'Insert code at the current cursor position',
+        description: 'Insert code at the specified position.'
+            + ' Line and column numbers are one-based for "absolute" and zero-based for "relative".'
+            + ' If no position is specified, your cursor\'s current position will be used.'
+            + ' Remember to add indents after newlines where appropriate.'
+            + ' After inserting, your cursor will be placed at the end of the inserted text.'
+            + ' Also make sure you use new lines and indentation appropriately.',
         schema: {
             type: 'object',
             properties: {
                 text: { type: 'string' },
+                position: POSITION_SCHEMA,
             },
             required: ['text'],
+            additionalProperties: false,
         },
         permissions: [PERMISSIONS.editActiveDocument],
         handler: handleInsertText,
-        validator: [checkCurrentFile],
+        validator: [checkCurrentFile, createPositionValidator('position'), createStringValidator(['text'])],
         promptGenerator: (actionData: ActionData) => {
             const lineCount = actionData.params.text.trim().split('\n').length;
-            return `insert ${lineCount} line${lineCount === 1 ? '' : 's'} of code.`;
+            let text = `insert ${lineCount} line${lineCount === 1 ? '' : 's'} of code`;
+            if (actionData.params.position) {
+                const position = actionData.params.position;
+                switch (position.type) {
+                    case 'relative':
+                        text += `, (${position.line}:${position.column}) away from her cursor`;
+                        break;
+                    case 'absolute':
+                        text += `, at line (${position.line}:${position.column})`;
+                        break;
+                }
+            }
+            text += '.';
+            return text;
+        },
+    },
+    insert_lines: {
+        name: 'insert_lines',
+        description: 'Insert code below a certain line.'
+            + ' Defaults to your current cursor\'s location'
+            + ' Remember to add indents after newlines where appropriate.'
+            + ' Your cursor will be moved to the end of the inserted line.', // TODO: Clarify cursor stuff again
+        schema: {
+            type: 'object',
+            properties: {
+                text: {
+                    type: 'string',
+                },
+                insertUnder: {
+                    type: 'integer',
+                    minimum: 1,
+                },
+            },
+            additionalProperties: false,
+            required: ['text'],
+        },
+        permissions: [PERMISSIONS.editActiveDocument],
+        handler: handleInsertLines,
+        validator: [checkCurrentFile, createStringValidator(['lines'])],
+        promptGenerator: (actionData: ActionData) => {
+            const lines = actionData.params.text.trim().split('\n').length;
+            const insertUnder = actionData.params.insertUnder;
+            return `insert ${lines} line${lines !== 1 ? 's' : ''} of code below ${insertUnder ? `line ${insertUnder}` : 'her cursor'}.`;
         },
     },
     replace_text: {
         name: 'replace_text',
-        description: 'Replace text in the active document. If you set "useRegex" to true, you can use a Regex in the "find" parameter and a subtitution pattern in the "replaceWith" parameter.',
+        description: 'Replace text in the active document.'
+            + ' If you set "useRegex" to true, you can use a Regex in the "find" parameter and a substitution pattern in the "replaceWith" parameter.'
+            + ' This will place your cursor at the end of the replaced text, unless you replaced multiple instances.',
         schema: {
             type: 'object',
             properties: {
@@ -74,51 +271,173 @@ export const editingActions = {
                 replaceWith: { type: 'string' },
                 useRegex: { type: 'boolean' },
                 match: { type: 'string', enum: MATCH_OPTIONS },
+                lineRange: LINE_RANGE_SCHEMA,
             },
             required: ['find', 'replaceWith', 'match'],
+            additionalProperties: false,
         },
         permissions: [PERMISSIONS.editActiveDocument],
         handler: handleReplaceText,
-        validator: [checkCurrentFile],
-        promptGenerator: (actionData: ActionData) => `replace "${actionData.params.useRegex ? escapeRegExp(actionData.params.find) : actionData.params.find}" with "${actionData.params.replaceWith}".`,
+        validator: [checkCurrentFile, createStringValidator(['find', 'replaceWith']), createLineRangeValidator('lineRange')],
+        promptGenerator: (actionData: ActionData) => {
+            let text = 'replace ';
+            const target = actionData.params.useRegex ? escapeRegExp(actionData.params.find) : actionData.params.find;
+            switch (actionData.params.match as MatchOptions) {
+                case 'allInFile':
+                    text += 'all matches ';
+                    break;
+                case 'firstAfterCursor':
+                    text += 'the first match (after her cursor) ';
+                    break;
+                case 'firstInFile':
+                    text += 'the first match (in the file) ';
+                    break;
+                case 'lastBeforeCursor':
+                    text += 'the last match (before her cursor) ';
+                    break;
+                case 'lastInFile':
+                    text += 'the last match (in the file) ';
+                    break;
+            }
+            text += `of "${target}" with "${actionData.params.replaceWith}"`;
+            if (actionData.params.useRegex) {
+                text += ' (using RegEx)';
+            }
+            if (actionData.params.lineRange) {
+                const lineRange = actionData.params.lineRange;
+                text += ` within lines ${lineRange.startLine}-${lineRange.endLine}`;
+            }
+            text += ' and move her cursor to the replaced text';
+            if (actionData.params.match === 'allInFile') text += ' (unless there were multiple matches)';
+            text += '.';
+            return text;
+        },
     },
     delete_text: {
         name: 'delete_text',
-        description: 'Delete text in the active document. If you set "useRegex" to true, you can use a Regex in the "find" parameter.',
+        description: 'Delete text in the active document.'
+            + ' If you set "useRegex" to true, you can use a Regex in the "find" parameter.'
+            + ' This will place your cursor where the deleted text was, unless you deleted multiple instances.'
+            + ' Line numbers are one-based.',
         schema: {
             type: 'object',
             properties: {
                 find: { type: 'string' },
                 useRegex: { type: 'boolean' },
                 match: { type: 'string', enum: MATCH_OPTIONS },
+                lineRange: LINE_RANGE_SCHEMA,
             },
             required: ['find', 'match'],
+            additionalProperties: false,
         },
         permissions: [PERMISSIONS.editActiveDocument],
         handler: handleDeleteText,
-        validator: [checkCurrentFile],
-        promptGenerator: (actionData: ActionData) => `delete "${actionData.params.useRegex ? escapeRegExp(actionData.params.find) : actionData.params.find}".`,
+        validator: [checkCurrentFile, createStringValidator(['find']), createLineRangeValidator('lineRange')],
+        promptGenerator: (actionData: ActionData) => {
+            let text = 'delete ';
+            const target = actionData.params.useRegex ? escapeRegExp(actionData.params.find) : actionData.params.find;
+            switch (actionData.params.match as MatchOptions) {
+                case 'allInFile':
+                    text += 'all matches ';
+                    break;
+                case 'firstAfterCursor':
+                    text += 'the first match (after her cursor) ';
+                    break;
+                case 'firstInFile':
+                    text += 'the first match (in the file) ';
+                    break;
+                case 'lastBeforeCursor':
+                    text += 'the last match (before her cursor) ';
+                    break;
+                case 'lastInFile':
+                    text += 'the last match (in the file) ';
+                    break;
+                default:
+                    text += 'unknown matches ';
+                    break;
+            }
+            text += `of "${target}"`;
+            if (actionData.params.useRegex) {
+                text += ' (using RegEx)';
+            }
+            if (actionData.params.lineRange) {
+                const lineRange = actionData.params.lineRange;
+                text += ` within lines ${lineRange.startLine}-${lineRange.endLine}`;
+            }
+            text += ' and move her cursor to the deleted text';
+            if (actionData.params.match === 'allInFile') text += ' (unless there were multiple matches)';
+            text += '.';
+            return text;
+        },
     },
     find_text: {
         name: 'find_text',
-        description: 'Find text in the active document. If you set "useRegex" to true, you can use a Regex in the "find" parameter.',
+        description: 'Find text in the active document.'
+            + ' If you set "useRegex" to true, you can use a Regex in the "find" parameter.'
+            + ' This will place your cursor directly before or after the found text (depending on "moveCursor"), unless you searched for multiple instances.'
+            + ' Set "highlight" to true to highlight the found text, if you want to draw Vedal\'s or Chat\'s attention to it.'
+            + ' If you search for multiple matches, the numbers at the start of each line are the one-based line numbers and not part of the code.',
         schema: {
             type: 'object',
             properties: {
                 find: { type: 'string' },
                 useRegex: { type: 'boolean' },
                 match: { type: 'string', enum: MATCH_OPTIONS },
+                lineRange: LINE_RANGE_SCHEMA,
+                moveCursor: { type: 'string', enum: ['start', 'end'] },
+                highlight: { type: 'boolean' },
             },
             required: ['find', 'match'],
+            additionalProperties: false,
         },
         permissions: [PERMISSIONS.editActiveDocument],
         handler: handleFindText,
-        validator: [checkCurrentFile],
-        promptGenerator: (actionData: ActionData) => `find "${actionData.params.useRegex ? escapeRegExp(actionData.params.find) : actionData.params.find}".`,
+        validator: [checkCurrentFile, createStringValidator(['find']), createLineRangeValidator('lineRange')],
+        promptGenerator: (actionData: ActionData) => {
+            let text = 'find ';
+            const target = actionData.params.useRegex ? escapeRegExp(actionData.params.find) : actionData.params.find;
+            if (actionData.params.highlight) text += 'and highlight ';
+            switch (actionData.params.match as MatchOptions) {
+                case 'allInFile':
+                    text += 'all matches ';
+                    break;
+                case 'firstAfterCursor':
+                    text += 'the first match (after her cursor) ';
+                    break;
+                case 'firstInFile':
+                    text += 'the first match (in the file) ';
+                    break;
+                case 'lastBeforeCursor':
+                    text += 'the last match (before her cursor) ';
+                    break;
+                case 'lastInFile':
+                    text += 'the last match (in the file) ';
+                    break;
+                default:
+                    text += 'unknown matches ';
+                    break;
+            }
+            text += `of "${target}"`;
+            if (actionData.params.useRegex) {
+                text += ' (using RegEx)';
+            }
+            if (actionData.params.lineRange) {
+                const lineRange = actionData.params.lineRange;
+                text += ` within lines ${lineRange.startLine}-${lineRange.endLine}`;
+            }
+            if (actionData.params.moveCursor) {
+                text += ' and move her cursor to the result';
+                if (actionData.params.match === 'allInFile') text += ' (unless there are multiple matches)';
+            }
+            text += '.';
+            return text;
+        },
     },
     undo: {
         name: 'undo',
-        description: 'Undo the last action in the active document. If this doesn\'t work, tell Vedal to focus your VS Code window.',
+        description: 'Undo the last change made to the active document.'
+            + ' Where your cursor will be moved cannot be determined.' // It will move to the real cursor but thats kinda useless for her to know
+            + ' If this doesn\'t work, tell Vedal to focus your VS Code window.',
         permissions: [PERMISSIONS.editActiveDocument],
         handler: handleUndo,
         validator: [checkCurrentFile],
@@ -132,6 +451,72 @@ export const editingActions = {
         validator: [checkCurrentFile],
         promptGenerator: 'save.',
     },
+    rewrite_all: {
+        name: 'rewrite_all',
+        description: 'Rewrite the entire contents of the file. Your cursor will be moved to the start of the file.',
+        schema: {
+            type: 'object',
+            properties: {
+                content: { type: 'string' },
+            },
+            required: ['content'],
+            additionalProperties: false,
+        },
+        permissions: [PERMISSIONS.editActiveDocument],
+        handler: handleRewriteAll,
+        validator: [checkCurrentFile, createStringValidator(['content'])],
+        promptGenerator: (actionData: ActionData) => {
+            const lineCount = actionData.params.content.trim().split('\n').length;
+            return `rewrite the entire file with ${lineCount} line${lineCount === 1 ? '' : 's'} of content.`;
+        },
+    },
+    rewrite_lines: {
+        name: 'rewrite_lines',
+        description: 'Rewrite everything in the specified line range.'
+            + ' After rewriting, your cursor will be placed at the end of the last inserted line.'
+            + ' Line numbers are one-based.',
+        schema: {
+            type: 'object',
+            properties: {
+                ...LINE_RANGE_SCHEMA.properties,
+                content: { type: 'string' },
+            },
+            required: [...LINE_RANGE_SCHEMA.required!, 'content'],
+            additionalProperties: false,
+        },
+        permissions: [PERMISSIONS.editActiveDocument],
+        handler: handleRewriteLines,
+        validator: [checkCurrentFile, createLineRangeValidator(), createStringValidator(['content'])],
+        promptGenerator: (actionData: ActionData) => {
+            const lineCount = actionData.params.content.trim().split('\n').length;
+            return `rewrite lines ${actionData.params.startLine}-${actionData.params.endLine} with ${lineCount} line${lineCount === 1 ? '' : 's'} of content.`;
+        },
+    },
+    delete_lines: {
+        name: 'delete_lines',
+        description: 'Delete everything in the specified line range.'
+            + ' After deleting, your cursor will be placed at the end of the line before the deleted lines, if possible.'
+            + ' Line numbers are one-based.',
+        schema: LINE_RANGE_SCHEMA,
+        permissions: [PERMISSIONS.editActiveDocument],
+        handler: handleDeleteLines,
+        validator: [checkCurrentFile, createLineRangeValidator()],
+        promptGenerator: (actionData: ActionData) => {
+            return `delete lines ${actionData.params.startLine}-${actionData.params.endLine}.`;
+        },
+    },
+    highlight_lines: {
+        name: 'highlight_lines',
+        description: 'Highlight the specified lines.'
+            + ' Can be used to draw Vedal\'s or Chat\'s attention towards something.'
+            + ' This will not move your cursor.'
+            + ' Line numbers are one-based.',
+        schema: LINE_RANGE_SCHEMA,
+        permissions: [PERMISSIONS.editActiveDocument],
+        handler: handleHighlightLines,
+        validator: [checkCurrentFile, createLineRangeValidator()],
+        promptGenerator: (actionData: ActionData) => `highlight lines ${actionData.params.startLine}-${actionData.params.endLine}.`,
+    },
 } satisfies Record<string, RCEAction>;
 
 export function registerEditingActions() {
@@ -139,16 +524,22 @@ export function registerEditingActions() {
         NEURO.client?.registerActions(stripToActions([
             editingActions.place_cursor,
             editingActions.get_cursor,
+            editingActions.get_content,
             editingActions.insert_text,
+            editingActions.insert_lines,
             editingActions.replace_text,
             editingActions.delete_text,
             editingActions.find_text,
             editingActions.undo,
-        ]));
+            editingActions.rewrite_all,
+            editingActions.rewrite_lines,
+            editingActions.delete_lines,
+            editingActions.highlight_lines,
+        ]).filter(isActionEnabled));
         if (vscode.workspace.getConfiguration('files').get<string>('autoSave') !== 'afterDelay') {
             NEURO.client?.registerActions(stripToActions([
                 editingActions.save,
-            ]));
+            ]).filter(isActionEnabled));
         };
     }
 }
@@ -192,12 +583,6 @@ export function handlePlaceCursor(actionData: ActionData): string | undefined {
         column -= 1;
     }
 
-    if (line >= document.lineCount || line < 0) {
-        return contextFailure(`Line is out of bounds, the last line of the document is ${document.lineCount}.`);
-    }
-    if (column > document.lineAt(line).text.length || column < 0)
-        return contextFailure(`Column is out of bounds, the last column of line ${basedLine} is ${document.lineAt(line).text.length + 1}.`);
-
     const cursorPosition = new vscode.Position(line, column);
     setVirtualCursor(cursorPosition);
     const cursorContext = getPositionContext(document, cursorPosition);
@@ -221,8 +606,46 @@ export function handleGetCursor(_actionData: ActionData): string | undefined {
     return `In file ${relativePath}\n\nCursor is at (${cursorPosition.line + 1}:${cursorPosition.character + 1})\n\n${formatContext(cursorContext)}`;
 }
 
+export function handleGetContent(): string {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) {
+        return contextFailure('No active text editor.');
+    }
+
+    const document = editor.document;
+    const fileName = simpleFileName(document.fileName);
+    const cursor = getVirtualCursor()!;
+
+    if (!isPathNeuroSafe(document.fileName)) {
+        return contextNoAccess(fileName);
+    }
+
+    // Manually construct context to include entire file
+    const positionContext: NeuroPositionContext = {
+        contextBefore: document.getText(new vscode.Range(new vscode.Position(0, 0), cursor)),
+        contextAfter: document.getText(new vscode.Range(cursor, document.lineAt(document.lineCount - 1).rangeIncludingLineBreak.end)),
+        contextBetween: '',
+        startLine: 0,
+        endLine: document.lineCount - 1,
+        totalLines: document.lineCount,
+    };
+
+    return `Contents of the file ${fileName}:\n\n${formatContext(positionContext)}`;
+}
+
 export function handleInsertText(actionData: ActionData): string | undefined {
     const text: string = actionData.params.text;
+    const cursor = getVirtualCursor()!;
+    let position = actionData.params.position;
+
+    let line: number;
+    let column: number;
+
+    if (!position) position = {
+        line: cursor.line + 1,
+        column: cursor.character + 1,
+        type: 'absolute',
+    };
 
     const document = vscode.window.activeTextEditor?.document;
     if (document === undefined)
@@ -230,17 +653,32 @@ export function handleInsertText(actionData: ActionData): string | undefined {
     if (!isPathNeuroSafe(document.fileName))
         return contextFailure(CONTEXT_NO_ACCESS);
 
-    const insertStart = getVirtualCursor()!;
+    if (position.type === 'relative') {
+        line = cursor.line + position.line;
+        column = cursor.character + position.column;
+    } else { // position.type === 'absolute'
+        line = position.line - 1;
+        column = position.column - 1;
+    }
+
+    const insertStart = new vscode.Position(line, column);
+
     const edit = new vscode.WorkspaceEdit();
     edit.insert(document.uri, insertStart, text);
+
+    setVirtualCursor(insertStart);
 
     vscode.workspace.applyEdit(edit).then(success => {
         if (success) {
             logOutput('INFO', 'Inserting text into document');
             const document = vscode.window.activeTextEditor!.document;
-            const insertEnd = document.positionAt(document.offsetAt(insertStart) + text.length);
+            const insertEnd = getVirtualCursor()!;
+            showDiffRanges(vscode.window.activeTextEditor!, {
+                range: new vscode.Range(insertStart, insertEnd),
+                type: DiffRangeType.Added,
+            });
             const cursorContext = getPositionContext(document, insertStart, insertEnd);
-            NEURO.client?.sendContext(`Inserted text into document\n\n${formatContext(cursorContext)}`);
+            NEURO.client?.sendContext(`Inserted text into document and moved cursor\n\n${formatContext(cursorContext)}`);
         }
         else {
             NEURO.client?.sendContext(contextFailure('Failed to insert text'));
@@ -250,11 +688,14 @@ export function handleInsertText(actionData: ActionData): string | undefined {
     return undefined;
 }
 
-export function handleReplaceText(actionData: ActionData): string | undefined {
-    const find: string = actionData.params.find;
-    const replaceWith: string = actionData.params.replaceWith;
-    const match: string = actionData.params.match;
-    const useRegex = actionData.params.useRegex ?? false;
+export function handleInsertLines(actionData: ActionData): string | undefined {
+    /**
+     * The current implementation is a lazy one of just appending a newline and pasting the text in
+     * We want to allow specification of the line to insert under, with the default set to the current cursor location
+     */
+    const cursor = getVirtualCursor()!;
+    let text: string = '\n' + actionData.params.text;
+    let insertLocation: number = actionData.params.insertUnder !== undefined ? actionData.params.insertUnder - 1 : cursor.line;
 
     const document = vscode.window.activeTextEditor?.document;
     if (document === undefined)
@@ -262,10 +703,57 @@ export function handleReplaceText(actionData: ActionData): string | undefined {
     if (!isPathNeuroSafe(document.fileName))
         return contextFailure(CONTEXT_NO_ACCESS);
 
+    // Add newlines for positions past the end of the file
+    const EOFL = document.lineCount;
+    if (insertLocation >= EOFL) {
+        text = '\n'.repeat(insertLocation - EOFL + 1) + text;
+        insertLocation = EOFL - 1;
+    }
+
+    const edit = new vscode.WorkspaceEdit();
+    const insertStart = new vscode.Position(insertLocation, document.lineAt(insertLocation).text.length);
+    // Virtual cursor will move with the inserted text
+    setVirtualCursor(insertStart);
+    edit.insert(document.uri, insertStart, text);
+
+    vscode.workspace.applyEdit(edit).then(success => {
+        if (success) {
+            logOutput('INFO', 'Inserting text lines into document');
+            const document = vscode.window.activeTextEditor!.document;
+            const insertEnd = getVirtualCursor()!;
+            showDiffRanges(vscode.window.activeTextEditor!, {
+                range: new vscode.Range(insertStart, insertEnd),
+                type: DiffRangeType.Added,
+            });
+            const cursorContext = getPositionContext(document, cursor, insertEnd);
+            NEURO.client?.sendContext(`Inserted text lines into document\n\n${formatContext(cursorContext)}`);
+        }
+        else {
+            NEURO.client?.sendContext(contextFailure('Failed to insert text lines'));
+        }
+    });
+
+    return;
+}
+
+export function handleReplaceText(actionData: ActionData): string | undefined {
+    const find: string = actionData.params.find;
+    const replaceWith: string = actionData.params.replaceWith;
+    const match: string = actionData.params.match;
+    const useRegex: boolean = actionData.params.useRegex ?? false;
+    const lineRange: LineRange | undefined = actionData.params.lineRange;
+
+    const document = vscode.window.activeTextEditor?.document;
+    if (document === undefined)
+        return contextFailure(CONTEXT_NO_ACTIVE_DOCUMENT);
+    if (!isPathNeuroSafe(document.fileName))
+        return contextFailure(CONTEXT_NO_ACCESS);
+
+    const originalText = document.getText();
     const regex = new RegExp(useRegex ? find : escapeRegExp(find), 'g');
     const cursorOffset = document.offsetAt(getVirtualCursor()!);
 
-    const matches = findAndFilter(regex, document.getText(), cursorOffset, match);
+    const matches = findAndFilter(regex, document, cursorOffset, match, lineRange);
     if (matches.length === 0)
         return 'No matches found for the given parameters.';
 
@@ -288,12 +776,16 @@ export function handleReplaceText(actionData: ActionData): string | undefined {
                 const startPosition = document.positionAt(matches[0].index);
                 const endPosition = document.positionAt(matches[0].index + substituteMatch(matches[0], replaceWith).length);
                 setVirtualCursor(endPosition);
+                const diffRanges = getDiffRanges(document, startPosition, matches[0][0], document.getText(new vscode.Range(startPosition, endPosition)));
+                showDiffRanges(vscode.window.activeTextEditor!, ...diffRanges);
                 const cursorContext = getPositionContext(document, startPosition, endPosition);
                 NEURO.client?.sendContext(`Replaced text in document\n\n${formatContext(cursorContext)}`);
             }
             else {
                 // Multiple matches
                 const document = vscode.window.activeTextEditor!.document;
+                const diffRanges = getDiffRanges(document, new vscode.Position(0, 0), originalText, document.getText());
+                showDiffRanges(vscode.window.activeTextEditor!, ...diffRanges);
                 const fence = getFence(document.getText());
                 NEURO.client?.sendContext(`Deleted ${matches.length} occurrences from the document\n\nUpdated content:\n\n${fence}\n${document.getText()}\n${fence}`);
             }
@@ -305,9 +797,10 @@ export function handleReplaceText(actionData: ActionData): string | undefined {
 }
 
 export function handleDeleteText(actionData: ActionData): string | undefined {
-    const find = actionData.params.find;
+    const find: string = actionData.params.find;
     const match: string = actionData.params.match;
-    const useRegex = actionData.params?.useRegex ?? false;
+    const useRegex: boolean = actionData.params.useRegex ?? false;
+    const lineRange: LineRange | undefined = actionData.params.lineRange;
 
     const document = vscode.window.activeTextEditor?.document;
     if (document === undefined)
@@ -315,10 +808,12 @@ export function handleDeleteText(actionData: ActionData): string | undefined {
     if (!isPathNeuroSafe(document.fileName))
         return contextFailure(CONTEXT_NO_ACCESS);
 
+    const originalText = document.getText();
+
     const regex = new RegExp(useRegex ? find : escapeRegExp(find), 'g');
     const cursorOffset = document.offsetAt(getVirtualCursor()!);
 
-    const matches = findAndFilter(regex, document.getText(), cursorOffset, match);
+    const matches = findAndFilter(regex, document, cursorOffset, match, lineRange);
     if (matches.length === 0)
         return 'No matches found for the given parameters.';
 
@@ -332,13 +827,21 @@ export function handleDeleteText(actionData: ActionData): string | undefined {
             if (matches.length === 1) {
                 // Single match
                 const document = vscode.window.activeTextEditor!.document;
-                setVirtualCursor(document.positionAt(matches[0].index));
-                const cursorContext = getPositionContext(document, document.positionAt(matches[0].index));
+                const position = document.positionAt(matches[0].index);
+                setVirtualCursor(position);
+                showDiffRanges(vscode.window.activeTextEditor!, {
+                    range: new vscode.Range(position, position),
+                    type: DiffRangeType.Removed,
+                    removedText: matches[0][0],
+                });
+                const cursorContext = getPositionContext(document, position);
                 NEURO.client?.sendContext(`Deleted text from document\n\n${formatContext(cursorContext)}`);
             }
             else {
                 // Multiple matches
                 const document = vscode.window.activeTextEditor!.document;
+                const diffRanges = getDiffRanges(document, new vscode.Position(0, 0), originalText, document.getText());
+                showDiffRanges(vscode.window.activeTextEditor!, ...diffRanges);
                 const fence = getFence(document.getText());
                 NEURO.client?.sendContext(`Deleted ${matches.length} occurrences from the document\n\nUpdated content:\n\n${fence}\n${document.getText()}\n${fence}`);
             }
@@ -350,9 +853,12 @@ export function handleDeleteText(actionData: ActionData): string | undefined {
 }
 
 export function handleFindText(actionData: ActionData): string | undefined {
-    const find = actionData.params.find;
-    const match = actionData.params.match;
-    const useRegex = actionData.params?.useRegex ?? false;
+    const find: string = actionData.params.find;
+    const match: MatchOptions = actionData.params.match;
+    const useRegex: boolean = actionData.params.useRegex ?? false;
+    const lineRange: LineRange | undefined = actionData.params.lineRange;
+    const moveCursor: 'before' | 'after' = actionData.params.moveCursor ?? 'after';
+    const highlight: boolean = actionData.params.highlight ?? false;
 
     const document = vscode.window.activeTextEditor?.document;
     if (document === undefined)
@@ -363,27 +869,43 @@ export function handleFindText(actionData: ActionData): string | undefined {
     const regex = new RegExp(useRegex ? find : escapeRegExp(find), 'g');
     const cursorOffset = document.offsetAt(getVirtualCursor()!);
 
-    const matches = findAndFilter(regex, document.getText(), cursorOffset, match);
+    const matches = findAndFilter(regex, document, cursorOffset, match, lineRange);
     if (matches.length === 0)
         return 'No matches found for the given parameters.';
 
     if (matches.length === 1) {
         // Single match
-        const offset = matches[0].index;
-        const pos = document.positionAt(offset);
-        setVirtualCursor(pos);
-        const cursorContext = getPositionContext(document, pos);
-        logOutput('INFO', `Placed cursor at (${pos.line + 1}:${pos.character + 1})`);
-        return `Found match and placed cursor at (${pos.line + 1}:${pos.character + 1})\n\n${formatContext(cursorContext)}`;
+        const startPosition = document.positionAt(matches[0].index);
+        const endPosition = document.positionAt(matches[0].index + matches[0][0].length);
+        setVirtualCursor(moveCursor === 'before' ? startPosition : endPosition);
+        if (highlight) {
+            const range = new vscode.Range(startPosition, endPosition);
+            vscode.window.activeTextEditor!.setDecorations(NEURO.highlightDecorationType!, [{
+                range,
+                hoverMessage: `**Highlighted by ${CONFIG.currentlyAsNeuroAPI} via finding text**`,
+            }]);
+            vscode.window.activeTextEditor!.revealRange(range, vscode.TextEditorRevealType.InCenterIfOutsideViewport);
+        }
+        const cursorContext = getPositionContext(document, startPosition);
+        logOutput('INFO', `Placed cursor at (${startPosition.line + 1}:${startPosition.character + 1})`);
+        return `Found match and placed cursor at (${startPosition.line + 1}:${startPosition.character + 1})\n\n${formatContext(cursorContext)}`;
     }
     else {
         // Multiple matches
         const positions = matches.map(m => document.positionAt(m.index));
         const lines = positions.map(p => document.lineAt(p.line).text);
         // max(1, ...) because log10(0) is -Infinity
-        const padding = Math.max(1, Math.log10(positions[positions.length - 1].line + 1) + 1); // Space for the line number
+        // const padding = Math.max(1, Math.log10(positions[positions.length - 1].line + 1) + 1); // Space for the line number
         logOutput('INFO', `Found ${positions.length} matches`);
-        const text = lines.map((line, i) => `L. ${(positions[i].line + 1).toString().padStart(padding)}: ${line}`).join('\n');
+        // const text = lines.map((line, i) => `L. ${(positions[i].line + 1).toString().padStart(padding)}: ${line}`).join('\n');
+        if (highlight) {
+            vscode.window.activeTextEditor!.setDecorations(NEURO.highlightDecorationType!, matches.map((match, i) => ({
+                range: new vscode.Range(positions[i], document.positionAt(match.index + match[0].length)),
+                hoverMessage: `**Highlighted by ${CONFIG.currentlyAsNeuroAPI} via finding text**`,
+            })));
+        }
+        const lineNumberContextFormat = CONFIG.lineNumberContextFormat || '{n}|';
+        const text = lines.map((line, i) => lineNumberContextFormat.replace('{n}', (positions[i].line + 1).toString()) + line).join('\n');
         const fence = getFence(text);
         return `Found ${positions.length} matches:\n\n${fence}\n${text}\n${fence}`;
     }
@@ -395,6 +917,8 @@ export function handleUndo(_actionData: ActionData): string | undefined {
         return contextFailure(CONTEXT_NO_ACTIVE_DOCUMENT);
     if (!isPathNeuroSafe(document.fileName))
         return contextFailure(CONTEXT_NO_ACCESS);
+
+    clearDecorations(vscode.window.activeTextEditor!);
 
     vscode.commands.executeCommand('undo').then(
         () => {
@@ -444,6 +968,195 @@ export function handleSave(_actionData: ActionData): string | undefined {
     return undefined;
 }
 
+export function handleRewriteAll(actionData: ActionData): string | undefined {
+    const content: string = actionData.params.content;
+
+    const document = vscode.window.activeTextEditor?.document;
+    if (document === undefined)
+        return contextFailure(CONTEXT_NO_ACTIVE_DOCUMENT);
+    if (!isPathNeuroSafe(document.fileName))
+        return contextFailure(CONTEXT_NO_ACCESS);
+
+    const originalText = document.getText();
+
+    const edit = new vscode.WorkspaceEdit();
+    const fullRange = new vscode.Range(
+        document.positionAt(0),
+        document.positionAt(document.getText().length),
+    );
+    edit.replace(document.uri, fullRange, content);
+
+    vscode.workspace.applyEdit(edit).then(success => {
+        if (success) {
+            logOutput('INFO', 'Rewrote entire document content');
+            const document = vscode.window.activeTextEditor!.document;
+            const relativePath = vscode.workspace.asRelativePath(document.uri);
+            const lineCount = content.trim().split('\n').length;
+
+            // Set cursor to beginning of file
+            const startPosition = new vscode.Position(0, 0);
+            setVirtualCursor(startPosition);
+
+            const diffRanges = getDiffRanges(document, new vscode.Position(0, 0), originalText, document.getText());
+            showDiffRanges(vscode.window.activeTextEditor!, ...diffRanges);
+
+            const fence = getFence(content);
+            NEURO.client?.sendContext(`Rewrote entire file ${relativePath} with ${lineCount} line${lineCount === 1 ? '' : 's'} of content\n\nUpdated content:\n\n${fence}\n${content}\n${fence}`);
+        } else {
+            NEURO.client?.sendContext(contextFailure('Failed to rewrite document content'));
+        }
+    });
+
+    return undefined;
+}
+
+export function handleDeleteLines(actionData: ActionData): string | undefined {
+    const startLine = actionData.params.startLine;
+    const endLine = actionData.params.endLine;
+
+    const document = vscode.window.activeTextEditor?.document;
+    if (document === undefined)
+        return contextFailure(CONTEXT_NO_ACTIVE_DOCUMENT);
+    if (!isPathNeuroSafe(document.fileName))
+        return contextFailure(CONTEXT_NO_ACCESS);
+
+    const edit = new vscode.WorkspaceEdit();
+    const startPosition = new vscode.Position(startLine - 1, 0);
+    const endLineZero = endLine - 1;
+    // Include the trailing newline by ending at the start of the line after endLine when possible
+    const endPosition = endLineZero + 1 < document.lineCount
+        ? new vscode.Position(endLineZero + 1, 0)
+        : new vscode.Position(endLineZero, document.lineAt(endLineZero).text.length);
+    const originalText = document.getText(new vscode.Range(startPosition, endPosition));
+    edit.delete(document.uri, new vscode.Range(startPosition, endPosition));
+
+    vscode.workspace.applyEdit(edit).then(success => {
+        if (success) {
+            const relativePath = vscode.workspace.asRelativePath(vscode.window.activeTextEditor!.document.uri);
+            // Defer cursor update until edits have fully settled
+            setTimeout(() => {
+                const documentPost = vscode.window.activeTextEditor!.document;
+                if (startLine <= 1) {
+                    // If deleting from the first line, place cursor at start of new first line
+                    const cursorPosition = new vscode.Position(0, 0);
+                    setVirtualCursor(cursorPosition);
+                    const cursorContext = getPositionContext(documentPost, cursorPosition);
+                    logOutput('INFO', `Deleted lines ${startLine}-${endLine} and moved cursor to start of line 1`);
+                    NEURO.client?.sendContext(`Deleted lines ${startLine}-${endLine} in file ${relativePath}\n\n${formatContext(cursorContext)}`);
+                } else {
+                    // Move cursor to end of line before the deleted lines
+                    const targetLineZero = Math.max(0, startLine - 2); // 0-based line before deleted block
+                    if (targetLineZero < documentPost.lineCount) {
+                        const cursorPosition = new vscode.Position(targetLineZero, documentPost.lineAt(targetLineZero).text.length);
+                        setVirtualCursor(cursorPosition);
+                        const cursorContext = getPositionContext(documentPost, cursorPosition);
+                        logOutput('INFO', `Deleted lines ${startLine}-${endLine} and moved cursor to end of line ${targetLineZero + 1}`);
+                        NEURO.client?.sendContext(`Deleted lines ${startLine}-${endLine} in file ${relativePath}\n\n${formatContext(cursorContext)}`);
+                    } else if (documentPost.lineCount > 0) {
+                        // Fallback: place cursor at the end of the document
+                        const cursorPosition = new vscode.Position(documentPost.lineCount - 1, documentPost.lineAt(documentPost.lineCount - 1).text.length);
+                        setVirtualCursor(cursorPosition);
+                        const cursorContext = getPositionContext(documentPost, cursorPosition);
+                        logOutput('INFO', `Deleted lines ${startLine}-${endLine} and moved cursor to end of document`);
+                        NEURO.client?.sendContext(`Deleted lines ${startLine}-${endLine} in file ${relativePath}\n\n${formatContext(cursorContext)}`);
+                    } else {
+                        // Empty document edge case
+                        const cursorPosition = new vscode.Position(0, 0);
+                        setVirtualCursor(cursorPosition);
+                        const cursorContext = getPositionContext(documentPost, cursorPosition);
+                        logOutput('INFO', `Deleted lines ${startLine}-${endLine} and moved cursor to start of document`);
+                        NEURO.client?.sendContext(`Deleted lines ${startLine}-${endLine} in file ${relativePath}\n\n${formatContext(cursorContext)}`);
+                    }
+                }
+
+                showDiffRanges(vscode.window.activeTextEditor!, {
+                    range: new vscode.Range(startPosition, startPosition),
+                    type: DiffRangeType.Removed,
+                    removedText: originalText,
+                });
+            }, 0);
+        } else {
+            NEURO.client?.sendContext(contextFailure('Failed to delete lines'));
+        }
+    });
+
+    return undefined;
+}
+
+export function handleRewriteLines(actionData: ActionData): string | undefined {
+    const startLine = actionData.params.startLine;
+    const endLine = actionData.params.endLine;
+    const content = actionData.params.content;
+
+    const document = vscode.window.activeTextEditor?.document;
+    if (document === undefined)
+        return contextFailure(CONTEXT_NO_ACTIVE_DOCUMENT);
+    if (!isPathNeuroSafe(document.fileName))
+        return contextFailure(CONTEXT_NO_ACCESS);
+
+    const edit = new vscode.WorkspaceEdit();
+    const startPosition = new vscode.Position(startLine - 1, 0);
+    const endLineZero = endLine - 1;
+    // Preserve the following line's newline by ending at the end of endLine
+    const endPosition = new vscode.Position(endLineZero, document.lineAt(endLineZero).text.length);
+    const originalText = document.getText(new vscode.Range(startPosition, endPosition));
+    edit.replace(document.uri, new vscode.Range(startPosition, endPosition), content);
+
+    vscode.workspace.applyEdit(edit).then(success => {
+        if (success) {
+            const relativePath = vscode.workspace.asRelativePath(vscode.window.activeTextEditor!.document.uri);
+            // Defer cursor update until edits have fully settled
+            setTimeout(() => {
+                const documentPost = vscode.window.activeTextEditor!.document;
+                // Move cursor to end of the last inserted line
+                const hasTrailingNewline = content.endsWith('\n');
+                const contentLines = content.split('\n');
+                const logicalLines = hasTrailingNewline ? contentLines.length - 1 : contentLines.length;
+                const lastInsertedLineZero = Math.min(
+                    documentPost.lineCount - 1,
+                    Math.max(0, startLine - 1 + (logicalLines - 1)),
+                );
+                const cursorPosition = new vscode.Position(lastInsertedLineZero, documentPost.lineAt(lastInsertedLineZero).text.length);
+                setVirtualCursor(cursorPosition);
+                const diffRanges = getDiffRanges(document, startPosition, originalText, document.getText(new vscode.Range(startPosition, cursorPosition)));
+                showDiffRanges(vscode.window.activeTextEditor!, ...diffRanges);
+                const cursorContext = getPositionContext(documentPost, cursorPosition);
+                logOutput('INFO', `Rewrote lines ${startLine}-${endLine} with ${logicalLines} line${logicalLines === 1 ? '' : 's'} of content and moved cursor to end of line ${lastInsertedLineZero + 1}`);
+                NEURO.client?.sendContext(`Rewrote lines ${startLine}-${endLine} in file ${relativePath}\n\n${formatContext(cursorContext)}`);
+            }, 0);
+        } else {
+            NEURO.client?.sendContext(contextFailure('Failed to rewrite lines'));
+        }
+    });
+
+    return undefined;
+}
+
+export function handleHighlightLines(actionData: ActionData): string | undefined {
+    const startLine: number = actionData.params.startLine;
+    const endLine: number = actionData.params.endLine;
+
+    const editor = vscode.window.activeTextEditor;
+    const document = editor?.document;
+    if (document === undefined)
+        return contextFailure(CONTEXT_NO_ACTIVE_DOCUMENT);
+    if (!isPathNeuroSafe(document.fileName))
+        return contextFailure(CONTEXT_NO_ACCESS);
+
+    const startPosition = new vscode.Position(startLine - 1, 0);
+    const endPosition = new vscode.Position(endLine - 1, document.lineAt(endLine - 1).text.length);
+
+    const range = new vscode.Range(startPosition, endPosition);
+
+    editor!.setDecorations(NEURO.highlightDecorationType!, [{
+        range,
+        hoverMessage: `**Highlighted manually by ${CONFIG.currentlyAsNeuroAPI}**`,
+    }]);
+    editor!.revealRange(range, vscode.TextEditorRevealType.InCenterIfOutsideViewport);
+
+    return `Highlighted lines ${startLine}-${endLine}.`;
+}
+
 export function fileSaveListener(e: vscode.TextDocument) {
     /**
      * In order from left to right, this function immediately returns if:
@@ -459,15 +1172,30 @@ export function fileSaveListener(e: vscode.TextDocument) {
 }
 
 /**
- * Find matches in the text and filter based on the match option.
+ * Find matches in the document and filter based on the match option.
  * @param regex The regular expression to search for.
- * @param text The text to search in.
+ * @param document The document to search in.
  * @param cursorOffset The current cursor offset in the text.
  * @param match The match option from the {@link MATCH_OPTIONS} array.
+ * @param lineRange The line range to limit results to. If not specified, defaults to the entire file.
  * @returns The matches found in the text based on the match option.
  */
-function findAndFilter(regex: RegExp, text: string, cursorOffset: number, match: string): RegExpExecArray[] {
-    const matches = text.matchAll(regex);
+function findAndFilter(regex: RegExp, document: vscode.TextDocument, cursorOffset: number, match: string, lineRange: LineRange | undefined = undefined): RegExpExecArray[] {
+    const matchIterator = document.getText().matchAll(regex);
+    let matches: RegExpStringIterator<RegExpExecArray> | RegExpExecArray[];
+
+    if (lineRange) {
+        const minOffset = document.offsetAt(document.lineAt(lineRange.startLine - 1).range.start);
+        const maxOffset = document.offsetAt(document.lineAt(lineRange.endLine - 1).range.end);
+        matches = [];
+        for (const m of matchIterator)
+            matches.push(m);
+        matches = matches.filter(m => m.index >= minOffset && m.index <= maxOffset);
+    }
+    else {
+        matches = matchIterator;
+    }
+
     let result: RegExpExecArray[] = [];
 
     switch (match) {
@@ -506,15 +1234,54 @@ function findAndFilter(regex: RegExp, text: string, cursorOffset: number, match:
 
 function formatContext(context: NeuroPositionContext): string {
     const fence = getFence(context.contextBefore + context.contextBetween + context.contextAfter);
-    return `Context (lines ${context.startLine + 1}-${context.endLine + 1}, cursor position denoted by \`<<<|>>>\`):\n\n${fence}\n${context.contextBefore}${context.contextBetween}<<<|>>>${context.contextAfter}\n${fence}`;
+    const rawContextBefore = context.contextBefore + context.contextBetween;
+    const rawContextAfter = context.contextAfter;
+    const lineNumberContextFormat = CONFIG.lineNumberContextFormat;
+    const lineNumberNote = lineNumberContextFormat.includes('{n}') ? 'Note that line numbers are not part of the source code. ' : '';
+
+    let n = 1;
+    let contextArray = [];
+    for (const line of rawContextBefore.split('\n')) {
+        contextArray.push(lineNumberContextFormat.replace('{n}', n.toString()) + line);
+        n++;
+    }
+    const contextBefore = contextArray.join('\n');
+    contextArray = [];
+
+    let first = true;
+    for (const line of rawContextAfter.split('\n')) {
+        if (first) {
+            contextArray.push(line);
+            first = false;
+            continue;
+        }
+        contextArray.push(lineNumberContextFormat.replace('{n}', n.toString()) + line);
+        n++;
+    }
+    const contextAfter = contextArray.join('\n');
+
+    const cursor = getVirtualCursor()!;
+    const showCursor = ['inline', 'both'].includes(CONFIG.cursorPositionContextStyle) ? '<<<|>>>' : '';
+    const cursorNote =
+        CONFIG.cursorPositionContextStyle === 'inline' ? 'Cursor position denoted by `<<<|>>>`. '
+        : CONFIG.cursorPositionContextStyle === 'lineAndColumn' ? `Cursor is at ${cursor.line + 1}:${cursor.character + 1}. `
+        : CONFIG.cursorPositionContextStyle === 'both' ? `Cursor is at ${cursor.line + 1}:${cursor.character + 1}, denoted by \`<<<|>>>\`. `
+        : '';
+
+    return `File context for lines ${context.startLine + 1}-${context.endLine + 1} of ${context.totalLines}. ${cursorNote}${lineNumberNote}Content:\n\n${fence}\n${contextBefore}${showCursor}${contextAfter}\n${fence}`;
 }
 
+let editorChangeHandlerTimeout: NodeJS.Timeout | undefined;
 /**
  * Sets and displays the virtual cursor position when the active text editor changes.
  * @param editor The active text editor.
  */
 export function editorChangeHandler(editor: vscode.TextEditor | undefined) {
+    if (editorChangeHandlerTimeout)
+        clearTimeout(editorChangeHandlerTimeout);
+
     if (editor) {
+        // Set cursor
         const uri = editor.document.uri;
         if (!NEURO.cursorOffsets.has(uri)) {
             if (isPathNeuroSafe(uri.fsPath))
@@ -525,6 +1292,28 @@ export function editorChangeHandler(editor: vscode.TextEditor | undefined) {
         else {
             setVirtualCursor();
         }
+
+        // Tell Neuro that the editor changed
+        if (isPathNeuroSafe(uri.fsPath)) {
+            const file = simpleFileName(editor.document.fileName);
+            const cursor = getVirtualCursor()!;
+            const context = getPositionContext(editor.document, cursor);
+            let text = `Switched to file ${file}.`;
+            if (CONFIG.sendContentsOnFileChange)
+                text += `\n\n${formatContext(context)}`;
+            NEURO.client?.sendContext(text);
+        }
+        else {
+            NEURO.client?.sendContext('Switched to a file you\'re not allowed to edit.');
+        }
+    }
+    else {
+        // Switching editors first triggers this event with an undefined editor and then with the new editor
+        // Delay sending the context to wait for a second event
+        editorChangeHandlerTimeout = setTimeout(() => {
+            NEURO.client?.sendContext('Switched to a non-editable file.');
+            editorChangeHandlerTimeout = undefined;
+        }, 200);
     }
 }
 
@@ -537,7 +1326,12 @@ export function workspaceEditHandler(event: vscode.TextDocumentChangeEvent) {
     if (event.contentChanges.length === 0) return;
     if (event.document !== vscode.window.activeTextEditor?.document) return;
     if (!getPermissionLevel(PERMISSIONS.editActiveDocument)) return;
+    if (event.document.fileName.startsWith('extension-output-')) return; // Ignore extension output to avoid infinite logging
 
+    // Diffs
+    clearDecorations(vscode.window.activeTextEditor);
+
+    // Cursor stuff
     const initialCursorOffset = NEURO.cursorOffsets.get(event.document.uri);
     if (initialCursorOffset === undefined || initialCursorOffset === null) return;
 

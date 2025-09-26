@@ -37,11 +37,10 @@
 			"preLaunchTask": "watch:web"
 		},
 		{
-      		"command": "./node_modules/.bin/astro dev",
-      		"name": "Docs development server (Astro)",
-			"cwd": "${workspaceFolder}/docs",
-      		"request": "launch",
-      		"type": "node-terminal"
+      		"name": "Open in Browser",
+			"type":	"node-terminal",
+			"request": "launch",
+			"command": "pnpm vscode-test-web --extensionDevelopmentPath=${workspaceFolder} ${workspaceFolder}/playground",
     	}
 	]
 }

@@ -7,10 +7,25 @@
 		"sourceMap": true,
 		"strict": true,
 		"paths": {
-			"~/*": ["./src/*"],
-			"@shared/*": ["./src/shared/*"],
-			"@typing/*": ["./src/types/*"]
+			"~/*": [
+				"./*"
+			],
+			"@/*": [
+				"./src/*"
+			],
+			"@shared/*": [
+				"./src/shared/*"
+			],
+			"@typing/*": [
+				"./src/types/*"
+			]
 		}
 	},
-	"exclude": ["node_modules", ".vscode-test", "playground", "docs", "project-files"]
+	"exclude": [
+		"node_modules",
+		".vscode-test",
+		"playground",
+		"docs",
+		"project-files"
+	]
 }

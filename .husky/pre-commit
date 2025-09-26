@@ -1,2 +1,2 @@
-npm run types
-npx eslint
+pnpm types
+pnpm eslint src/
