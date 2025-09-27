@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
 * This is a draft implementation of the NeuroPilot API.
 * This might not represent the final form of the API.
@@ -7,10 +6,10 @@
 // Instances of Position should be imaginatively replaced with an actual object interface to describe the Neuro cursor position.
 import { Event, Position, WorkspaceConfiguration } from 'vscode';
 import { Action, NeuroClient } from 'neuro-game-sdk';
-import { ActionData, ActionValidationResult, RCEAction } from '~/neuro_client_helper';
-import { Permission, PermissionLevel } from '~/config';
-import { PromptGenerator } from '~/rce';
-export type { Permission } from '~/config';
+import { ActionData, ActionValidationResult } from '@/neuro_client_helper';
+import { Permission, PermissionLevel } from '@/config';
+import { PromptGenerator } from '@/rce';
+export type { Permission } from '@/config';
 
 // "next" allows people to access API changes early, if any, but can and will change at any time
 export type CurrentAPIVersions = 'next' | 1;
@@ -42,7 +41,7 @@ export interface NeuroPilotExtension {
     getAPI(version: CurrentAPIVersions | DeprecatedAPIVersions): NeuroPilotAPI;
 }
 
-// @ts-expect-error CursorPropsHere is a placefolder
+// @ts-expect-error no cursor props quite yet
 type CursorReturns = CursorPropsHere | null | undefined;
 
 export interface Validators {
@@ -68,7 +67,7 @@ export interface Validators {
 }
 
 /** ActionHandler to use with constants for records of actions and their corresponding handlers */
-export interface ActionWithHandler extends Action {
+export interface RCEAction extends Action {
     /** The permissions required to execute this action. */
     permissions: Permission[];
     /**
@@ -411,7 +410,7 @@ export class NeuroPilotHelper {
     * Constructor class for the helper.
     * 
     * @param info An object containing extension info.
-    * @param token A token to interact with NeuroPilot. If supplied, the class assuems that you have registered separately and will simply store that token, without attempting to reconnect to the API.
+    * @param token A token to interact with NeuroPilot. If supplied, the class assumes that you have registered separately and will simply store that token, without attempting to reconnect to the API.
     * @throws If any info params are invalid.
     */
     constructor(info: HelperClassEXTInfo, token?: string);
@@ -477,7 +476,7 @@ export class NeuroPilotHelper {
     getCursors(...paths: string[]): MultiCursorType[];
 
     /**
-    * Gets the positiong of Neuro's editing cursor in all files she can access in the current workspace.
+    * Gets the positioning of Neuro's editing cursor in all files she can access in the current workspace.
     * This will automatically filter out Neuro-unsafe paths.
     * @todo Accept glob-specified/regex-specified paths?
     * 
