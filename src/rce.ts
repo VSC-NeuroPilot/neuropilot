@@ -10,6 +10,7 @@ import { checkVirtualWorkspace, checkWorkspaceTrust, logOutput } from '@/utils';
 import { CONFIG, getPermissionLevel, isActionEnabled, PermissionLevel, PERMISSIONS } from '@/config';
 import { handleRunTask } from '@/tasks';
 import { validate } from 'jsonschema';
+import type { RCECancelEvent } from '@events/utils';
 
 /**
  * A prompt parameter can either be a string or a function that converts ActionData into a prompt string.
@@ -42,6 +43,10 @@ export interface RceRequest {
      * Whether the notification has been revealed already.
      */
     notificationVisible: boolean;
+    /**
+     * Disposable events
+     */
+    cancelEvents?: vscode.Disposable[]
 }
 
 export const cancelRequestAction: RCEAction = {
@@ -79,8 +84,14 @@ export function emergencyDenyRequests(): void {
     vscode.window.showInformationMessage(`The last request from ${NEURO.currentController} has been denied automatically.`);
 }
 
-export function clearRceRequest(): void { // Function to clear out RCE dialogs
-    NEURO.rceRequest?.resolve();
+export function clearRceRequest(): void {
+    if (!NEURO.rceRequest) return;
+    NEURO.rceRequest.resolve();
+    if (NEURO.rceRequest.cancelEvents) {
+        for (const disposable of NEURO.rceRequest.cancelEvents) {
+            try { disposable.dispose(); } catch (erm: unknown) { logOutput('ERROR', `Failed to dispose a cancellation event: ${erm}. This could contribute to a memory leak.`); }
+        }
+    }
     NEURO.rceRequest = null;
     NEURO.client?.unregisterActions([cancelRequestAction.name]);
     NEURO.statusBarItem!.tooltip = 'No active request';
@@ -96,6 +107,7 @@ export function clearRceRequest(): void { // Function to clear out RCE dialogs
 export function createRceRequest(
     prompt: string,
     callback: () => string | undefined,
+    cancelEvents?: vscode.Disposable[],
 ): void {
     NEURO.rceRequest = {
         prompt,
@@ -105,6 +117,7 @@ export function createRceRequest(
         // these immediately get replaced synchronously, this is just so we don't have them be nullable in the type
         resolve: () => { },
         attachNotification: async () => { },
+        cancelEvents,
     };
 
     const promise = new Promise<void>((resolve) => {
@@ -252,7 +265,7 @@ export async function RCEActionHandler(actionData: ActionData, actionList: Recor
                 description: task.description,
                 permissions: [PERMISSIONS.runTasks],
                 handler: handleRunTask,
-                validator: [checkVirtualWorkspace, checkWorkspaceTrust],
+                validators: [checkVirtualWorkspace, checkWorkspaceTrust],
                 promptGenerator: () => `run the task "${task.id}".`,
             };
         }
@@ -284,12 +297,46 @@ export async function RCEActionHandler(actionData: ActionData, actionList: Recor
         }
 
         // Validate custom
-        if (action.validator) {
-            for (const validate of action.validator) {
+        if (action.validators) {
+            for (const validate of action.validators) {
                 const actionResult = await validate(actionData);
                 if (!actionResult.success) {
                     NEURO.client?.sendActionResult(actionData.id, !(actionResult.retry ?? false), actionResult.message);
                     return;
+                }
+            }
+        }
+
+        const eventArray: vscode.Disposable[] = [];
+
+        if (CONFIG.enableCancelEvents && action.cancelEvents) {
+            const eventListener = (eventObject: RCECancelEvent) => {
+                let createdReason: string;
+                let createdLogReason: string;
+                const reason = eventObject.reason;
+                if (typeof reason === 'string') {
+                    createdReason = reason.trim();
+                } else if (typeof reason === 'function') {
+                    createdReason = reason(actionData).trim();
+                } else {
+                    createdReason = 'a cancellation event was fired.';
+                };
+                const logReason = eventObject.logReason;
+                if (typeof logReason === 'string') {
+                    createdLogReason = logReason.trim();
+                } else if (typeof logReason === 'function') {
+                    createdLogReason = logReason(actionData).trim();
+                } else {
+                    createdLogReason = createdReason;
+                }
+                logOutput('WARN', `${CONFIG.currentlyAsNeuroAPI}'${CONFIG.currentlyAsNeuroAPI.endsWith('s') ? '' : 's'} action ${action.name} was cancelled because ${createdLogReason}`);
+                NEURO.client?.sendContext(`Your request was cancelled because ${createdReason}`);
+                clearRceRequest();
+            };
+            for (const eventObject of action.cancelEvents) {
+                const eventDetails = eventObject(actionData);
+                if (eventDetails) {
+                    eventArray.push(eventDetails.event(() => eventListener(eventDetails)), eventDetails.disposable);
                 }
             }
         }
@@ -308,11 +355,12 @@ export async function RCEActionHandler(actionData: ActionData, actionList: Recor
                 ? NEURO.currentController
                 : 'The Neuro API server') +
                 ' wants to ' +
-                (typeof action.promptGenerator === 'string' ? action.promptGenerator.trim() : action.promptGenerator(actionData).trim());
+                (typeof action.promptGenerator === 'string' ? action.promptGenerator : action.promptGenerator(actionData)).trim();
 
             createRceRequest(
                 prompt,
                 () => action.handler(actionData),
+                eventArray,
             );
 
             NEURO.statusBarItem!.tooltip = new vscode.MarkdownString(prompt);

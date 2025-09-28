@@ -6,11 +6,37 @@ Since v2.1.0, we're keeping a changelog of each version's changes in NeuroPilot.
 
 Changes between each version before then will not be listed.
 
-## 2.2.0 <!-- Assuming we'll just put everything into the next minor release, change to 2.1.3 if we decide to release a patch first -->
+## 2.2.0
+
+### New settings
+
+- `neuropilot.connection.*` category, which includes:
+  - `websocketUrl`, `gameName` and `initialContext` settings, which were moved from their `neuropilot.*` variants.
+    - The old settings have now been deprecated.
+  - `autoConnect`, which controls whether or not NeuroPilot will auto-connect to the Neuro API on startup.
+  - `retryAmount`, which dictates how many times NeuroPilot will attempt to *re*connect to the Neuro API. The _total_ amount of tries will be this value + 1. 
+  - `retryInterval`, which controls the amount of time to wait between each retry.
+- `neuropilot.enableCancelEvents` - Whether or not to enable cancel events. See below for an explainer.
+- New permission for getting the user's cursor / selection: `neuropilot.permission.getUserSelection`
+
+### New commands
+
+- `neuropilot.disconnect` - Disconnects from the Neuro API without reconnecting.
+- `neuropilot.sendSelectionToNeuro` - Sends the current cursor selection to Neuro.
 
 ### Added features
 
+- A popup reminder is now shown to users after each extension update, prompting them to check the changelog and documentation. The popup includes direct links to both resources and only appears once per version update.
 - A tooltip will now show when hovering over Neuro-highlighted text, indicating that Neuro highlighted it, and how (either through finding text or manually).
+- There is now an option to send the current cursor selection to Neuro. This can be invoked either by command or through right-click context menu. These options will only appear when *your cursor* is highlighting code.
+- There is a new detector ran on startup to look for deprecated settings and if found, will ask you to migrate them. You can choose to not show that notice ever again by selecting the "Don't show again" option. This persists across sessions.
+- The RCE framework now has a new component: **cancellation events**.
+  - This automatically cancels Neuro's action requests if certain events happen.
+  - Example: If Neuro wants to insert text, that request will auto-cancel if the active file is switched.
+  - You can disable this with the new `Enable Cancel Events` setting (defaulted to on).
+- Neuro can now get and replace the user's current selection.
+  - This only works in Neuro-safe files.
+  - This requires the new permissions *Get User Selection* and *Edit Active Document*.
 
 ### Changes
 
@@ -18,11 +44,17 @@ Changes between each version before then will not be listed.
   - AHHHH MY EYES - Vedal
   - The specific colour used now is RGBA 202 22 175 1 as opposed to RGBA 255 255 0 1.
 - Some Copilot mode prompts for editing actions have been rewritten majorly to properly reflect the options available to Neuro.
+- Upon connection or disconnection from the API, the message that pops up now has extra buttons to either quickly re-/dis-connect or to change the Auto-Connect settings.
+- Clarified whose cursor will be moved in action descriptions and contexts.
+- Context returned from editing actions now uses a common format.
 
 ### Fixes
 
 - Fixed automatically opening files created by Neuro when she only has Copilot permission for opening files.
 - `rename_git_remote` now has a Git extension validator attached to it, matching all other Git actions.
+- Fixed Neuro not being able to create a terminal that was killed by the user before.
+- Usage of CRLF and LF in context was inconsistent across actions, and sometimes even inconsistent within the same context. This has now (hopefully) been fixed to only use LF.
+- Line numbers should now appear for all actions.
 
 ## 2.1.2
 

@@ -87,6 +87,11 @@
 				"category": "NeuroPilot"
 			},
 			{
+				"command": "neuropilot.disconnect",
+				"title": "Disconnect",
+				"category": "NeuroPilot"
+			},
+			{
 				"command": "neuropilot.moveNeuroCursorHere",
 				"title": "Move Neuro's Cursor Here",
 				"category": "NeuroPilot"
@@ -155,6 +160,12 @@
 				"command": "neuropilot.openSpecificDocsPage",
 				"title": "Open a specific page in the docs",
 				"category": "NeuroPilot"
+			},
+			{
+				"command": "neuropilot.sendSelectionToNeuro",
+				"title": "Send selection to Neuro",
+				"category": "NeuroPilot",
+				"enablement": "editorHasSelection"
 			}
 		],
 		"configuration": [
@@ -163,18 +174,18 @@
 				"properties": {
 					"neuropilot.websocketUrl": {
 						"type": "string",
-						"default": "ws://localhost:8000",
-						"description": "The URL to connect to the Neuro API"
+						"description": "The URL to connect to the Neuro API",
+						"deprecationMessage": "This setting has been moved to `neuropilot.connection.websocketUrl`"
 					},
 					"neuropilot.gameName": {
 						"type": "string",
-						"default": "Visual Studio Code",
-						"description": "The name to use for this \"game\""
+						"description": "The name to use for this \"game\"",
+						"deprecationMessage": "This setting has been moved to `neuropilot.connection.gameName`"
 					},
 					"neuropilot.initialContext": {
 						"type": "string",
-						"default": "You are using an extension in Visual Studio Code that allows you to code together with Vedal.",
 						"description": "The initial context to sent to Neuro-sama (or whatever is connected to NeuroPilot)",
+						"deprecationMessage": "This setting has been moved to `neuropilot.connection.initialContext`",
 						"editPresentation": "multilineText"
 					},
 					"neuropilot.currentlyAsNeuroAPI": {
@@ -240,14 +251,12 @@
 					},
 					"neuropilot.includePattern": {
 						"type": "string",
-						"default": "**/*",
 						"markdownDescription": "A case-sensitive glob pattern for files Neuro is allowed to open, i.e. she will be unable to open files that don't match this pattern. Separate multiple patterns with a newline. Patterns without a slash will match any file or folder with that name.",
 						"editPresentation": "multilineText",
 						"markdownDeprecationMessage": "This setting has been moved to `neuropilot.access.includePattern`."
 					},
 					"neuropilot.excludePattern": {
 						"type": "string",
-						"default": "**/node_modules/**\n**/venv/**\nCNAME",
 						"markdownDescription": "A case-sensitive glob pattern for files Neuro is not allowed to open. Applied after the include pattern. Files and folders beginning with a dot are always excluded, regardless of this setting. Separate multiple patterns with a newline. Patterns without a slash will match any file or folder with that name.",
 						"editPresentation": "multilineText",
 						"markdownDeprecationMessage": "This setting has been moved to `neuropilot.access.excludePattern`."
@@ -314,7 +323,6 @@
 					},
 					"neuropilot.allowUnsafePaths": {
 						"type": "boolean",
-						"default": false,
 						"markdownDescription": "Allow Neuro to view & edit files and folders in unsafe paths. These include:\n- files/folders starting with a '.'\n- parent directories and directories outside the workspace\n- Environmental variables\n\nNote that your include/exclude patterns are still respected.",
 						"markdownDeprecationMessage": "This setting is no longer used. Please use the more granular access permissions such as `neuropilot.access.dotFiles` and `neuropilot.access.externalFiles`."
 					},
@@ -410,6 +418,7 @@
 								"get_files",
 								"get_folder_lint_problems",
 								"get_git_config",
+								"get_user_selection",
 								"get_workspace_lint_problems",
 								"git_blame",
 								"git_log",
@@ -432,6 +441,7 @@
 								"rename_file_or_folder",
 								"rename_git_remote",
 								"replace_text",
+								"replace_user_selection",
 								"request_cookie",
 								"rewrite_all",
 								"rewrite_lines",
@@ -485,6 +495,11 @@
 							"/* {n} */ ",
 							"L. {n}: "
 						]
+					},
+					"neuropilot.enableCancelEvents": {
+						"type": "boolean",
+						"default": true,
+						"markdownDescription": "Whether to enable cancellation events for RCE. See [this docs page](https://vsc-neuropilot.github.io/docs/references/rce#cancellation-events)."
 					},
 					"neuropilot.permission.openFiles": {
 						"type": "string",
@@ -694,6 +709,21 @@
 						],
 						"markdownDescription": "Allow Neuro to get access to linting problems within loaded files."
 					},
+					"neuropilot.permission.getUserSelection": {
+						"type": "string",
+						"default": "Off",
+						"enum": [
+							"Off",
+							"Copilot",
+							"Autopilot"
+						],
+						"enumDescriptions": [
+							"Disable this permission.",
+							"Require approval before execution.",
+							"Execute without oversight."
+						],
+						"markdownDescription": "Allow Neuro to see your cursor position and selection within Neuro-safe files."
+					},
 					"neuropilot.access.dotFiles": {
 						"type": "boolean",
 						"default": false,
@@ -730,6 +760,39 @@
 							"CNAME"
 						],
 						"markdownDescription": "A case-sensitive glob pattern for files Neuro is not allowed to open. Applied after the include pattern. Patterns without a slash will match any file or folder with that name."
+					},
+					"neuropilot.connection.websocketUrl": {
+						"type": "string",
+						"default": "ws://localhost:8000",
+						"description": "The URL to connect to the Neuro API"
+					},
+					"neuropilot.connection.gameName": {
+						"type": "string",
+						"default": "Visual Studio Code",
+						"description": "The name to use for this \"game\""
+					},
+					"neuropilot.connection.initialContext": {
+						"type": "string",
+						"default": "You are using an extension in Visual Studio Code that allows you to code together with Vedal.",
+						"description": "The initial context to sent to Neuro-sama (or whatever is connected to NeuroPilot)",
+						"editPresentation": "multilineText"
+					},
+					"neuropilot.connection.autoConnect": {
+						"type": "boolean",
+						"default": true,
+						"markdownDescription": "Whether to auto-connect to the Neuro API on extension setup."
+					},
+					"neuropilot.connection.retryInterval": {
+						"type": "integer",
+						"default": 0,
+						"minimum": 0,
+						"markdownDescription": "The delay (in ms) between NeuroPilot retrying connections to NeuroPilot.\n\nSet to 0 if you want to retry as soon as possible."
+					},
+					"neuropilot.connection.retryAmount": {
+						"type": "integer",
+						"default": 0,
+						"minimum": 0,
+						"markdownDescription": "The amount of retries to connect to the Neuro API if it fails.\n\nThe amount of tries total will be (this setting) + 1.\n\nSet to 0 to disallow retries."
 					}
 				}
 			}
@@ -749,6 +812,15 @@
 					"fontCharacter": "\\E901"
 				}
 			}
+		},
+		"menus": {
+			"editor/context": [
+				{
+					"command": "neuropilot.sendSelectionToNeuro",
+					"when": "editorHasSelection",
+					"group": "navigation"
+				}
+			]
 		}
 	},
 	"capabilities": {
@@ -805,7 +877,7 @@
 		"@types/vscode": "^1.95.0",
 		"@types/ws": "^8.18.0",
 		"@vscode/test-web": "^0.0.73",
-		"@vscode/vsce": "^3.6.0",
+		"@vscode/vsce": "^3.6.2",
 		"chalk": "^5.4.1",
 		"cross-env": "^7.0.3",
 		"esbuild": "^0.25.5",

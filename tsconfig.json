@@ -18,6 +18,9 @@
 			],
 			"@typing/*": [
 				"./src/types/*"
+			],
+			"@events/*": [
+				"./src/events/*"
 			]
 		}
 	},

@@ -3,7 +3,7 @@ playground/**
 .gitignore
 eslint.config.mjs
 tsconfig.json
-tsconfig.web.json
+**/tsconfig.*.json
 src/
 node_modules/
 *.vsix

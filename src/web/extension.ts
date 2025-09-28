@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { createClient, isPathNeuroSafe, setVirtualCursor } from '@/utils';
+import { isPathNeuroSafe, setVirtualCursor } from '@/utils';
 import { NEURO } from '@/constants';
 import {
     initializeCommonState,
@@ -15,10 +15,16 @@ import {
     getDiffAddedDecorationRenderOptions,
     reloadPermissions,
     getHighlightDecorationRenderOptions,
+    showUpdateReminder,
+    startupCreateClient,
 } from '@shared/extension';
 import { registerUnsupervisedActions, registerUnsupervisedHandlers } from './unsupervised';
+import { registerSendSelectionToNeuro } from '@/editing';
 
 export function activate(context: vscode.ExtensionContext) {
+    // Show update reminder if version changed
+    showUpdateReminder(context);
+
     // Initialize common state
     initializeCommonState(context);
 
@@ -39,10 +45,15 @@ export function activate(context: vscode.ExtensionContext) {
     // Create status bar item
     createStatusBarItem();
 
+    // The "Send selection to Neuro" feature requires both a command and a code action provider.
+    // To keep related logic together and allow easy registration in both desktop and web, it is encapsulated
+    // in registerSendSelectionToNeuro instead of being registered inline like most single commands.
+    registerSendSelectionToNeuro(context);
+
     // We don't obtain extension state here automatically
 
     // Create client
-    createClient();
+    startupCreateClient();
 
     // Create cursor decoration (web-specific)
     NEURO.cursorDecorationType = vscode.window.createTextEditorDecorationType(getCursorDecorationRenderOptions());

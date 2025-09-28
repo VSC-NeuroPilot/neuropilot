@@ -120,7 +120,8 @@ export default tseslint.config(
                 ...globals.browser,
             },
             parserOptions: {
-                project: null, // Disable TypeScript project for JS files
+                tsconfigRootDir: '.',
+                project: './tsconfig.json', // Disable TypeScript project for JS files
             },
         },
     },

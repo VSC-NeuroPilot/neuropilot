@@ -1,21 +1,23 @@
 import * as vscode from 'vscode';
 import { NEURO, EXTENSIONS } from '@/constants';
-import { logOutput, createClient, onClientConnected, setVirtualCursor } from '@/utils';
+import { logOutput, createClient, onClientConnected, setVirtualCursor, showAPIMessage, disconnectClient, reconnectClient } from '@/utils';
 import { completionsProvider, registerCompletionResultHandler } from '@/completions';
 import { giveCookie, registerRequestCookieAction, registerRequestCookieHandler, sendCurrentFile } from '@/context';
 import { registerChatResponseHandler } from '@/chat';
-import { ACCESS, CONFIG } from '@/config';
+import { ACCESS, checkDeprecatedSettings, CONFIG, CONNECTION } from '@/config';
 import { explainWithNeuro, fixWithNeuro, NeuroCodeActionsProvider, sendDiagnosticsDiff } from '@/lint_problems';
 import { editorChangeHandler, fileSaveListener, moveNeuroCursorHere, toggleSaveAction, workspaceEditHandler } from '@/editing';
-import { emergencyDenyRequests, acceptRceRequest, denyRceRequest, revealRceNotification } from '@/rce';
+import { emergencyDenyRequests, acceptRceRequest, denyRceRequest, revealRceNotification, clearRceRequest } from '@/rce';
 import type { GitExtension } from '@typing/git';
 import { getGitExtension } from '@/git';
-import { registerDocsCommands, registerDocsLink } from './docs';
+import { openDocsOnTarget, registerDocsCommands, registerDocsLink } from './docs';
+import { moveCursorEmitterDiposable } from '@events/cursor';
 
 // Shared commands
 export function registerCommonCommands() {
     return [
         vscode.commands.registerCommand('neuropilot.reconnect', reconnect),
+        vscode.commands.registerCommand('neuropilot.disconnect', disconnect),
         vscode.commands.registerCommand('neuropilot.moveNeuroCursorHere', moveNeuroCursorHere),
         vscode.commands.registerCommand('neuropilot.sendCurrentFile', sendCurrentFile),
         vscode.commands.registerCommand('neuropilot.giveCookie', giveCookie),
@@ -75,6 +77,7 @@ export function setupCommonEventHandlers() {
             }
         }),
         vscode.extensions.onDidChange(obtainExtensionState),
+        moveCursorEmitterDiposable,
     ];
 
     return handlers;
@@ -82,13 +85,14 @@ export function setupCommonEventHandlers() {
 
 export function initializeCommonState(context: vscode.ExtensionContext) {
     NEURO.context = context;
-    NEURO.url = CONFIG.websocketUrl;
-    NEURO.gameName = CONFIG.gameName;
+    NEURO.url = CONNECTION.websocketUrl;
+    NEURO.gameName = CONNECTION.gameName;
     NEURO.connected = false;
     NEURO.waiting = false;
     NEURO.cancelled = false;
     NEURO.outputChannel = vscode.window.createOutputChannel('NeuroPilot');
     NEURO.currentController = CONFIG.currentlyAsNeuroAPI;
+    checkDeprecatedSettings();
 }
 
 export function setupCommonProviders() {
@@ -131,10 +135,27 @@ export function createStatusBarItem() {
     }
 }
 
+export function startupCreateClient() {
+    if (CONNECTION.autoConnect) {
+        createClient();
+    } else {
+        showAPIMessage('disabled');
+    }
+}
+
 // Shared utility functions
 function reconnect() {
     logOutput('INFO', 'Attempting to reconnect to Neuro API');
-    createClient();
+    reconnectClient();
+}
+
+function disconnect() {
+    if (!NEURO.client) {
+        vscode.window.showErrorMessage('Not connected to Neuro API.');
+        return;
+    }
+    logOutput('INFO', 'Manually disconnecting from Neuro API');
+    disconnectClient();
 }
 
 export function reloadPermissions(...extraFunctions: (() => void)[]) {
@@ -242,7 +263,8 @@ export function obtainExtensionState(): void {
 }
 
 export function deactivate() {
-    NEURO.client?.sendContext(`NeuroPilot is being deactivated, or ${CONFIG.gameName} is closing. See you next time, ${NEURO.currentController}!`);
+    NEURO.client?.sendContext(`NeuroPilot is being deactivated, or ${CONNECTION.gameName} is closing. See you next time, ${NEURO.currentController}!`);
+    clearRceRequest();
 }
 
 export function getCursorDecorationRenderOptions(): vscode.DecorationRenderOptions {
@@ -312,4 +334,63 @@ export function getHighlightDecorationRenderOptions(): vscode.DecorationRenderOp
         overviewRulerLane: vscode.OverviewRulerLane.Center,
         rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
     };
+}
+
+/**
+ * Shows a popup reminding the user to check the changelog and docs if the extension version has changed.
+ * Only shows once per version update, using memento storage.
+ * Does NOT show on brand new installs (sets memento to current version instead).
+ */
+export function showUpdateReminder(context: vscode.ExtensionContext) {
+    const mementoKey = 'lastVersionReminder';
+    const lastVersion = context.globalState.get<string>(mementoKey);
+    const docsUrl = 'https://vsc-neuropilot.github.io/docs';
+    const manifest = context.extension.packageJSON;
+    const version = manifest.version as string;
+    const id = context.extension.id;
+    let showPopup = () => { }; // Exists so that showPopup isn't nullable, do not modify since if either of the if-else conditions are satisfied then this function will be called.
+    if (!lastVersion) {
+        showPopup = () => {
+            vscode.window.showInformationMessage(
+                `Welcome to NeuroPilot! You have just installed version ${version}.`,
+                'View Docs',
+                'Configure NeuroPilot',
+            ).then(async selection => {
+                if (selection === 'View Docs') {
+                    await openDocsOnTarget('NeuroPilot', docsUrl);
+                    // Re-show popup to allow visiting both links
+                    showPopup();
+                } else if (selection === 'Configure NeuroPilot') {
+                    await vscode.commands.executeCommand('workbench.action.openSettings', `@ext:${id}`);
+                    // Re-show popup to allow visiting both links
+                    showPopup();
+                }
+                // If dismissed, do nothing
+            });
+        };
+    } else if (lastVersion !== version) {
+        // Helper to show the popup and allow both links to be visited
+        showPopup = () => {
+            vscode.window.showInformationMessage(
+                'NeuroPilot updated! Please check the changelog and docs for important changes.',
+                'View Changelog',
+                'View Docs',
+            ).then(async selection => {
+                if (selection === 'View Changelog') {
+                    // Open local CHANGELOG.md in markdown preview
+                    const changelogUri = vscode.Uri.joinPath(context.extensionUri, 'CHANGELOG.md');
+                    await vscode.commands.executeCommand('markdown.showPreview', changelogUri);
+                    // Re-show popup to allow visiting both links
+                    showPopup();
+                } else if (selection === 'View Docs') {
+                    await openDocsOnTarget('NeuroPilot', docsUrl);
+                    // Re-show popup to allow visiting both links
+                    showPopup();
+                }
+                // If dismissed, do nothing
+            });
+        };
+    }
+    showPopup();
+    context.globalState.update(mementoKey, version);
 }
