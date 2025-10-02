@@ -1,3 +1,22 @@
+import { Event } from 'vscode';
+
+export type APIVersions = 1 | 'latest' | 'oldest' | 'next';
+
+export interface NeuroPilotAPI {
+    /** Whether or not NeuroPilot is connected to the Neuro API. */
+    readonly connected: boolean;
+    /** 
+     * Event that fires if the Neuro API connection status changes.
+     * Only fires once all connection attempts have been exhausted.
+     */
+    readonly onDidChangeConnectionStatus: Event<boolean>;
+
+    registerExtension(details: ExtensionInfo): ExtensionRegisterReturns;
+
+    getAPI(version: APIVersions): ExtensionAPI;
+    getSupportedVersions(): APIVersions[];
+}
+
 export interface ExtensionAPI {
     version: number;
     [key: string]: unknown;
@@ -24,11 +43,6 @@ export interface ExtensionInfo {
     docs?: {
         base: string;
     };
-    registersActions?: boolean;
-    sendsPassiveContexts?: boolean;
-    canForceActions?: boolean;
-    accessNeuroCursor?: boolean;
-    usesFilePaths?: boolean;
 }
 
 export interface RegistrationName {
