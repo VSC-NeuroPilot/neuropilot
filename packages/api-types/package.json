@@ -1,0 +1,28 @@
+{
+    "name": "@vsc-neuropilot/api-types",
+    "scripts": {},
+    "author": "VSC-NeuroPilot",
+    "maintainers": [
+        "Pasu4",
+        {
+            "name": "KTrain5369",
+            "email": "me@ktrain5360.dev",
+            "url": "https://ktrain5369.dev"
+        }
+    ],
+    "types": "./index.d.ts",
+    "publishConfig": {
+        "access": "public",
+        "registry": "https://npm.pkg.github.com/"
+    },
+    "dependencies": {
+        "@types/vscode": "1.95.0",
+        "@types/json-schema": "7.0.15"
+    },
+    "devDependencies": {
+        "neuro-game-sdk": "^1.0.5"
+    },
+    "peerDependencies": {
+        "neuro-game-sdk": "^1.0.5"
+    }
+}

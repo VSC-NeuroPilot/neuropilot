@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@vsc-neuropilot/api-types':
+        specifier: workspace:*
+        version: link:packages/api-types
       file-type:
         specifier: ^21.0.0
         version: 21.0.0
@@ -87,6 +90,8 @@ importers:
       typescript-eslint:
         specifier: ^8.26.0
         version: 8.39.1(eslint@9.33.0)(typescript@5.9.2)
+
+  packages/api-types: {}
 
 packages:
 

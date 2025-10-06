@@ -864,7 +864,8 @@
 		"watch:web:esbuild": "node esbuild.mjs --watch --mode web",
 		"watch:web:tsc": "tsc --noEmit --watch --project tsconfig.web.json",
 		"watch:desktop:esbuild": "node esbuild.mjs --watch --mode desktop",
-		"watch:desktop:tsc": "tsc --noEmit --watch --project tsconfig.app.json"
+		"watch:desktop:tsc": "tsc --noEmit --watch --project tsconfig.app.json",
+		"api-types": "pnpm --filter=@vsc-neuropilot/api-types"
 	},
 	"devDependencies": {
 		"@eslint/js": "^9.13.0",
@@ -891,6 +892,7 @@
 		"typescript-eslint": "^8.26.0"
 	},
 	"dependencies": {
+		"@vsc-neuropilot/api-types": "workspace:*",
 		"file-type": "^21.0.0",
 		"glob-to-regexp": "^0.4.1",
 		"jsonschema": "^1.5.0",

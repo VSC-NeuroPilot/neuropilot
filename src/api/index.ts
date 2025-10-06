@@ -1,4 +1,4 @@
-import { APIVersions, ExtensionAPI } from './neuropilot-types';
+import { APIVersions, ExtensionAPI } from '@vsc-neuropilot/api-types';
 import { getAPIv1 } from './versions/1';
 
 /**

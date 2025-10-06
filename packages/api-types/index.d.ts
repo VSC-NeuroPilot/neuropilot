@@ -2,19 +2,31 @@ import { Event } from 'vscode';
 
 export type APIVersions = 1 | 'latest' | 'oldest' | 'next';
 
+export const enum ConnectionTypes {
+    Connected,
+    Disconnected,
+    Failed,
+    Retrying,
+}
+
 export interface NeuroPilotAPI {
     /** Whether or not NeuroPilot is connected to the Neuro API. */
-    readonly connected: boolean;
+    readonly connected: Omit<ConnectionTypes, ConnectionTypes.Failed>;
+    /** Current connection info, assuming {@link NeuroPilotAPI.connected} returns {@link ConnectionTypes.Connected} */
+    readonly connectionInfo: ConnectionStatus | null;
     /** 
      * Event that fires if the Neuro API connection status changes.
-     * Only fires once all connection attempts have been exhausted.
+     * Only fires on fail once all connection attempts have been exhausted.
+     * @fires ConnectionType - see {@link ConnectionTypes}
      */
-    readonly onDidChangeConnectionStatus: Event<boolean>;
+    readonly onDidChangeConnectionStatus: Event<Omit<ConnectionStatus, ConnectionTypes.Retrying>>;
 
+    /** @todo Stay in pre-API exports? */
     registerExtension(details: ExtensionInfo): ExtensionRegisterReturns;
 
     getAPI(version: APIVersions): ExtensionAPI;
-    getSupportedVersions(): APIVersions[];
+    /** Array of supported version numbers. */
+    readonly supportedVersions: Omit<APIVersions, 'latest' & 'oldest' & 'next'>[];
 }
 
 export interface ExtensionAPI {

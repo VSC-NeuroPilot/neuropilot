@@ -1,15 +1,15 @@
 import * as vscode from 'vscode';
-import { ExtensionAPI } from '../neuropilot-types';
 import { RCEAction } from '../../neuro_client_helper';
 import { logOutput, isPathNeuroSafe as _isPathNeuroSafe } from '../../utils';
 import {
+    ExtensionAPI,
     ConnectionStatus,
     NeuroMessage,
     ExtensionInfo,
     RegistrationName,
     ExtensionRegisterReturns,
     ModifyMetadata,
-} from '../neuropilot-types';
+} from '@vsc-neuropilot/api-types';
 
 export interface APIv1 extends ExtensionAPI {
     version: 1;
