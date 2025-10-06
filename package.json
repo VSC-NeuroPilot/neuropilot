@@ -844,7 +844,6 @@
 	},
 	"scripts": {
 		"version:changesets": "changeset version --global-changelog",
-		"push": "tsx ./dual-publish.ts",
 		"vscode:prepublish": "pnpm build",
 		"build": "pnpm types && node esbuild.mjs",
 		"compile": "cross-env NODE_ENV=0 pnpm build",
