@@ -1,0 +1,16 @@
+{
+  "name": "@vsc-neuropilot/cli",
+  "version": "1.0.0",
+  "description": "Small CLI to manage updating the API types/helper",
+  "main": "dist/index.js",
+  "types": "lib/index.d.ts",
+  "bin": {
+    "np": "./dist/index.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "KTrain5369 <me@ktrain5369.dev> (https://ktrain5369.dev)",
+  "license": "MIT"
+}

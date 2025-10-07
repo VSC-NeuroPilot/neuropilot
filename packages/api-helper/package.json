@@ -1,0 +1,28 @@
+{
+  "name": "@vsc-neuropilot/api-helper",
+  "version": "1.0.0",
+  "description": "Helper class storage for interacting with NeuroPilot's API.",
+  "main": "dist/index.js",
+  "types": "lib/index.d.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@types/vscode": "1.95.0",
+    "@types/json-schema": "7.0.15",
+    "neuro-game-sdk": "^1.0.5"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.2"
+  },
+  "peerDependencies": {
+    "typescript": "^5.8.2"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://npm.pkg.github.com/"
+  }
+}
