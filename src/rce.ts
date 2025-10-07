@@ -7,15 +7,11 @@ import * as vscode from 'vscode';
 import { ActionData, RCEAction, stripToAction } from '@/neuro_client_helper';
 import { NEURO } from '@/constants';
 import { checkVirtualWorkspace, checkWorkspaceTrust, logOutput } from '@/utils';
-import { CONFIG, getPermissionLevel, isActionEnabled, PermissionLevel, PERMISSIONS } from '@/config';
+import { CONFIG, getPermissionLevel, isActionEnabled, PERMISSIONS } from '@/config';
+import { PermissionLevel } from '@vsc-neuropilot/api-types/settings/permissions';
 import { handleRunTask } from '@/tasks';
 import { validate } from 'jsonschema';
 import type { RCECancelEvent } from '@events/utils';
-
-/**
- * A prompt parameter can either be a string or a function that converts ActionData into a prompt string.
- */
-export type PromptGenerator = string | ((actionData: ActionData) => string);
 
 /**
  * RCE request object

@@ -3,7 +3,8 @@ import * as vscode from 'vscode';
 import { NEURO } from '@/constants';
 import { formatContext, getFence, getPositionContext, getVirtualCursor, getWorkspacePath, getWorkspaceUri, isBinary, isPathNeuroSafe, logOutput, normalizePath } from '@/utils';
 import { ActionData, contextNoAccess, RCEAction, actionValidationFailure, actionValidationAccept, ActionValidationResult, stripToActions } from '@/neuro_client_helper';
-import { CONFIG, PERMISSIONS, PermissionLevel, getPermissionLevel, isActionEnabled } from '@/config';
+import { CONFIG, PERMISSIONS, getPermissionLevel, isActionEnabled } from '@/config';
+import { PermissionLevel } from '@vsc-neuropilot/api-types/settings/permissions';
 import { targetedFileCreatedEvent, targetedFileDeletedEvent } from '@events/files';
 import { RCECancelEvent } from '@events/utils';
 

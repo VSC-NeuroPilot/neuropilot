@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { PromptGenerator } from '@vsc-neuropilot/api-types/utils/client_helpers';
+import { PromptGenerator } from './client_helpers';
 
 export interface RCECancelEventInitializer {
     /** The reason that will be used to send to Neuro-sama. */
@@ -10,6 +10,7 @@ export interface RCECancelEventInitializer {
     events?: [vscode.Event<unknown>, ((data: unknown) => boolean | Promise<boolean>) | null][];
 }
 
+/** Still need to figure out some problems... */
 export class RCECancelEvent {
     /**
      * Private emitter constructed by the class constructor.
@@ -40,35 +41,11 @@ export class RCECancelEvent {
      * Fires the event.
      * @param data The data to provide in the fire.
      */
-    public fire(data: unknown): void {
-        this.emitter.fire(data);
-        this.disposable.dispose();
-    }
+    public fire(data: unknown): void;
 
     /**
      * Creates an instance of RCECancelEvent.
      * @param init Initialization parameters.
      */
-    constructor(init?: RCECancelEventInitializer) {
-        this.emitter = new vscode.EventEmitter<never>();
-        this.event = this.emitter.event;
-
-        // Subscribe to all events
-        const disposables: vscode.Disposable[] = [];
-        for (const [event, predicate] of init?.events ?? []) {
-            disposables.push(
-                event(async (data) => {
-                    if (predicate === null || await predicate(data)) {
-                        this.fire(data);
-                    }
-                }),
-            );
-        }
-
-        // Clean up all disposables when this is disposed
-        this.disposable = vscode.Disposable.from(...disposables, this.emitter);
-
-        this.reason = init?.reason;
-        this.logReason = init?.logReason;
-    }
+    constructor(init?: RCECancelEventInitializer);
 }

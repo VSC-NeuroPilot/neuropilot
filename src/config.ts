@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { Action } from 'neuro-game-sdk';
 import { NEURO } from './constants';
 import { logOutput } from './utils';
+import { Permission, PermissionLevel } from '@vsc-neuropilot/api-types/settings/permissions';
 
 interface DeprecatedSetting {
     old: string;
@@ -171,13 +172,6 @@ export type CursorPositionContextStyle = 'off' | 'inline' | 'lineAndColumn' | 'b
 
 //#endregion
 
-/** Permission level enums */
-export const enum PermissionLevel {
-    OFF = 0,
-    COPILOT = 1,
-    AUTOPILOT = 2,
-}
-
 /**
  * Gets the value of the config
  * @param key The config key to get
@@ -231,13 +225,6 @@ export function getPermissionLevel(...permissions: Permission[]): PermissionLeve
             }
         })
         .reduce((lowest, level) => level < lowest ? level : lowest, PermissionLevel.AUTOPILOT);
-}
-
-export interface Permission {
-    /** The ID of the permission in package.json, without the `neuropilot.permission.` prefix. */
-    id: string;
-    /** The infinitive of the permission to construct sentences (should fit the scheme "permission to {something}"). */
-    infinitive: string;
 }
 
 /** Collection of strings for use in {@link actionResultNoPermission}. */
