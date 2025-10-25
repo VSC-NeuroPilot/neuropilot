@@ -78,6 +78,8 @@ interface Neuro {
     killSwitch: boolean;
     /** The last known user selection, or null if there is none or it is in a non-Neuro-safe file. */
     lastKnownUserSelection: vscode.Selection | null;
+    /** Any temporarily disabled actions for this session. */
+    tempDisabledActions: string[]
 }
 
 
@@ -111,6 +113,7 @@ export const NEURO: Neuro = {
     currentController: null,
     killSwitch: false,
     lastKnownUserSelection: null,
+    tempDisabledActions: [],
 };
 
 // this will likely be transformed for a different use later when the API rolls around

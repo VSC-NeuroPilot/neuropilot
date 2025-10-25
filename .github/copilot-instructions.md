@@ -45,6 +45,8 @@
 - Never access or modify global git config, only local repository config
 - Dangerous actions are disabled in virtual/untrusted workspaces
 - Code should be modular, with clear separation of concerns
+- Always normalize line endings in text read from the document using `filterFileContents`
+- Avoid using `TextDocument.positionAt` and `TextDocument.offsetAt`, use the functions `indexFromPosition` and `positionFromIndex` with normalized document text instead
 
 ## When in Doubt
 

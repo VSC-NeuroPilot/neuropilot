@@ -37,6 +37,19 @@
 			"preLaunchTask": "watch:web"
 		},
 		{
+			"name": "Extension Tests",
+			"type": "extensionHost",
+			"request": "launch",
+			"runtimeExecutable": "${execPath}",
+			"args": [
+				"--extensionDevelopmentPath=${workspaceFolder}",
+				"--extensionTestsPath=${workspaceFolder}/out/desktop/test.js",
+				"${workspaceFolder}/test-playground"
+			],
+			"outFiles": ["${workspaceFolder}/out/desktop/test.js"],
+			"preLaunchTask": "watch:desktop"
+		},
+		{
       		"name": "Open in Browser",
 			"type":	"node-terminal",
 			"request": "launch",

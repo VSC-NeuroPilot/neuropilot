@@ -4,10 +4,23 @@ import { NEURO } from './constants';
 import { logOutput } from './utils';
 import { Permission, PermissionLevel } from '@vsc-neuropilot/api-types/settings/permissions';
 
+//#region Types
+
+export type CursorPositionContextStyle = 'off' | 'inline' | 'lineAndColumn' | 'both';
+
+export interface Permission {
+    /** The ID of the permission in package.json, without the `neuropilot.permission.` prefix. */
+    id: string;
+    /** The infinitive of the permission to construct sentences (should fit the scheme "permission to {something}"). */
+    infinitive: string;
+}
+
 interface DeprecatedSetting {
     old: string;
     new: string | ((target: vscode.ConfigurationTarget) => Promise<void>);
 }
+
+//#endregion
 
 /** Array of deprecated settings */
 const DEPRECATED_SETTINGS: DeprecatedSetting[] = [
@@ -50,6 +63,26 @@ const DEPRECATED_SETTINGS: DeprecatedSetting[] = [
             await cfg.update('access.externalFiles', config, target);
             await cfg.update('access.environmentVariables', config, target);
         },
+    },
+    {
+        old: 'disabledActions',
+        new: 'actions.disabledActions',
+    },
+    {
+        old: 'hideCopilotRequests',
+        new: 'actions.hideCopilotRequests',
+    },
+    {
+        old: 'allowRunningAllTasks',
+        new: 'actions.allowRunningAllTasks',
+    },
+    {
+        old: 'enableCancelRequests',
+        new: 'actions.enableCancelRequests',
+    },
+    {
+        old: 'currentlyAsNeuroAPI',
+        new: 'connection.nameOfAPI',
     },
 ];
 
@@ -166,34 +199,35 @@ export async function checkDeprecatedSettings() {
     }
 }
 
-//#region Types
-
-export type CursorPositionContextStyle = 'off' | 'inline' | 'lineAndColumn' | 'both';
-
-//#endregion
+//#region Config get functions
 
 /**
  * Gets the value of the config
  * @param key The config key to get
  * @returns The value of the config, or `undefined` if it doesn't exist
  */
-export function getConfig<T>(key: string): T | undefined {
+function getConfig<T>(key: string): T | undefined {
     return vscode.workspace.getConfiguration('neuropilot').get<T>(key);
 }
 
-export function getAccess<T>(key: string): T | undefined {
+function getAccess<T>(key: string): T | undefined {
     return vscode.workspace.getConfiguration('neuropilot').get<T>('access.' + key);
 }
 
-export function getConnection<T>(key: string): T | undefined {
+function getConnection<T>(key: string): T | undefined {
     return vscode.workspace.getConfiguration('neuropilot').get<T>('connection.' + key);
 }
 
-export function isActionEnabled(action: string | Action): boolean {
-    if (typeof action === 'string')
-        return !CONFIG.disabledActions.includes(action);
-    return !CONFIG.disabledActions.includes(action.name);
+function getActions<T>(key: string): T | undefined {
+    return vscode.workspace.getConfiguration('neuropilot').get<T>('actions.' + key);
 }
+
+export function isActionEnabled(action: string | Action): boolean {
+    const name = typeof action === 'string' ? action : action.name;
+    return !ACTIONS.disabledActions.includes(name) && !NEURO.tempDisabledActions.includes(name);
+}
+
+//#endregion
 
 /**
  * Checks the configured permission level for each provided permission and returns 
@@ -201,7 +235,8 @@ export function isActionEnabled(action: string | Action): boolean {
  *
  * @param permissions The permission(s) to query.
  * @returns The lowest permission level in the list of permissions.
- * If no permissions are specified, this function assumes Copilot
+ * If no permissions are specified, this function assumes {@link PermissionLevel.COPILOT}.
+ * If used as a boolean, {@link PermissionLevel.OFF} is considered `false`, everything else is considered `true`.
  */
 export function getPermissionLevel(...permissions: Permission[]): PermissionLevel {
     if (NEURO.killSwitch) {
@@ -243,7 +278,7 @@ class Permissions {
     get gitConfigs() { return { id: 'gitConfigs', infinitive: 'edit the Git configuration' }; }
     get terminalAccess() { return { id: 'terminalAccess', infinitive: 'access the terminal' }; }
     get accessLintingAnalysis() { return { id: 'accessLintingAnalysis', infinitive: 'view linting problems' }; }
-    get getUserSelection() { return { id: 'getUserSelection', infinitive: 'get Vedal\'s cursor' }; }
+    get getUserSelection() { return { id: 'getUserSelection', infinitive: `get ${CONNECTION.userName}'s cursor` }; }
 }
 
 export const PERMISSIONS = new Permissions();
@@ -256,20 +291,15 @@ class Config {
     get timeout(): number { return getConfig('timeout')!; }
     get showTimeOnTerminalStart(): boolean { return getConfig('showTimeOnTerminalStart')!; }
     get terminalContextDelay(): number { return getConfig('terminalContextDelay')!; }
-    get allowRunningAllTasks(): boolean { return getConfig('allowRunningAllTasks')!; }
     get sendNewLintingProblemsOn(): string { return getConfig('sendNewLintingProblemsOn')!; }
     get sendSaveNotifications(): boolean { return getConfig('sendSaveNotifications')!; }
     get requestExpiryTimeout(): number { return getConfig('requestExpiryTimeout')!; }
-    get hideCopilotRequests(): boolean { return getConfig('hideCopilotRequests')!; }
     get cursorFollowsNeuro(): boolean { return getConfig('cursorFollowsNeuro')!; }
-    get currentlyAsNeuroAPI(): string { return getConfig('currentlyAsNeuroAPI')!; }
     get docsURL(): string { return getConfig('docsURL')!; }
     get defaultOpenDocsWindow(): string { return getConfig('defaultOpenDocsWindow')!; }
-    get disabledActions(): string[] { return getConfig('disabledActions')!; }
     get sendContentsOnFileChange(): boolean { return getConfig('sendContentsOnFileChange')!; }
     get cursorPositionContextStyle(): CursorPositionContextStyle { return getConfig('cursorPositionContextStyle')!; }
     get lineNumberContextFormat(): string { return getConfig('lineNumberContextFormat')!; }
-    get enableCancelEvents(): boolean { return getConfig('enableCancelEvents')!; }
 
     get terminals(): { name: string; path: string; args?: string[]; }[] { return getConfig('terminals')!; }
 }
@@ -293,6 +323,18 @@ class Connection {
     get autoConnect(): boolean { return getConnection<boolean>('autoConnect')!; }
     get retryInterval(): number { return getConnection<number>('retryInterval')!; }
     get retryAmount(): number { return getConnection<number>('retryAmount')!; }
+    get userName(): string { return getConnection<string>('userName')!; }
+    get nameOfAPI(): string { return getConnection<string>('nameOfAPI')!; }
 }
 
 export const CONNECTION = new Connection();
+
+class Actions {
+    get disabledActions(): string[] { return getActions<string[]>('disabledActions')!; }
+    get hideCopilotRequests(): boolean { return getActions<boolean>('hideCopilotRequests')!; }
+    get allowRunningAllTasks(): boolean { return getActions<boolean>('allowRunningAllTasks')!; }
+    get enableCancelEvents(): boolean { return getActions<boolean>('enableCancelEvents')!; }
+    get experimentalSchemas(): boolean { return getActions<boolean>('experimentalSchemas')!; }
+}
+
+export const ACTIONS = new Actions();

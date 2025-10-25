@@ -43,8 +43,8 @@ export const terminalAccessHandlers = {
         schema: {
             type: 'object',
             properties: {
-                command: { type: 'string' },
-                shell: { type: 'string', enum: getAvailableShellProfileNames() },
+                command: { type: 'string', description: 'The command to run in the terminal.', examples: ['echo Hello world!', 'node dist/index.js'] },
+                shell: { type: 'string', enum: getAvailableShellProfileNames(), description: 'The shell to run the command in.' },
             },
             required: ['command', 'shell'],
             additionalProperties: false,
@@ -63,7 +63,7 @@ export const terminalAccessHandlers = {
         schema: {
             type: 'object',
             properties: {
-                shell: { type: 'string' },
+                shell: { type: 'string', description: 'The shell to kill.', enum: getAvailableShellProfileNames() },
             },
             required: ['shell'],
             additionalProperties: false,

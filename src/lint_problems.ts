@@ -37,8 +37,9 @@ async function getUriExistence(uri: vscode.Uri): Promise<boolean> {
     try {
         await vscode.workspace.fs.stat(uri);
         return true;
-    } catch {
-        return false;
+    } catch (erm: unknown) {
+        if (erm instanceof vscode.FileSystemError && erm.code === 'FileNotFound') return false;
+        else throw erm;
     }
 }
 
@@ -69,7 +70,7 @@ export const lintActions = {
         schema: {
             type: 'object',
             properties: {
-                file: { type: 'string' },
+                file: { type: 'string', description: 'The relative file path to scan for diagnostics.', examples: ['src/index.ts', './main.py'] },
             },
             required: ['file'],
             additionalProperties: false,
@@ -95,7 +96,7 @@ export const lintActions = {
         schema: {
             type: 'object',
             properties: {
-                folder: { type: 'string' },
+                folder: { type: 'string', description: 'The relative folder path to scan for diagnostics.', examples: ['./src', 'test'] },
             },
             required: ['folder'],
             additionalProperties: false,
@@ -129,13 +130,12 @@ export const lintActions = {
         cancelEvents: [
             workspaceLintingResolvedEvent,
         ],
-        validators: [() => {
+        validators: [async () => {
             const workspace = getWorkspacePath();
             if (!workspace) {
                 return actionValidationFailure('Unable to get current workspace.');
             }
-            validatePath(workspace, 'workspace');
-            return actionValidationAccept();
+            return await validatePath(workspace, 'workspace');
         }, () => {
             const diagnostics = vscode.languages.getDiagnostics();
             // Filter for diagnostics on safe files with errors.

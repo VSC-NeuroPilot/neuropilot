@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { RCECancelEvent } from './utils';
-import { CONFIG } from '../config';
+import { CONNECTION } from '../config';
 import { getWorkspaceUri } from '@/utils';
 
 /**
@@ -10,14 +10,14 @@ import { getWorkspaceUri } from '@/utils';
  * @param file An absolute path to the file.
  */
 export function targetedFileCreatedEvent(file: string) {
-    return new RCECancelEvent({
-        reason: `the file ${file} was created by Vedal.`,
-        logReason: (_data) => `${CONFIG.currentlyAsNeuroAPI} created the file ${file}.`,
+    return new RCECancelEvent<vscode.FileCreateEvent>({
+        reason: `the file ${file} was created by ${CONNECTION.userName}.`,
+        logReason: () => `the file "${file}" was created.`,
         events: [
             [vscode.workspace.onDidCreateFiles, (data) => {
                 const workspaceUri = getWorkspaceUri();
                 const fileUri = workspaceUri?.with({ path: workspaceUri.path + '/' + file });
-                return (data as vscode.FileCreateEvent).files.some(f => f.fsPath === fileUri?.fsPath);
+                return data.files.some(f => f.fsPath === fileUri?.fsPath);
             }],
         ],
     });
@@ -30,14 +30,14 @@ export function targetedFileCreatedEvent(file: string) {
  * @param file An absolute path to the file.
  */
 export function targetedFileDeletedEvent(file: string) {
-    return new RCECancelEvent({
-        reason: `the file ${file} was deleted by Vedal.`,
-        logReason: (_data) => `${CONFIG.currentlyAsNeuroAPI} deleted the file ${file}.`,
+    return new RCECancelEvent<vscode.FileDeleteEvent>({
+        reason: `the file ${file} was deleted by ${CONNECTION.userName}.`,
+        logReason: () => `the file "${file}" was created.`,
         events: [
             [vscode.workspace.onDidDeleteFiles, (data) => {
                 const workspaceUri = getWorkspaceUri();
                 const fileUri = workspaceUri?.with({ path: workspaceUri.path + '/' + file });
-                return (data as vscode.FileDeleteEvent).files.some(f => f.fsPath === fileUri?.fsPath);
+                return data.files.some(f => f.fsPath === fileUri?.fsPath);
             }],
         ],
     });

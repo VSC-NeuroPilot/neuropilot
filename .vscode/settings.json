@@ -7,5 +7,8 @@
         "neuropilot",
         "Pasu",
         "sama"
-    ]
+    ],
+    "python.testing.pytestEnabled": false,
+    "python.testing.unittestEnabled": false,
+    "python.testing.promptToConfigure": false
 }

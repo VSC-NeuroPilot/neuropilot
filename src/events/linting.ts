@@ -14,7 +14,7 @@ export function targetedFileLintingResolvedEvent(file: string): RCECancelEvent {
 
     let previousDiagnostics = vscode.languages.getDiagnostics(fileUri);
 
-    return new RCECancelEvent({
+    return new RCECancelEvent<vscode.DiagnosticChangeEvent>({
         reason: `the file ${file} no longer has linting issues.`,
         events: [
             [vscode.languages.onDidChangeDiagnostics, async () => {
@@ -55,7 +55,7 @@ export function targetedFolderLintingResolvedEvent(folder: string): RCECancelEve
         }
     }
 
-    return new RCECancelEvent({
+    return new RCECancelEvent<vscode.DiagnosticChangeEvent>({
         reason: `the folder ${folder} no longer has any linting issues.`,
         events: [
             [vscode.languages.onDidChangeDiagnostics, async (event) => {

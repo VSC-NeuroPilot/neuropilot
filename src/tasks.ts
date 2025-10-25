@@ -9,7 +9,7 @@ import * as vscode from 'vscode';
 import { NEURO } from '@/constants';
 import { logOutput, formatActionID, getFence, checkWorkspaceTrust, checkVirtualWorkspace } from '@/utils';
 import { ActionData, RCEAction, actionValidationAccept, actionValidationFailure, stripToActions } from '@/neuro_client_helper';
-import { CONFIG, PERMISSIONS, getPermissionLevel, isActionEnabled } from '@/config';
+import { ACTIONS, PERMISSIONS, getPermissionLevel, isActionEnabled } from '@/config';
 import { notifyOnTaskFinish } from '@events/shells';
 
 export const taskHandlers = {
@@ -96,7 +96,7 @@ export function reloadTasks() {
 
     vscode.tasks.fetchTasks().then((tasks) => {
         for (const task of tasks) {
-            if (CONFIG.allowRunningAllTasks === true && vscode.workspace.isTrusted) {
+            if (ACTIONS.allowRunningAllTasks === true && vscode.workspace.isTrusted) {
                 let taskdesc: string = task.detail ?? '';
                 if (taskdesc.toLowerCase().startsWith('[neuro]')) {
                     taskdesc = taskdesc.substring(7).trim();
