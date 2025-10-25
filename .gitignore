@@ -28,3 +28,11 @@ pnpm-debug.log*
 
 # macOS-specific files
 .DS_Store
+
+# Coverage
+/*coverage
+/coverage-web/*
+/coverage-desktop/*
+
+# Local Playwright browser cache if needed for local web tests, in non-default location
+.playwright-browsers

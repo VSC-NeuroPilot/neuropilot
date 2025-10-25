@@ -4,7 +4,7 @@ import { logOutput, createClient, onClientConnected, setVirtualCursor, showAPIMe
 import { completionsProvider, registerCompletionResultHandler } from '@/completions';
 import { giveCookie, registerRequestCookieAction, registerRequestCookieHandler, sendCurrentFile } from '@/context';
 import { registerChatResponseHandler } from '@/chat';
-import { ACCESS, checkDeprecatedSettings, CONFIG, CONNECTION } from '@/config';
+import { ACCESS, ACTIONS, checkDeprecatedSettings, CONFIG, CONNECTION } from '@/config';
 import { explainWithNeuro, fixWithNeuro, NeuroCodeActionsProvider, sendDiagnosticsDiff } from '@/lint_problems';
 import { editorChangeHandler, fileSaveListener, moveNeuroCursorHere, toggleSaveAction, workspaceEditHandler } from '@/editing';
 import { emergencyDenyRequests, acceptRceRequest, denyRceRequest, revealRceNotification, clearRceRequest } from '@/rce';
@@ -29,6 +29,7 @@ export function registerCommonCommands() {
         vscode.commands.registerCommand('neuropilot.explainWithNeuro', explainWithNeuro),
         vscode.commands.registerCommand('neuropilot.switchNeuroAPIUser', switchCurrentNeuroAPIUser),
         vscode.commands.registerCommand('neuropilot.refreshExtensionDependencyState', obtainExtensionState),
+        vscode.commands.registerCommand('neuropilot.resetTemporarilyDisabledActions', () => NEURO.tempDisabledActions = []),
         ...registerDocsCommands(),
     ];
 }
@@ -37,6 +38,8 @@ export function setupCommonEventHandlers() {
     const handlers = [
         vscode.languages.onDidChangeDiagnostics(sendDiagnosticsDiff),
         vscode.workspace.onDidSaveTextDocument(fileSaveListener),
+        vscode.window.onDidChangeActiveTextEditor(editorChangeHandler),
+        vscode.workspace.onDidChangeTextDocument(workspaceEditHandler),
         vscode.workspace.onDidChangeConfiguration(event => {
             if (event.affectsConfiguration('files.autoSave')) {
                 NEURO.client?.sendContext('The Auto-Save setting has been modified.');
@@ -46,18 +49,12 @@ export function setupCommonEventHandlers() {
                 logOutput('INFO', 'NeuroPilot Docs URL changed.');
                 registerDocsLink('NeuroPilot', CONFIG.docsURL);
             }
-        }),
-        vscode.workspace.onDidChangeConfiguration(event => {
-            if (event.affectsConfiguration('neuropilot.currentlyAsNeuroAPI')) {
-                NEURO.currentController = CONFIG.currentlyAsNeuroAPI;
+            if (event.affectsConfiguration('neuropilot.connection.nameOfAPI')) {
+                NEURO.currentController = CONNECTION.nameOfAPI;
                 logOutput('DEBUG', `Changed current controller name to ${NEURO.currentController}.`);
             }
-        }),
-        vscode.window.onDidChangeActiveTextEditor(editorChangeHandler),
-        vscode.workspace.onDidChangeTextDocument(workspaceEditHandler),
-        vscode.workspace.onDidChangeConfiguration(event => {
-            if (event.affectsConfiguration('neuropilot.hideCopilotRequests')) {
-                if (CONFIG.hideCopilotRequests) {
+            if (event.affectsConfiguration('neuropilot.actions.hideCopilotRequests')) {
+                if (ACTIONS.hideCopilotRequests) {
                     NEURO.statusBarItem?.show();
                 } else {
                     NEURO.statusBarItem?.hide();
@@ -72,7 +69,7 @@ export function setupCommonEventHandlers() {
             ) {
                 setVirtualCursor();
             }
-            if (event.affectsConfiguration('neuropilot.permission') || event.affectsConfiguration('neuropilot.disabledActions')) {
+            if (event.affectsConfiguration('neuropilot.permission') || event.affectsConfiguration('neuropilot.actions.disabledActions')) {
                 vscode.commands.executeCommand('neuropilot.reloadPermissions');
             }
         }),
@@ -91,7 +88,8 @@ export function initializeCommonState(context: vscode.ExtensionContext) {
     NEURO.waiting = false;
     NEURO.cancelled = false;
     NEURO.outputChannel = vscode.window.createOutputChannel('NeuroPilot');
-    NEURO.currentController = CONFIG.currentlyAsNeuroAPI;
+    NEURO.currentController = CONNECTION.nameOfAPI;
+    NEURO.context.subscriptions.push(NEURO.outputChannel);
     checkDeprecatedSettings();
 }
 
@@ -130,7 +128,7 @@ export function createStatusBarItem() {
     NEURO.statusBarItem.color = new vscode.ThemeColor('statusBarItem.foreground');
     NEURO.statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.background');
 
-    if (CONFIG.hideCopilotRequests) {
+    if (ACTIONS.hideCopilotRequests) {
         NEURO.statusBarItem.show();
     }
 }
@@ -216,7 +214,7 @@ function disableAllPermissions() {
 
     Promise.all(promises).then(() => {
         vscode.commands.executeCommand('neuropilot.reloadPermissions'); // Reload permissions to unregister all actions
-        NEURO.client?.sendContext('Vedal has turned off all permissions.');
+        NEURO.client?.sendContext(`${CONNECTION.userName} has turned off all permissions.`);
         vscode.window.showInformationMessage('All permissions, all unsafe path rules and linting auto-context have been turned off, all actions have been unregistered and any terminal shells have been killed.');
         NEURO.killSwitch = false;
     });
@@ -241,7 +239,7 @@ function switchCurrentNeuroAPIUser() {
             quickPick.hide();
             return;
         }
-        vscode.workspace.getConfiguration('neuropilot').update('currentlyAsNeuroAPI', selected, vscode.ConfigurationTarget.Global);
+        vscode.workspace.getConfiguration('neuropilot').update('connection.nameOfAPI', selected, vscode.ConfigurationTarget.Global);
         quickPick.hide();
     });
     quickPick.show();

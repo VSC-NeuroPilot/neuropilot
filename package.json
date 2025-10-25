@@ -4,7 +4,7 @@
 	"private": true,
 	"description": "Allows Neuro-sama to either act as a companion/copilot or control Visual Studio Code by herself.",
 	"icon": "assets/heart-xaendril.png",
-	"version": "2.1.2",
+	"version": "2.2.2",
 	"publisher": "VSC-NeuroPilot",
 	"repository": "https://github.com/VSC-NeuroPilot/neuropilot",
 	"homepage": "https://vsc-neuropilot.github.io/neuropilot",
@@ -162,6 +162,11 @@
 				"category": "NeuroPilot"
 			},
 			{
+				"command": "neuropilot.resetTemporarilyDisabledActions",
+				"title": "Reset temporarily disabled actions",
+				"category": "NeuroPilot"
+			},
+			{
 				"command": "neuropilot.sendSelectionToNeuro",
 				"title": "Send selection to Neuro",
 				"category": "NeuroPilot",
@@ -191,7 +196,7 @@
 					"neuropilot.currentlyAsNeuroAPI": {
 						"type": "string",
 						"markdownDescription": "Who is currently acting as the Neuro API server?\nThis only changes the name in certain areas (such as Copilot-mode requests or Git commit messages) due to limitations.\n\nYou can add custom characters using `settings.json` if you ignore the lint error from VS Code.\n\n(Most) names mentioned here are not associated with NeuroPilot.",
-						"default": "Neuro",
+						"deprecationMessage": "This setting has been moved to neuropilot.connection.nameOfAPI",
 						"enum": [
 							"Neuro",
 							"Evil",
@@ -328,8 +333,8 @@
 					},
 					"neuropilot.allowRunningAllTasks": {
 						"type": "boolean",
-						"default": false,
-						"markdownDescription": "Allow Neuro to run all tasks regardless of their prefix in their 'detail' key."
+						"markdownDescription": "Allow Neuro to run all tasks regardless of their prefix in their 'detail' key.",
+						"markdownDeprecationMessage": "This setting has been moved to neuropilot.actions.allowRunningAllTasks."
 					},
 					"neuropilot.sendNewLintingProblemsOn": {
 						"type": "string",
@@ -363,8 +368,8 @@
 					},
 					"neuropilot.hideCopilotRequests": {
 						"type": "boolean",
-						"default": false,
-						"markdownDescription": "Don't immediately show Copilot-mode action requests, requiring clicking the status bar item to reveal them."
+						"markdownDescription": "Don't immediately show Copilot-mode action requests, requiring clicking the status bar item to reveal them.",
+						"markdownDeprecationMessage": "This setting has been moved to neuropilot.actions.hideCopilotRequests."
 					},
 					"neuropilot.cursorFollowsNeuro": {
 						"type": "boolean",
@@ -393,7 +398,6 @@
 					},
 					"neuropilot.disabledActions": {
 						"type": "array",
-						"default": [],
 						"items": {
 							"type": "string",
 							"enum": [
@@ -408,6 +412,7 @@
 								"delete_tag",
 								"delete_text",
 								"diff_files",
+								"diff_patch",
 								"execute_in_terminal",
 								"fetch_git_commits",
 								"find_text",
@@ -453,7 +458,8 @@
 								"undo"
 							]
 						},
-						"markdownDescription": "List of action names that Neuro can't use, regardless of other permission settings.\n\nRequires [reloading permissions](command:neuropilot.reloadPermissions) if changed."
+						"markdownDescription": "List of action names that Neuro can't use, regardless of other permission settings.\n\nRequires [reloading permissions](command:neuropilot.reloadPermissions) if changed.",
+						"markdownDeprecationMessage": "This setting has moved to neuropilot.actions.disabledActions"
 					},
 					"neuropilot.sendContentsOnFileChange": {
 						"type": "boolean",
@@ -498,8 +504,8 @@
 					},
 					"neuropilot.enableCancelEvents": {
 						"type": "boolean",
-						"default": true,
-						"markdownDescription": "Whether to enable cancellation events for RCE. See [this docs page](https://vsc-neuropilot.github.io/docs/references/rce#cancellation-events)."
+						"markdownDescription": "Whether to enable cancellation events for RCE. See [this docs page](https://vsc-neuropilot.github.io/docs/references/rce#cancellation-events).",
+						"markdownDeprecationMessage": "This setting has been moved to neuropilot.actions.enableCancelEvents."
 					},
 					"neuropilot.permission.openFiles": {
 						"type": "string",
@@ -596,11 +602,13 @@
 						"default": "Copilot",
 						"enum": [
 							"Off",
-							"Copilot"
+							"Copilot",
+							"Autopilot"
 						],
 						"enumDescriptions": [
 							"Disable this permission.",
-							"Require approval before execution."
+							"Require approval before execution.",
+							"Execute without oversight."
 						],
 						"markdownDescription": "Neuro may ask for cookies while coding."
 					},
@@ -774,7 +782,7 @@
 					"neuropilot.connection.initialContext": {
 						"type": "string",
 						"default": "You are using an extension in Visual Studio Code that allows you to code together with Vedal.",
-						"description": "The initial context to sent to Neuro-sama (or whatever is connected to NeuroPilot)",
+						"markdownDescription": "The initial context to sent to Neuro-sama (or whatever is connected to NeuroPilot)\n\nTo replace with your name (according to [this setting](vscode://settings/neuropilot.connection.userName)), use `insert_turtle_here`.",
 						"editPresentation": "multilineText"
 					},
 					"neuropilot.connection.autoConnect": {
@@ -793,6 +801,117 @@
 						"default": 0,
 						"minimum": 0,
 						"markdownDescription": "The amount of retries to connect to the Neuro API if it fails.\n\nThe amount of tries total will be (this setting) + 1.\n\nSet to 0 to disallow retries."
+					},
+					"neuropilot.connection.userName": {
+						"type": "string",
+						"default": "Vedal",
+						"description": "Your name (to communicate who is controlling this VS Code instance alongside the API server). This will be used where the name `Vedal` would work for Neuro."
+					},
+					"neuropilot.connection.nameOfAPI": {
+						"type": "string",
+						"markdownDescription": "Who is currently acting as the Neuro API server?\nThis only changes the name in certain areas (such as Copilot-mode requests or Git commit messages) due to limitations.\n\nYou can add custom characters using `settings.json` if you ignore the lint error from VS Code.\n\n(Most) names mentioned here are not associated with NeuroPilot.",
+						"default": "Neuro",
+						"enum": [
+							"Neuro",
+							"Evil",
+							"Randy",
+							"Jippity",
+							"Tony",
+							"Gary"
+						],
+						"enumDescriptions": [
+							"#1 at osu!",
+							"Evil, but actually nice.",
+							"Random Dot Range (Alex)",
+							"A GPT model (EnterpriseScratchDev)",
+							"The human operator (Pasu4)",
+							"Literally in your computer walls (Govorunb)"
+						]
+					},
+					"neuropilot.actions.disabledActions": {
+						"type": "array",
+						"default": [],
+						"items": {
+							"type": "string",
+							"enum": [
+								"abort_merge",
+								"add_file_to_git",
+								"add_git_remote",
+								"create_file",
+								"create_folder",
+								"delete_file_or_folder",
+								"delete_git_branch",
+								"delete_lines",
+								"delete_tag",
+								"delete_text",
+								"diff_files",
+								"diff_patch",
+								"execute_in_terminal",
+								"fetch_git_commits",
+								"find_text",
+								"get_content",
+								"get_currently_running_shells",
+								"get_cursor",
+								"get_file_lint_problems",
+								"get_files",
+								"get_folder_lint_problems",
+								"get_git_config",
+								"get_user_selection",
+								"get_workspace_lint_problems",
+								"git_blame",
+								"git_log",
+								"git_status",
+								"highlight_lines",
+								"init_git_repo",
+								"insert_lines",
+								"insert_text",
+								"kill_terminal_process",
+								"make_git_commit",
+								"merge_to_current_branch",
+								"new_git_branch",
+								"open_file",
+								"place_cursor",
+								"pull_git_commits",
+								"push_git_commits",
+								"read_file",
+								"remove_file_from_git",
+								"remove_git_remote",
+								"rename_file_or_folder",
+								"rename_git_remote",
+								"replace_text",
+								"replace_user_selection",
+								"request_cookie",
+								"rewrite_all",
+								"rewrite_lines",
+								"save",
+								"set_git_config",
+								"switch_git_branch",
+								"tag_head",
+								"terminate_task",
+								"undo"
+							]
+						},
+						"markdownDescription": "List of action names that Neuro can't use, regardless of other permission settings.\n\nRequires [reloading permissions](command:neuropilot.reloadPermissions) if changed."
+					},
+					"neuropilot.actions.hideCopilotRequests": {
+						"type": "boolean",
+						"default": false,
+						"markdownDescription": "Don't immediately show Copilot-mode action requests, requiring clicking the status bar item to reveal them."
+					},
+					"neuropilot.actions.allowRunningAllTasks": {
+						"type": "boolean",
+						"default": false,
+						"markdownDescription": "Allow Neuro to run all tasks regardless of their prefix in their 'detail' key."
+					},
+					"neuropilot.actions.enableCancelEvents": {
+						"type": "boolean",
+						"default": true,
+						"markdownDescription": "Whether to enable cancellation events for RCE. See [this docs page](https://vsc-neuropilot.github.io/docs/references/rce#cancellation-events)."
+					},
+					"neuropilot.actions.experimentalSchemas": {
+						"type": "boolean",
+						"default": true,
+						"markdownDescription": "Whether or not to toggle schemas that may use \"unsupported\" schema properties.\n\nRequires reloading permissions if changed."
 					}
 				}
 			}
@@ -843,40 +962,61 @@
 		}
 	},
 	"scripts": {
+		"preinstall": "node ./scripts/check-malicious-packages.js",
 		"version:changesets": "changeset version --global-changelog",
 		"push": "tsx ./dual-publish.ts",
 		"vscode:prepublish": "pnpm build",
-		"build": "pnpm types && node esbuild.mjs",
+		"build": "pnpm types && node ./scripts/esbuild.mjs",
 		"compile": "cross-env NODE_ENV=0 pnpm build",
 		"package": "cross-env NODE_ENV=1 pnpm build",
 		"lint": "eslint --fix",
-		"test": "vscode-test",
+		"test": "npm-run-all -s test:* --continue-on-error",
 		"postinstall": "husky",
 		"types": "npm-run-all -p build:*:tsc",
 		"types:watch": "npm-run-all -p watch:*:tsc",
-		"build:web": "npm-run-all -p build:web:*",
-		"build:desktop": "npm-run-all -p build:desktop:*",
-		"build:web:esbuild": "node esbuild.mjs --mode web",
+		"build:web": "npm-run-all -s build:web:*",
+		"build:desktop": "npm-run-all -s build:desktop:*",
 		"build:web:tsc": "tsc --noEmit --project tsconfig.web.json",
-		"build:desktop:esbuild": "node esbuild.mjs --mode desktop",
+		"build:web:esbuild": "node ./scripts/esbuild.mjs --mode web",
 		"build:desktop:tsc": "tsc --noEmit --project tsconfig.app.json",
+		"build:desktop:esbuild": "node ./scripts/esbuild.mjs --mode desktop",
 		"watch:web": "npm-run-all -p watch:web:*",
 		"watch:desktop": "npm-run-all -p watch:desktop:*",
-		"watch:web:esbuild": "node esbuild.mjs --watch --mode web",
+		"watch:web:esbuild": "node ./scripts/esbuild.mjs --watch --mode web",
 		"watch:web:tsc": "tsc --noEmit --watch --project tsconfig.web.json",
-		"watch:desktop:esbuild": "node esbuild.mjs --watch --mode desktop",
-		"watch:desktop:tsc": "tsc --noEmit --watch --project tsconfig.app.json"
+		"watch:desktop:esbuild": "node ./scripts/esbuild.mjs --watch --mode desktop",
+		"watch:desktop:tsc": "tsc --noEmit --watch --project tsconfig.app.json",
+		"test:web": "pnpm run build:web && npm-run-all -s test:web:tsc test:web:esbuild test:web:browser",
+		"test:web:tsc": "tsc --noEmit --project test-tsconfigs/tsconfig.web.json",
+		"test:web:esbuild": "node ./scripts/esbuild.mjs --mode web --test",
+		"test:web:vscode": "vscode-test --coverage --label webUnitTest --coverage-output ./coverage-web",
+		"test:web:browser": "pnpm run build:web && npm-run-all -s test:web:browser:*",
+		"test:web:browser:tsc": "tsc --noEmit --project test-tsconfigs/tsconfig.web.json",
+		"test:web:browser:esbuild": "node ./scripts/esbuild.mjs --mode web --test --web-browser-test",
+		"test:web:browser:vscode": "vscode-test-web --headless --extensionDevelopmentPath=. --extensionTestsPath=out/web/test/browser.js test-playground",
+		"test:web:browser:open": "npm-run-all -s test:web:browser:open:chromium --continue-on-error",
+		"test:web:browser:open:chromium": "vscode-test-web --headless --browser=chromium --extensionDevelopmentPath=. --extensionTestsPath=out/web/test/browser.js test-playground",
+		"test:web:browser:open:firefox": "vscode-test-web --headless --browser=firefox --extensionDevelopmentPath=. --extensionTestsPath=out/web/test/browser.js test-playground",
+		"test:web:browser:open:webkit": "vscode-test-web --headless --browser=webkit --extensionDevelopmentPath=. --extensionTestsPath=out/web/test/browser.js test-playground",
+		"test:web:browser:open:vscode": "vscode-test-web --headless --extensionDevelopmentPath=. --extensionTestsPath=out/web/test/browser.js test-playground",
+		"test:desktop": "npm run build:desktop && npm-run-all -s test:desktop:*",
+		"test:desktop:tsc": "tsc --noEmit --project test-tsconfigs/tsconfig.app.json",
+		"test:desktop:esbuild": "node ./scripts/esbuild.mjs --mode desktop --test",
+		"test:desktop:vscode": "vscode-test --coverage --label desktopUnitTest --coverage-output ./coverage-desktop"
 	},
 	"devDependencies": {
 		"@eslint/js": "^9.13.0",
 		"@stylistic/eslint-plugin": "^2.9.0",
 		"@types/eslint__js": "^8.42.3",
 		"@types/glob-to-regexp": "^0.4.4",
+		"@types/mocha": "^10.0.10",
 		"@types/json-schema": "^7.0.15",
 		"@types/node": "^20",
 		"@types/vscode": "^1.95.0",
 		"@types/ws": "^8.18.0",
-		"@vscode/test-web": "^0.0.73",
+		"@vscode/test-cli": "^0.0.11",
+		"@vscode/test-electron": "^2.5.2",
+		"@vscode/test-web": "^0.0.74",
 		"@vscode/vsce": "^3.6.2",
 		"chalk": "^5.4.1",
 		"cross-env": "^7.0.3",
@@ -884,10 +1024,14 @@
 		"esbuild-plugin-polyfill-node": "^0.3.0",
 		"eslint": "^9.13.0",
 		"eslint-plugin-unicorn": "^60.0.0",
+		"glob": "^11.0.3",
 		"globals": "^16.3.0",
 		"husky": "^9.1.7",
+		"mocha": "^11.7.1",
 		"npm-run-all": "^4.1.5",
 		"ovsx": "^0.10.5",
+		"playwright": "^1.44.0",
+		"ts-mockito": "^2.6.1",
 		"typescript": "^5.8.2",
 		"typescript-eslint": "^8.26.0"
 	},
@@ -895,6 +1039,7 @@
 		"file-type": "^21.0.0",
 		"glob-to-regexp": "^0.4.1",
 		"jsonschema": "^1.5.0",
-		"neuro-game-sdk": "^1.0.5"
+		"neuro-game-sdk": "^1.0.5",
+		"yaml": "^2.8.1"
 	}
 }

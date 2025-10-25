@@ -3,8 +3,8 @@
  */
 
 import { Action } from 'neuro-game-sdk';
-import { Permission, PermissionLevel } from '@/config';
-import { logOutput } from '@/utils';
+import { ACTIONS, Permission, PermissionLevel } from '@/config';
+import { logOutput, turtleSafari } from '@/utils';
 import { PromptGenerator } from '@/rce';
 import { RCECancelEvent } from '@events/utils';
 import { JSONSchema7 } from 'json-schema';
@@ -36,7 +36,8 @@ export interface ActionValidationResult {
 type TypedAction = Omit<Action, 'schema'> & { schema?: JSONSchema7 };
 
 /** ActionHandler to use with constants for records of actions and their corresponding handlers */
-export interface RCEAction extends TypedAction {
+export interface RCEAction<T = unknown> extends TypedAction {
+    schemaFallback?: JSONSchema7;
     /** The permissions required to execute this action. */
     permissions: Permission[];
     /** The function to validate the action data *after* checking the schema. */
@@ -48,7 +49,7 @@ export interface RCEAction extends TypedAction {
      * 
      * Following VS Code's pattern, Disposables will not be awaited if async.
      */
-    cancelEvents?: ((actionData: ActionData) => RCECancelEvent | null)[];
+    cancelEvents?: ((actionData: ActionData) => RCECancelEvent<T> | null)[];
     /** The function to handle the action. */
     handler: (actionData: ActionData) => string | undefined;
     /** 
@@ -68,10 +69,16 @@ export interface RCEAction extends TypedAction {
  * @returns The action stripped to its basic form, without the handler and permissions.
  */
 export function stripToAction(action: RCEAction): Action {
+    let schema: JSONSchema7 | undefined;
+    if (ACTIONS.experimentalSchemas && action.schemaFallback) {
+        schema = action.schema;
+    } else {
+        schema = action.schemaFallback ?? action.schema ?? undefined;
+    }
     return {
         name: action.name,
-        description: action.description,
-        schema: action.schema,
+        description: turtleSafari(action.description),
+        schema,
     };
 }
 

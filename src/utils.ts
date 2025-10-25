@@ -98,7 +98,7 @@ function attemptConnection(currentAttempt: number, maxAttempts: number, interval
         };
 
         NEURO.client.sendContext(
-            vscode.workspace.getConfiguration('neuropilot').get('connection.initialContext', 'Something went wrong, blame Pasu4 and/or KTrain5369 and tell Vedal to file a bug report.'),
+            turtleSafari(vscode.workspace.getConfiguration('neuropilot').get('connection.initialContext', 'Someone tell the NeuroPilot devs that there\'s a problem with their extension.')),
         );
 
         for (const handler of clientConnectedHandlers) {
@@ -127,7 +127,7 @@ export async function disconnectClient() {
     shouldAutoReconnect = false;
     if (NEURO.client) {
         NEURO.client.disconnect();
-        if(!await waitFor(() => !NEURO.connected, 100, 5000)) {
+        if (!await waitFor(() => !NEURO.connected, 100, 5000)) {
             logOutput('ERROR', 'Client took too long to disconnect');
             vscode.window.showErrorMessage('Client could not disconnect.');
         }
@@ -272,8 +272,13 @@ export function normalizePath(path: string): string {
  * @returns The path to the workspace folder, or undefined if the workspace is not open.
  */
 export function getWorkspacePath(): string | undefined {
-    const path = vscode.workspace.workspaceFolders?.[0].uri.fsPath;
-    return path ? normalizePath(path) : undefined;
+    const uri = vscode.workspace.workspaceFolders?.[0]?.uri;
+    if (!uri) return undefined;
+    if (uri.scheme === 'file') {
+        return normalizePath(uri.fsPath);
+    }
+    // For non-file schemes (e.g., vscode-test-web://mount), use the URI path
+    return normalizePath(uri.path);
 }
 
 export function getWorkspaceUri(): vscode.Uri | undefined {
@@ -523,13 +528,12 @@ export interface DiffRange {
 
 /**
  * Calculates the difference between the original and modified text. The ranges are based on the modified text.
- * @param document The text document to calculate the difference for, used to calculate positions from offsets.
  * @param startPosition The position where the diff starts, used to calculate positions from offsets.
- * @param original The original text.
- * @param modified The modified text.
+ * @param original The original text. Must have consistent line endings with `modified`.
+ * @param modified The modified text. Must have consistent line endings with `original`.
  */
-export function getDiffRanges(document: vscode.TextDocument, startPosition: vscode.Position, original: string, modified: string): DiffRange[] {
-    const tokenRegExp = /\w+|\s+|./g;
+export function getDiffRanges(startPosition: vscode.Position, original: string, modified: string): DiffRange[] {
+    const tokenRegExp = /\w+|\r?\n|\s+|./g;
     const originalTokens = original.match(tokenRegExp) ?? [];
     const modifiedTokens = modified.match(tokenRegExp) ?? [];
 
@@ -537,7 +541,7 @@ export function getDiffRanges(document: vscode.TextDocument, startPosition: vsco
 
     const result: DiffRange[] = [];
     let currentType: DiffRangeType | undefined = undefined;
-    let currentStartOffset = document.offsetAt(startPosition);
+    let currentStartOffset = 0;
     let currentLength = 0;
     let currentRemovedText = '';
 
@@ -546,8 +550,10 @@ export function getDiffRanges(document: vscode.TextDocument, startPosition: vsco
         if (token.aIndex !== -1 && token.bIndex !== -1) {
             // If this is the end of a change
             if (currentType !== undefined) {
+                const currentStartPosition = positionFromIndex(modified, currentStartOffset);
+                const currentEndPosition = positionFromIndex(modified, currentStartOffset + currentLength);
                 result.push({
-                    range: new vscode.Range(document.positionAt(currentStartOffset), document.positionAt(currentStartOffset + currentLength)),
+                    range: new vscode.Range(translatePosition(startPosition, currentStartPosition), translatePosition(startPosition, currentEndPosition)),
                     type: currentType,
                     removedText: currentRemovedText,
                 });
@@ -587,8 +593,10 @@ export function getDiffRanges(document: vscode.TextDocument, startPosition: vsco
 
     // Add last change if it exists
     if (currentType !== undefined) {
+        const currentStartPosition = positionFromIndex(modified, currentStartOffset);
+        const currentEndPosition = positionFromIndex(modified, currentStartOffset + currentLength);
         result.push({
-            range: new vscode.Range(document.positionAt(currentStartOffset), document.positionAt(currentStartOffset + currentLength)),
+            range: new vscode.Range(translatePosition(startPosition, currentStartPosition), translatePosition(startPosition, currentEndPosition)),
             type: currentType,
             removedText: currentRemovedText,
         });
@@ -603,7 +611,7 @@ export function showDiffRanges(editor: vscode.TextEditor, ...ranges: DiffRange[]
     const removedRanges = ranges.filter(r => r.type === DiffRangeType.Removed);
 
     const languageId = editor.document.languageId;
-    const user = CONFIG.currentlyAsNeuroAPI;
+    const user = CONNECTION.nameOfAPI;
 
     editor.setDecorations(NEURO.diffAddedDecorationType!, addedRanges.map(range => ({
         range: range.range,
@@ -831,4 +839,98 @@ export function formatContext(context: NeuroPositionContext, overrideCursorStyle
         : '';
 
     return `File context for lines ${context.startLine + 1}-${context.endLine + 1} of ${context.totalLines}. ${cursorNote}${lineNumberNote}Content:\n\n${fence}\n${contextBefore}${cursorText}${contextAfter}\n${fence}`;
+}
+
+/**
+ * Get the position (line and column) in a string from a character index.
+ * May sometimes be necessary if different line endings are a concern.
+ * @param text The text to get the position from.
+ * @param index The character index.
+ * @returns The position (line and column) in the text.
+ */
+export function positionFromIndex(text: string, index: number): vscode.Position {
+    const lineCount = text.slice(0, index).match(/\r?\n/g)?.length ?? 0;
+    const lastLineBreak = text.slice(0, index).lastIndexOf('\n');
+    const character = lastLineBreak === -1 ? index : index - lastLineBreak - 1;
+    return new vscode.Position(lineCount, character);
+}
+
+/**
+ * Get the index of a position (line and column) in a string.
+ * May sometimes be necessary if different line endings are a concern.
+ * @param text The text to get the index from.
+ * @param position The position (line and column).
+ * @returns The character index in the text.
+ */
+export function indexFromPosition(text: string, position: vscode.Position): number {
+    const lines = text.split(/(?<=\r?\n)/);
+    let index = 0;
+    for (let i = 0; i < position.line; i++) {
+        index += lines[i].length;
+    }
+    index += position.character;
+    return index;
+}
+
+/**
+ * Offsets a position by a given delta.
+ * Only positive deltas are supported.
+ * If the line number of the delta is greater than 0, the character number of the delta is used as-is,
+ * otherwise it is added to the character number of the original position.
+ * @param pos The original position.
+ * @param delta The delta to add to the position.
+ * @returns The new position.
+ */
+export function translatePosition(pos: vscode.Position, delta: vscode.Position): vscode.Position {
+    if (delta.line < 0 || delta.character < 0) {
+        throw new Error('Only positive deltas are supported.');
+    }
+    return new vscode.Position(
+        pos.line + delta.line,
+        delta.line > 0 ? delta.character : pos.character + delta.character,
+    );
+}
+
+/**
+ * Replaces all instances of `insert_turtle_here` in the input string with the User Name setting.
+ * @param input String input to check.
+ */
+export const turtleSafari = (input: string) => input.replace(/(?<!\\)insert_turtle_here/g, CONNECTION.userName).replace(/\\insert_turtle_here/g, 'insert_turtle_here');
+
+/**
+ * Log a caught exception and surface an error to report to GitHub.
+ */
+export function notifyOnCaughtException(name: string, error: Error | unknown): void {
+    logOutput('ERROR', `Error occurred while executing action ${name}: ${error}`);
+    vscode.window.showErrorMessage(`${CONNECTION.nameOfAPI} tried to run the action "${name}", but an exception was thrown!`, 'View Logs', 'Disable Action for...', 'Report on GitHub').then(
+        async (v) => {
+            switch (v) {
+                case 'View Logs':
+                    NEURO.outputChannel?.show();
+                    break;
+                case 'Report on GitHub':
+                    vscode.env.openExternal(await vscode.env.asExternalUri(vscode.Uri.parse('https://github.com/VSC-NeuroPilot/neuropilot/issues/new', true)));
+                    break;
+                case 'Disable Action for...': {
+                    const disableFor = await vscode.window.showQuickPick(
+                        ['this session', 'this entire workspace', 'this user'],
+                        { title: 'Disable action for...' },
+                    );
+                    switch (disableFor) {
+                        case 'this session':
+                            NEURO.tempDisabledActions.push(name);
+                            break;
+                        case 'this entire workspace':
+                            await vscode.workspace.getConfiguration('neuropilot').update('actions.disabledActions', name, vscode.ConfigurationTarget.Workspace);
+                            break;
+                        case 'this user':
+                            await vscode.workspace.getConfiguration('neuropilot').update('actions.disabledActions', name, vscode.ConfigurationTarget.Global);
+                            break;
+                    }
+                    if (disableFor) logOutput('INFO', `Disabled action "${name}" for ${disableFor} due to a caught exception.`);
+                    break;
+                }
+            }
+        },
+    );
 }

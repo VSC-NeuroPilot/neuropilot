@@ -12,11 +12,10 @@ node_modules/
 project-files/
 
 # Build files
-esbuild.{m,c,}js
 esbuild-configs/
 
 # Other meta scripts
-sort-enums.ts
+/scripts
 
 # Krita
 *.kra
@@ -31,3 +30,10 @@ tony/
 
 # Ignored assets
 assets/ignore/**
+# Coverage
+/coverage-*
+
+# Integration testing
+test-playground/
+.vscode-test.mjs
+out/test/**

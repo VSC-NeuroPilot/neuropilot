@@ -1,0 +1,28 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ES2024",
+    "lib": ["WebWorker"],
+    "sourceMap": true,
+    "outDir": "../out/test/web",
+    "rootDir": "../src/",
+    "strict": true,
+    "esModuleInterop": true,
+    "types": [
+      "mocha",
+      "vscode"
+    ]
+  },
+  "include": [
+    "../src/test/suite/web/**/*.ts",
+    "../src/test/**/*.ts"
+  ],
+  "exclude": [
+    "../node_modules",
+    "../out",
+    "../dist",
+    "../src/test/suite/desktop/**/*.ts"
+  ]
+}

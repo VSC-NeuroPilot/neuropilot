@@ -1,0 +1,89 @@
+name: Tests (Desktop & Web)
+
+on:
+    push:
+        branches:
+            - master
+            - dev
+    # Tests should always run on Pull Requests in order to catch regressions early
+    pull_request:
+    workflow_dispatch: # in case we need to regenerate test coverage
+
+jobs:
+    desktop-tests:
+        name: Desktop (Electron) tests
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                  - os: macos-latest
+                    name: macOS
+                  - os: windows-latest
+                    name: Windows
+                  - os: ubuntu-latest
+                    name: Linux
+        runs-on: ${{ matrix.os }}
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+            - name: Cache VS Code test downloads
+              uses: actions/cache@v4
+              with:
+                key: neuropilot-tests-vscode-${{ github.repository }}-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+                restore-keys: |
+                  neuropilot-tests-vscode-${{ github.repository }}-${{ runner.os }}-
+                path: .vscode-test/
+            - name: Setup pnpm
+              uses: pnpm/action-setup@v4
+              with:
+                  version: 10.14.0
+            - name: Install Node.js
+              uses: actions/setup-node@v4
+              with:
+                node-version: 22.x
+                cache: 'pnpm'
+                cache-dependency-path: './pnpm-lock.yaml'
+            - run: pnpm install --frozen-lockfile
+            - name: Run desktop tests (Linux)
+              run: xvfb-run -a pnpm run test:desktop
+              if: runner.os == 'Linux'
+            - name: Run desktop tests (macOS/Windows)
+              run: pnpm run test:desktop
+              if: runner.os != 'Linux'
+
+    web-tests:
+        name: Web tests (browser matrix)
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                browser: [chromium, firefox, webkit]
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+            - name: Cache VS Code web test downloads
+              uses: actions/cache@v4
+              with:
+                key: neuropilot-tests-vscode-web-v2-${{ github.repository }}-${{ runner.os }}
+                path: .vscode-test-web/
+            - name: Cache Playwright browsers
+              uses: actions/cache@v4
+              with:
+                key: neuropilot-playwright-v2-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+                path: ~/.cache/ms-playwright
+            - name: Setup pnpm
+              uses: pnpm/action-setup@v4
+              with:
+                  version: 10.14.0
+            - name: Install Node.js
+              uses: actions/setup-node@v4
+              with:
+                node-version: 22.x
+                cache: 'pnpm'
+                cache-dependency-path: './pnpm-lock.yaml'
+            - run: pnpm install --frozen-lockfile
+            - name: Ensure Playwright browsers are installed (Chromium, Firefox, WebKit)
+              run: pnpm exec playwright install --with-deps
+            - name: Build web extension and test bundle (browser)
+              run: pnpm run build:web && pnpm run test:web:browser:esbuild
+            - name: Run web tests (headless)
+              run: pnpm exec vscode-test-web --headless --browser=${{ matrix.browser }} --extensionDevelopmentPath=. --extensionTestsPath=out/web/test/browser.js test-playground
