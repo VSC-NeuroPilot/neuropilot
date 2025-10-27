@@ -805,7 +805,7 @@
 					"neuropilot.connection.userName": {
 						"type": "string",
 						"default": "Vedal",
-						"description": "Your name (to communicate who is controlling this VS Code instance alongside the API server). This will be used where the name `Vedal` would work for Neuro."
+						"description": "The name to indicate who is controlling this VS Code instance alongside the API server. This replaces the default name `Vedal`."
 					},
 					"neuropilot.connection.nameOfAPI": {
 						"type": "string",

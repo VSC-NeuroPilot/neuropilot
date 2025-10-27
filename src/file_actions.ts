@@ -307,7 +307,7 @@ export function handleCreateFile(actionData: ActionData): string | undefined {
             NEURO.client?.sendContext(`Could not create file: File ${relativePath} already exists`);
             return;
         } catch (erm: unknown) {
-            if ((erm as vscode.FileSystemError).code !== 'FileNotFound') {
+            if (erm instanceof vscode.FileSystemError && erm.code !== 'FileNotFound') {
                 notifyOnCaughtException('create_file', erm);
                 return;
             };
@@ -362,7 +362,7 @@ export function handleCreateFolder(actionData: ActionData): string | undefined {
 			NEURO.client?.sendContext(`Could not create folder: Folder ${relativePath} already exists`);
 			return;
 		} catch (erm: unknown) {
-            if ((erm as vscode.FileSystemError).code !== 'FileNotFound') {
+            if (erm instanceof vscode.FileSystemError && erm.code !== 'FileNotFound') {
                 notifyOnCaughtException('create_folder', erm);
                 return;
             }
@@ -408,7 +408,7 @@ export function handleRenameFileOrFolder(actionData: ActionData): string | undef
             NEURO.client?.sendContext(`Could not rename: ${newRelativePath} already exists`);
             return;
         } catch (erm: unknown) {
-            if ((erm as vscode.FileSystemError).code !== 'FileNotFound') {
+            if (erm instanceof vscode.FileSystemError && erm.code !== 'FileNotFound') {
                 notifyOnCaughtException('rename_file_or_folder', erm);
                 return;
             };

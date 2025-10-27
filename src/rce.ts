@@ -231,7 +231,7 @@ export function acceptRceRequest(): void {
     } catch (erm: unknown) {
         const actionName = NEURO.rceRequest.actionData.name;
         notifyOnCaughtException(actionName, erm);
-        NEURO.client?.sendActionResult(NEURO.rceRequest.actionData.id, true, `An error occured while executing the action "${actionName}". You can retry if you like, but it may be better to ask Vedal to check what's up.`);
+        NEURO.client?.sendActionResult(NEURO.rceRequest.actionData.id, true, `An error occurred while executing the action "${actionName}". You can retry if you like, but it may be better to ask ${CONNECTION.userName} to check what's up.`);
     }
 
     clearRceRequest();
