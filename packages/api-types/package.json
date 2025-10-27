@@ -26,5 +26,10 @@
     "peerDependencies": {
         "typescript": "^5.8.2"
     },
+    "peerDependenciesMeta": {
+        "typescript": {
+            "optional": true
+        }
+    },
     "license": "MIT"
 }

@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import { getFence, logOutput, notifyOnCaughtException, simpleFileName } from '@/utils';
 import { NEURO } from '@/constants';
 import { CONNECTION, PERMISSIONS, getPermissionLevel, isActionEnabled } from '@/config';
-import { PermissionLevel } from '@vsc-neuropilot/api-types/settings/permissions';
+import { PermissionLevel } from '@vsc-neuropilot/api-types';
 
 export function sendCurrentFile() {
     const editor = vscode.window.activeTextEditor;

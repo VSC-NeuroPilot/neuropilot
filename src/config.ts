@@ -2,23 +2,11 @@ import * as vscode from 'vscode';
 import { Action } from 'neuro-game-sdk';
 import { NEURO } from './constants';
 import { logOutput } from './utils';
-import { Permission, PermissionLevel } from '@vsc-neuropilot/api-types/settings/permissions';
+import { Permission, PermissionLevel, DeprecatedSetting } from '@vsc-neuropilot/api-types';
 
 //#region Types
 
 export type CursorPositionContextStyle = 'off' | 'inline' | 'lineAndColumn' | 'both';
-
-export interface Permission {
-    /** The ID of the permission in package.json, without the `neuropilot.permission.` prefix. */
-    id: string;
-    /** The infinitive of the permission to construct sentences (should fit the scheme "permission to {something}"). */
-    infinitive: string;
-}
-
-interface DeprecatedSetting {
-    old: string;
-    new: string | ((target: vscode.ConfigurationTarget) => Promise<void>);
-}
 
 //#endregion
 

@@ -2,7 +2,8 @@ import * as vscode from 'vscode';
 import { NEURO } from '@/constants';
 import { normalizePath, getWorkspacePath, logOutput, isPathNeuroSafe, getWorkspaceUri } from '@/utils';
 import { PERMISSIONS, getPermissionLevel, CONFIG, isActionEnabled } from '@/config';
-import { ActionData, actionValidationAccept, actionValidationFailure, ActionValidationResult, RCEAction, contextFailure, stripToActions } from '@/neuro_client_helper';
+import { actionValidationAccept, actionValidationFailure, RCEAction, contextFailure, stripToActions } from '@/neuro_client_helper';
+import { ActionData, ActionValidationResult } from '@vsc-neuropilot/api-types';
 import assert from 'node:assert';
 import { targetedFileLintingResolvedEvent, targetedFolderLintingResolvedEvent, workspaceLintingResolvedEvent } from '@events/linting';
 

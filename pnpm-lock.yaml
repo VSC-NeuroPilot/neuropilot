@@ -115,7 +115,39 @@ importers:
         specifier: ^8.26.0
         version: 8.39.1(eslint@9.33.0)(typescript@5.9.2)
 
-  packages/api-types: {}
+  packages/api-helper:
+    dependencies:
+      '@types/json-schema':
+        specifier: 7.0.15
+        version: 7.0.15
+      '@types/vscode':
+        specifier: 1.95.0
+        version: 1.95.0
+      '@vsc-neuropilot/api-types':
+        specifier: workspace:*
+        version: link:../api-types
+    devDependencies:
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.2
+
+  packages/api-types:
+    dependencies:
+      '@types/json-schema':
+        specifier: 7.0.15
+        version: 7.0.15
+      '@types/vscode':
+        specifier: 1.95.0
+        version: 1.95.0
+      neuro-game-sdk:
+        specifier: ^1.0.5
+        version: 1.0.5(ws@8.18.3)
+    devDependencies:
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.2
+
+  packages/cli: {}
 
 packages:
 
@@ -665,6 +697,9 @@ packages:
 
   '@types/vscode@1.103.0':
     resolution: {integrity: sha512-o4hanZAQdNfsKecexq9L3eHICd0AAvdbLk6hA60UzGXbGH/q8b/9xv2RgR7vV3ZcHuyKVq7b37IGd/+gM4Tu+Q==}
+
+  '@types/vscode@1.95.0':
+    resolution: {integrity: sha512-0LBD8TEiNbet3NvWsmn59zLzOFu/txSlGxnv5yAFHCrhG9WvAnR3IvfHzMOs2aeWqgvNjq9pO99IUw8d3n+unw==}
 
   '@types/ws@8.18.1':
     resolution: {integrity: sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==}
@@ -3720,6 +3755,8 @@ snapshots:
   '@types/sarif@2.1.7': {}
 
   '@types/vscode@1.103.0': {}
+
+  '@types/vscode@1.95.0': {}
 
   '@types/ws@8.18.1':
     dependencies:

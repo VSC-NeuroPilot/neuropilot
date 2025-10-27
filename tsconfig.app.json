@@ -5,5 +5,5 @@
         "outDir": "./out/desktop"
     },
     "include": ["src/desktop/**/*"],
-    "exclude": ["src/web"]
+    "exclude": ["src/web", "**/node_modules/**"]
 }

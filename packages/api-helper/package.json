@@ -13,13 +13,18 @@
   "dependencies": {
     "@types/vscode": "1.95.0",
     "@types/json-schema": "7.0.15",
-    "neuro-game-sdk": "^1.0.5"
+    "@vsc-neuropilot/api-types": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.8.2"
   },
   "peerDependencies": {
     "typescript": "^5.8.2"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
   },
   "publishConfig": {
     "access": "public",

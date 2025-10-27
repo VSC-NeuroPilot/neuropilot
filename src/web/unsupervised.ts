@@ -1,7 +1,8 @@
 import { NEURO } from '@/constants';
 import { fileActions, registerFileActions } from '@/file_actions';
 import { editingActions, registerEditingActions } from '@/editing';
-import { ActionData, RCEAction } from '@/neuro_client_helper';
+import { RCEAction } from '@/neuro_client_helper';
+import { ActionData } from '@vsc-neuropilot/api-types';
 import { lintActions, registerLintActions } from '@/lint_problems';
 import { cancelRequestAction, RCEActionHandler } from '@/rce';
 

@@ -4,11 +4,11 @@
  */
 
 import * as vscode from 'vscode';
-import { ActionData, RCEAction, stripToAction } from '@/neuro_client_helper';
+import { RCEAction, stripToAction } from '@/neuro_client_helper';
 import { NEURO } from '@/constants';
 import { checkVirtualWorkspace, checkWorkspaceTrust, logOutput, notifyOnCaughtException } from '@/utils';
 import { ACTIONS, CONFIG, CONNECTION, getPermissionLevel, isActionEnabled, PERMISSIONS } from '@/config';
-import { PermissionLevel } from '@vsc-neuropilot/api-types/settings/permissions';
+import { PermissionLevel, ActionData } from '@vsc-neuropilot/api-types';
 import { handleRunTask } from '@/tasks';
 import { validate } from 'jsonschema';
 import type { RCECancelEvent } from '@events/utils';

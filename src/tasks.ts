@@ -8,7 +8,8 @@ import * as vscode from 'vscode';
 
 import { NEURO } from '@/constants';
 import { logOutput, formatActionID, getFence, checkWorkspaceTrust, checkVirtualWorkspace } from '@/utils';
-import { ActionData, RCEAction, actionValidationAccept, actionValidationFailure, stripToActions } from '@/neuro_client_helper';
+import { RCEAction, actionValidationAccept, actionValidationFailure, stripToActions } from '@/neuro_client_helper';
+import { ActionData } from '@vsc-neuropilot/api-types';
 import { ACTIONS, PERMISSIONS, getPermissionLevel, isActionEnabled } from '@/config';
 import { notifyOnTaskFinish } from '@events/shells';
 

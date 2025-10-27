@@ -6,7 +6,8 @@ import { fileTypeFromBuffer } from 'file-type';
 import { NEURO } from '@/constants';
 import { ACCESS, CONFIG, CONNECTION, CursorPositionContextStyle, getPermissionLevel, PERMISSIONS } from '@/config';
 
-import { ActionValidationResult, ActionData, actionValidationAccept, actionValidationFailure } from '@/neuro_client_helper';
+import { actionValidationAccept, actionValidationFailure } from '@/neuro_client_helper';
+import { ActionValidationResult, ActionData } from '@vsc-neuropilot/api-types';
 import assert from 'node:assert';
 import { patienceDiff } from './patience_diff';
 import { fireCursorPositionChangedEvent } from '@events/cursor';

@@ -4,7 +4,8 @@ import type { Change, CommitOptions, Commit, Repository, API, GitExtension } fro
 import { ForcePushMode } from '@typing/git.d';
 import { StatusStrings, RefTypeStrings } from '@typing/git_status';
 import { logOutput, simpleFileName, isPathNeuroSafe, normalizePath, getWorkspacePath } from '@/utils';
-import { ActionData, ActionValidationResult, actionValidationAccept, actionValidationFailure, RCEAction, contextFailure, stripToActions, actionValidationRetry } from '@/neuro_client_helper';
+import { actionValidationAccept, actionValidationFailure, RCEAction, contextFailure, stripToActions, actionValidationRetry } from '@/neuro_client_helper';
+import { ActionData, ActionValidationResult } from '@vsc-neuropilot/api-types';
 import { PERMISSIONS, getPermissionLevel, isActionEnabled } from '@/config';
 import assert from 'node:assert';
 import { RCECancelEvent } from '@events/utils';

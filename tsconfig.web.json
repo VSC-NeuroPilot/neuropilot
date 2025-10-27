@@ -14,5 +14,6 @@
   ],
   "exclude": [
     "src/desktop/**/*",
+    "**/node_modules/**"
   ]
 }

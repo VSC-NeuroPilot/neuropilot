@@ -2,36 +2,11 @@
  * Helper functions and types for interacting with the Neuro Game SDK.
  */
 import { Action } from 'neuro-game-sdk';
-import { PermissionLevel } from '@vsc-neuropilot/api-types/settings/permissions';
-import { ACTIONS, Permission } from '@/config';
+import { Permission, PermissionLevel, PromptGenerator, ActionData, ActionValidationResult } from '@vsc-neuropilot/api-types';
+import { ACTIONS } from '@/config';
 import { logOutput, turtleSafari } from '@/utils';
-import { ActionData, ActionValidationResult, RCEAction, PromptGenerator } from '@vsc-neuropilot/api-types/utils/client_helpers';
 import { RCECancelEvent } from '@events/utils';
 import { JSONSchema7 } from 'json-schema';
-
-/** Data used by an action handler. */
-export interface ActionData {
-    id: string;
-    name: string;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    params?: any;
-}
-
-/** The result of attempting to execute an action client-side. */
-export interface ActionValidationResult {
-    /**
-     * If `false`, the action handler is not executed.
-     * Warning: This is *not* the success parameter of the action result.
-     */
-    success: boolean;
-    /**
-     * The message to send Neuro.
-     * If success is `true`, this is optional, otherwise it should be an error message.
-     */
-    message?: string;
-    /** If `true`, Neuro should retry the action if it was forced. */
-    retry?: boolean;
-}
 
 type TypedAction = Omit<Action, 'schema'> & { schema?: JSONSchema7 };
 

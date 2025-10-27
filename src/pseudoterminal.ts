@@ -9,7 +9,8 @@ import { spawn, ChildProcessWithoutNullStreams } from 'node:child_process';
 import { NEURO } from '@/constants';
 import { checkWorkspaceTrust, checkVirtualWorkspace } from '@/utils';
 import { logOutput, delayAsync, getFence } from '@/utils';
-import { ActionData, actionValidationAccept, actionValidationFailure, ActionValidationResult, RCEAction, contextFailure, stripToActions } from '@/neuro_client_helper';
+import { actionValidationAccept, actionValidationFailure, RCEAction, contextFailure, stripToActions } from '@/neuro_client_helper';
+import { ActionData, ActionValidationResult } from '@vsc-neuropilot/api-types';
 import { CONFIG, PERMISSIONS, getPermissionLevel, isActionEnabled } from '@/config';
 import { notifyOnTerminalClose } from '@events/shells';
 
