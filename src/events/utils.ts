@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { PromptGenerator } from '@vsc-neuropilot/api-types/utils/client_helpers';
+import { PromptGenerator } from '@vsc-neuropilot/api-types';
 
 export interface RCECancelEventInitializer<T = unknown> {
     /** The reason that will be used to send to Neuro-sama. */
