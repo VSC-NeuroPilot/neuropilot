@@ -5,7 +5,7 @@
  * This code does the following:
  * 1. We sanitize tool names because MCP tool names may not be valid Neuro action names 
  * (e.g., "GetFileContent" -> "get_file_content")
- * 3. When Neuro calls an action, we need to find the original MCP tool name
+ * 2. When Neuro calls an action, we need to find the original MCP tool name
  */
 
 /**

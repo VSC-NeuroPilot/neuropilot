@@ -11,6 +11,7 @@ import { ACTIONS, CONFIG, CONNECTION, getPermissionLevel, isActionEnabled, Permi
 import { handleRunTask } from '@/tasks';
 import { validate } from 'jsonschema';
 import type { RCECancelEvent } from '@events/utils';
+import { getMCPAction, isMCPAction } from '@/mcp/mcp_actions';
 
 /**
  * A prompt parameter can either be a string or a function that converts ActionData into a prompt string.
@@ -266,12 +267,15 @@ export function denyRceRequest(): void {
 export async function RCEActionHandler(actionData: ActionData, actionList: Record<string, RCEAction>, checkTasks: boolean) {
     const actionKeys = Object.keys(actionList);
     try {
-        if (actionKeys.includes(actionData.name) || checkTasks === true && NEURO.tasks.find(task => task.id === actionData.name)) {
+        if (actionKeys.includes(actionData.name) || isMCPAction(actionData.name) || checkTasks === true && NEURO.tasks.find(task => task.id === actionData.name)) {
             NEURO.actionHandled = true;
 
             let action: RCEAction;
             if (actionKeys.includes(actionData.name)) {
                 action = actionList[actionData.name];
+            }
+            else if (isMCPAction(actionData.name)) {
+                action = getMCPAction(actionData.name)!;
             }
             else {
                 const task = NEURO.tasks.find(task => task.id === actionData.name)!;

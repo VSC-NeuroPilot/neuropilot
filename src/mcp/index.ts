@@ -22,3 +22,20 @@ export { ToolRegistry } from './registry';
 
 // Export MCP client
 export { MCPClient, type MCPServerConfig, type ToolCallResult } from './mcp_client';
+
+// Export MCP manager
+export { MCPManager } from './mcp_manager';
+
+// Export MCP actions (main integration point)
+export {
+    mcpManager,
+    registerMCPActions,
+    unregisterMCPActions,
+    refreshMCPActions,
+    getMCPStatus,
+    isMCPAction,
+    autoConnectMCP,
+} from './mcp_actions';
+
+// Export MCP commands
+export { registerMCPCommands } from './mcp_commands';
