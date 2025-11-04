@@ -1039,6 +1039,8 @@
 		"typescript-eslint": "^8.26.0"
 	},
 	"dependencies": {
+		"@cfworker/json-schema": "4.1.1",
+		"@modelcontextprotocol/sdk": "1.21.0",
 		"file-type": "^21.0.0",
 		"glob-to-regexp": "^0.4.1",
 		"jsonschema": "^1.5.0",
