@@ -8,6 +8,7 @@
  */
 
 import type { JSONSchema7 } from 'json-schema';
+import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 
 /**
  * JSON Schema keywords that are forbidden in Neuro action schemas.
@@ -195,14 +196,10 @@ export function parseActionData(dataStr: string | null | undefined): Record<stri
 }
 
 /**
- * Temporary type definition for MCP Tool (until we integrate the MCP SDK).
- * This matches the structure from @modelcontextprotocol/sdk.
+ * Type alias for MCP Tool from the SDK.
+ * Re-exported for convenience.
  */
-export interface MCPTool {
-    name: string;
-    description?: string;
-    inputSchema?: JSONSchema7;
-}
+export type MCPTool = Tool;
 
 /**
  * Type definition for a Neuro Action (from neuro-game-sdk).
@@ -256,7 +253,8 @@ export function mcpToolToNeuroAction(tool: MCPTool): NeuroAction {
     const description = tool.description || `Execute ${tool.name}`;
 
     // Simplify the schema
-    const schema = simplifySchema(tool.inputSchema || null);
+    // Note: The SDK's Tool.inputSchema is typed with unknown, so we cast to JSONSchema7
+    const schema = simplifySchema((tool.inputSchema as JSONSchema7) || null);
 
     return {
         name: actionName,

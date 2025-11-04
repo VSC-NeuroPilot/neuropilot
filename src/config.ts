@@ -229,6 +229,10 @@ function getActions<T>(key: string): T | undefined {
     return vscode.workspace.getConfiguration('neuropilot').get<T>('actions.' + key);
 }
 
+function getMCPConfig<T>(key: string): T | undefined {
+    return vscode.workspace.getConfiguration('neuropilot').get<T>('mcp.' + key);
+}
+
 export function isActionEnabled(action: string | Action): boolean {
     const name = typeof action === 'string' ? action : action.name;
     return !ACTIONS.disabledActions.includes(name) && !NEURO.tempDisabledActions.includes(name);
@@ -286,6 +290,7 @@ class Permissions {
     get terminalAccess() { return { id: 'terminalAccess', infinitive: 'access the terminal' }; }
     get accessLintingAnalysis() { return { id: 'accessLintingAnalysis', infinitive: 'view linting problems' }; }
     get getUserSelection() { return { id: 'getUserSelection', infinitive: `get ${CONNECTION.userName}'s cursor` }; }
+    get mcpTools() { return { id: 'mcpTools', infinitive: 'execute MCP tools' }; }
 }
 
 export const PERMISSIONS = new Permissions();
@@ -345,3 +350,12 @@ class Actions {
 }
 
 export const ACTIONS = new Actions();
+
+class MCPConfig {
+    get enabled(): boolean { return getMCPConfig<boolean>('enabled') ?? false; }
+    get serverUrl(): string { return getMCPConfig<string>('serverUrl') ?? ''; }
+    get timeout(): number { return getMCPConfig<number>('timeout') ?? 30000; }
+    get autoConnect(): boolean { return getMCPConfig<boolean>('autoConnect') ?? false; }
+}
+
+export const MCP = new MCPConfig();

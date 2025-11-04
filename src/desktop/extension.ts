@@ -24,6 +24,7 @@ import {
 import { registerChatParticipant } from '@/chat';
 import { registerUnsupervisedActions, registerUnsupervisedHandlers } from './unsupervised';
 import { registerSendSelectionToNeuro } from '@/editing';
+import { registerMCPCommands, autoConnectMCP } from '@/mcp';
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -41,6 +42,9 @@ export function activate(context: vscode.ExtensionContext) {
     // Register commands
     NEURO.context!.subscriptions.push(...registerCommonCommands());
 
+    // Register MCP commands
+    NEURO.context!.subscriptions.push(...registerMCPCommands(context));
+
     // Setup event handlers
     NEURO.context!.subscriptions.push(...setupCommonEventHandlers());
 
@@ -51,7 +55,7 @@ export function activate(context: vscode.ExtensionContext) {
     registerChatParticipant();
 
     // Setup client connected handlers
-    setupClientConnectedHandlers(reloadTasks, registerUnsupervisedActions, registerUnsupervisedHandlers); // reloadTasks added to set it up at the same time
+    setupClientConnectedHandlers(reloadTasks, registerUnsupervisedActions, registerUnsupervisedHandlers, autoConnectMCP); // reloadTasks added to set it up at the same time
 
     // Create status bar item
     createStatusBarItem();

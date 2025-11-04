@@ -11,7 +11,7 @@
     "neuropilot.permission.gitOperations": "Copilot",
     "neuropilot.permission.gitConfigs": "Copilot",
     "neuropilot.showTimeOnTerminalStart": true,
-    "neuropilot.permission.terminalAccess": "Copilot",
+    "neuropilot.permission.terminalAccess": "Off",
     "neuropilot.permission.accessLintingAnalysis": "Copilot",
     "neuropilot.permission.getUserSelection": "Copilot",
     "neuropilot.terminals": [
@@ -48,5 +48,10 @@
     "files.autoSave": "afterDelay",
     "files.autoSaveDelay": 1000,
     "neuropilot.actions.hideCopilotRequests": false,
-    "neuropilot.connection.nameOfAPI": "Neuro"
+    "neuropilot.connection.nameOfAPI": "Neuro",
+    "neuropilot.mcp.enabled": true,
+    "neuropilot.mcp.serverUrl": "http://127.0.0.1:3000",
+    "neuropilot.mcp.autoConnect": false,
+    "neuropilot.permission.mcpTools": "Copilot",
+    "neuropilot.access.dotFiles": false
 }
