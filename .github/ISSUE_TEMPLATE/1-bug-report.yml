@@ -1,0 +1,66 @@
+name: Bug report
+description: File a bug report
+title: "[Bug] "
+type: Bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing a bug report!
+  
+  - type: dropdown
+    id: build
+    attributes:
+      label: Build
+      description: Which build are you running?
+      options:
+        - Desktop (Node.js)
+        - Browser (WebWorker)
+      default: 0
+    validations:
+      required: true
+    
+  - type: dropdown
+    id: platform
+    attributes:
+      label: OS/Browser
+      description: Which OS/Browser are you running?
+      options:
+        - Windows (Desktop)
+        - MacOS (Desktop)
+        - Linux (Desktop) - specify your Linux distro below.
+        - Chrome (Browser)
+        - Firefox (Browser)
+        - Edge (Browser)
+        - Safari (Browser)
+        - Other (Browser) - specify your browser below.
+      default: 0
+    validations:
+      required: true
+    
+  - type: input
+    id: distro
+    attributes:
+      label: Specific distro/browser
+      description: If you have selected either the `Linux (Desktop)` or `Other (Browser)` options above, please specify your specific distro/browser here.
+      placeholder: Linux, Firefox
+    validations:
+      required: false
+    
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe the bug in detail here, including actual and expected behaviour.
+      placeholder: I was trying to get Neuro to run `rm -rf /`, then...
+    validations:
+      required: true
+  
+  - type: textarea
+    id: logs
+    attributes:
+      label: Extension log output
+      description: Please copy your logs and paste them into this field. This will be auto-formatted into code, so do not use backticks.
+      render: shell
+    validations:
+      required: true

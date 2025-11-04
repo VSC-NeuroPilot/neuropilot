@@ -128,8 +128,8 @@ const commonFileEvents: ((actionData: ActionData) => RCECancelEvent | null)[] = 
 ];
 
 export const fileActions = {
-    get_files: {
-        name: 'get_files',
+    get_workspace_files: { // pending functionality change, see https://github.com/VSC-NeuroPilot/neuropilot/issues/153
+        name: 'get_workspace_files',
         description: 'Get a list of files in the workspace',
         permissions: [PERMISSIONS.openFiles],
         handler: handleGetFiles,
@@ -258,7 +258,7 @@ export const fileActions = {
 export function registerFileActions() {
 	if (getPermissionLevel(PERMISSIONS.openFiles)) {
 		NEURO.client?.registerActions(stripToActions([
-			fileActions.get_files,
+			fileActions.get_workspace_files,
 			fileActions.open_file,
 			fileActions.read_file,
 		]).filter(isActionEnabled));

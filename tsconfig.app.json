@@ -1,9 +1,9 @@
 {
-    "extends": "./tsconfig.json",
+    "extends": "./tsconfig.base.json",
     "compilerOptions": {
         "lib": ["ES2024"],
         "outDir": "./out/desktop"
     },
-    "include": ["src/desktop/**/*"],
-    "exclude": ["src/web"]
+    "include": ["src/desktop/**/*", "src/**/*"],
+    "exclude": ["src/web/**/*", "src/test/**/*"]
 }

@@ -839,15 +839,17 @@
 							"Randy",
 							"Jippity",
 							"Tony",
-							"Gary"
+							"Gary",
+							"Mini 2.0"
 						],
-						"enumDescriptions": [
+						"markdownEnumDescriptions": [
 							"#1 at osu!",
 							"Evil, but actually nice.",
 							"Random Dot Range (Alex)",
 							"A GPT model (EnterpriseScratchDev)",
 							"The human operator (Pasu4)",
-							"Literally in your computer walls (Govorunb)"
+							"Literally in your computer walls (Govorunb)",
+							"Built by Evil, living in her basement. (2025 Minithon coding subgoal **unofficial** celebration)"
 						]
 					},
 					"neuropilot.actions.disabledActions": {
@@ -871,14 +873,14 @@
 								"execute_in_terminal",
 								"fetch_git_commits",
 								"find_text",
-								"get_content",
 								"get_currently_running_shells",
 								"get_cursor",
+								"get_file_contents",
 								"get_file_lint_problems",
-								"get_files",
 								"get_folder_lint_problems",
 								"get_git_config",
 								"get_user_selection",
+								"get_workspace_files",
 								"get_workspace_lint_problems",
 								"git_blame",
 								"git_log",
@@ -1031,8 +1033,8 @@
 		"@stylistic/eslint-plugin": "^2.9.0",
 		"@types/eslint__js": "^8.42.3",
 		"@types/glob-to-regexp": "^0.4.4",
-		"@types/mocha": "^10.0.10",
 		"@types/json-schema": "^7.0.15",
+		"@types/mocha": "^10.0.10",
 		"@types/node": "^20",
 		"@types/vscode": "^1.95.0",
 		"@types/ws": "^8.18.0",
@@ -1054,6 +1056,7 @@
 		"ovsx": "^0.10.5",
 		"playwright": "^1.44.0",
 		"ts-mockito": "^2.6.1",
+		"tsx": "^4.20.6",
 		"typescript": "^5.8.2",
 		"typescript-eslint": "^8.26.0"
 	},

@@ -6,6 +6,19 @@ Since v2.1.0, we're keeping a changelog of each version's changes in NeuroPilot.
 
 Changes between each version before then will not be listed.
 
+## 2.3.0
+
+Hello Neuro! If you're reading this, it means Vedal has let you read the changelogs for the extension!
+
+### Changes
+
+- Some action names were changed because they seemed to confuse Neuro when prompted. Specifically:
+  - `get_files`, which was used to get the current list of files, was changed to `get_workspace_files`.
+  - `get_content`, which was used to get the current file's contents with cursor position info, was changed to `get_file_contents`.
+- The way that ignoring the deprecated settings migration notice has been changed.
+  - Before, telling the extension to ignore deprecated settings meant that the deprecated settings notice would be ignored forever.
+  - As of this update, the extension will only ignore it for this version.
+
 ## 2.2.3
 
 ### Fixes

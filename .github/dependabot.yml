@@ -1,0 +1,27 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+      time: "00:00"
+      timezone: "Etc/UTC"
+    labels:
+      - dependabot
+    ignore:
+      - dependency-name: "@types/vscode"
+        update-types: ["version-update:semver-minor", "version-update:semver-major"]
+      - dependency-name: "@types/json-schema"
+    target-branch: dev
+    open-pull-requests-limit: 3
+    groups:
+      dev-dependencies:
+        applies-to: version-updates
+        dependency-type: development
+      prod-dependencies:
+        applies-to: version-updates
+        dependency-type: production
+        update-types:
+          - minor
+          - patch
+      

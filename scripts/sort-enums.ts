@@ -28,14 +28,12 @@ function localeSort(a: any, b: any) {
     return String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: 'base' });
 }
 
-const targetSetting = 'neuropilot.disabledActions';
+const targetSetting = 'neuropilot.actions.disabledActions';
 let found = false;
 
 function trySortEnumOnProps(props: Record<string, any>): boolean {
-    console.log('hi 1');
     if (!props || typeof props !== 'object') return false;
     const prop = props[targetSetting];
-    console.log('hi 2');
     if (!prop) return false;
     // We expect the enum to live under prop.items.enum
     if (prop.items && Array.isArray(prop.items.enum)) {

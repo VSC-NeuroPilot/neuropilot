@@ -1,0 +1,39 @@
+{
+	"compilerOptions": {
+		"composite": true,
+		"module": "commonjs",
+		"moduleResolution": "Node",
+		"esModuleInterop": true,
+		"target": "es2020",
+		"outDir": "out",
+		"sourceMap": true,
+		"strict": true,
+		"paths": {
+			"~/*": [
+				"./*"
+			],
+			"@/*": [
+				"./src/*"
+			],
+			"@shared/*": [
+				"./src/shared/*"
+			],
+			"@typing/*": [
+				"./src/types/*"
+			],
+			"@test/*": [
+				"./src/test/*"
+			],
+			"@events/*": [
+				"./src/events/*"
+			]
+		}
+	},
+	"exclude": [
+		"node_modules",
+		".vscode-test",
+		"playground",
+		"docs",
+		"project-files"
+	]
+}

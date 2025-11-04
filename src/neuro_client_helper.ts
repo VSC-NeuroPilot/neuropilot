@@ -41,7 +41,7 @@ export interface RCEAction<T = unknown> extends TypedAction {
     /** The permissions required to execute this action. */
     permissions: Permission[];
     /** The function to validate the action data *after* checking the schema. */
-    validators?: (((actionData: ActionData) => ActionValidationResult) | ((actionData: ActionData) => Promise<ActionValidationResult>))[];
+    validators?: ((actionData: ActionData) => (ActionValidationResult | Promise<ActionValidationResult>))[];
     /**
      * Cancellation events attached to the action that will be automatically set up.
      * Each cancellation event will be setup in parallel to each other.

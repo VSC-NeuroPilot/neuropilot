@@ -1,5 +1,5 @@
 {
-  "extends": "./tsconfig.json",
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "target": "es2024",
     "lib": [
@@ -10,9 +10,11 @@
     "outDir": "./out/web" // ESBuild will bundle anyway
   },
   "include": [
-    "src/web/**/*"
+    "src/web/**/*",
+    "src/**/*"
   ],
   "exclude": [
     "src/desktop/**/*",
+    "src/test/**/*"
   ]
 }

@@ -213,8 +213,8 @@ export const editingActions = {
         cancelEvents: commonCancelEventsWithCursor,
         promptGenerator: 'get her current cursor position and the text surrounding it.',
     },
-    get_content: {
-        name: 'get_content',
+    get_file_contents: {
+        name: 'get_file_contents',
         description: 'Get the contents of the current file.',
         permissions: [PERMISSIONS.editActiveDocument],
         handler: handleGetContent,
@@ -590,7 +590,7 @@ export const editingActions = {
         validators: [checkCurrentFile],
         promptGenerator: 'get your cursor position and surrounding text.',
     },
-    replace_user_selection: { // TODO: cancellation event
+    replace_user_selection: {
         name: 'replace_user_selection',
         description: 'Replace insert_turtle_here\'s current selection with the provided text.'
             + ' If insert_turtle_here has no selection, this will insert the text at insert_turtle_here\'s current cursor position.'
@@ -698,7 +698,7 @@ export function registerEditingActions() {
         NEURO.client?.registerActions(stripToActions([
             editingActions.place_cursor,
             editingActions.get_cursor,
-            editingActions.get_content,
+            editingActions.get_file_contents,
             editingActions.insert_text,
             editingActions.insert_lines,
             editingActions.replace_text,

@@ -6,7 +6,7 @@ import { ActionData } from '@/neuro_client_helper';
 suite('file Actions', () => {
     test('get_files has a non-empty fixed prompt', () => {
         // === Arrange & Act ===
-        const prompt = fileActions.get_files.promptGenerator as string;
+        const prompt = fileActions.get_workspace_files.promptGenerator as string;
 
         // === Assert ===
         assert.ok(typeof prompt === 'string' && prompt.length > 0);

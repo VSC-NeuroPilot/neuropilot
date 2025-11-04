@@ -99,8 +99,9 @@ function getTargetConfig<T>(config: vscode.WorkspaceConfiguration, key: string, 
 }
 
 /** Function to check deprecated settings */
-export async function checkDeprecatedSettings() {
-    if (NEURO.context?.globalState.get('no-migration')) return;
+export async function checkDeprecatedSettings(version: string) {
+    const noMigration = NEURO.context?.globalState.get<string>('no-migration');
+    if (noMigration === version) return;
     const cfg = vscode.workspace.getConfiguration('neuropilot');
     const deprecatedSettings: Record<string, Map<vscode.ConfigurationTarget, unknown>> = {};
 
@@ -155,7 +156,7 @@ export async function checkDeprecatedSettings() {
 
         const notif = await vscode.window.showInformationMessage(
             `You have ${totalConfigs} deprecated configuration${totalConfigs === 1 ? '' : 's'} in your ${targetList} setting${targetNames.length === 1 ? '' : 's'}. Would you like to migrate them?`,
-            'Yes', 'No', 'Don\'t show again',
+            'Yes', 'No', 'Don\'t show again for this update',
         );
 
         if (notif) {
@@ -186,11 +187,11 @@ export async function checkDeprecatedSettings() {
                     break;
                 case 'No':
                     break;
-                case 'Don\'t show again':
+                case 'Don\'t show again for this update':
                     if (NEURO.context) {
-                        NEURO.context.globalState.update('no-migration', true);
+                        NEURO.context.globalState.update('no-migration', version);
                     } else {
-                        logOutput('ERROR', 'Couldn\'t save no-migration preference to memento because of a missing extension context.');
+                        logOutput('ERROR', 'Couldn\'t save no-migration preference to memento, most likely because of a missing extension context.');
                     }
                     break;
             }

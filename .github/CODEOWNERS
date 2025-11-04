@@ -1,0 +1,5 @@
+# Only using CODEOWNERS to lock do-not-replace files.
+src/patience_diff.ts @Pasu4
+src/types/git.d.ts @KTrain5169
+src/types/git_status.ts @KTrain5169
+src/types/ts-mockito.d.ts @frogneko
