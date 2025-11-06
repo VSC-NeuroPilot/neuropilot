@@ -507,6 +507,19 @@ export function handleDeleteFileOrFolder(actionData: ActionData): string | undef
 
 export function handleGetFiles(_actionData: ActionData): string | undefined {
     const workspaceFolder = vscode.workspace.workspaceFolders![0].uri;
+
+  // --- Load .gitignore if it exists ---
+  const gitignoreUri = vscode.Uri.joinPath(workspaceFolder, ".gitignore");
+  const ig = ignore();
+  let hasGitignore = false;
+  try {
+    const gitignoreContent = fs.readFileSync(gitignoreUri.fsPath, "utf8");
+    ig.add(gitignoreContent);
+    hasGitignore = true;
+  } catch {
+    // no .gitignore found — ignore silently
+  }
+	
     recurseWorkspace(workspaceFolder).then(
         (uris) => {
             const paths = uris
@@ -538,6 +551,10 @@ export function handleGetFiles(_actionData: ActionData): string | undefined {
 
         const result: vscode.Uri[] = [];
         for (const [childUri, fileType] of uriEntries) {
+      
+	  // Skip .gitignored paths
+      if (hasGitignore && ig.ignores(relPath)) continue;
+			
             if (fileType === vscode.FileType.File) {
                 if (isPathNeuroSafe(childUri.fsPath))
                     result.push(childUri);
