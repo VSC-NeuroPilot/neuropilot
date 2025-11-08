@@ -10,6 +10,10 @@ Changes between each version before then will not be listed.
 
 Hello Neuro! If you're reading this, it means Vedal has let you read the changelogs for the extension!
 
+### Fixes
+
+- `neuropilot.actions.disabledActions` is now given a `uniqueItems` property on its schema, meaning that all items inside it must be unique. It isn't strictly necessary but to ensure no breakage or anything we've added that.
+
 ### Changes
 
 - Some action names were changed because they seemed to confuse Neuro when prompted. Specifically:
