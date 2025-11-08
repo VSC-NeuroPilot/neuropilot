@@ -3,8 +3,8 @@
  * Neuro action names and MCP tool names.
  *
  * This code does the following:
- * 1. We sanitize tool names because MCP tool names may not be valid Neuro action names 
- * (e.g., "GetFileContent" -> "get_file_content")
+ * 1. We sanitize tool names because MCP tool names may not be valid Neuro action names
+ * (e.g., "GetFileContent" -> "mcp_get_file_content")
  * 2. When Neuro calls an action, we need to find the original MCP tool name
  */
 
@@ -13,12 +13,12 @@
  *
  * @example
  * const registry = new ToolRegistry();
- * registry.register('get_file_content', 'GetFileContent');
+ * registry.register('mcp_get_file_content', 'GetFileContent');
  *
- * registry.getMCPToolName('get_file_content'); // => 'GetFileContent'
- * registry.getNeuroActionName('GetFileContent'); // => 'get_file_content'
+ * registry.getMCPToolName('mcp_get_file_content'); // => 'GetFileContent'
+ * registry.getNeuroActionName('GetFileContent'); // => 'mcp_get_file_content'
  *
- * registry.hasNeuroAction('get_file_content'); // => true
+ * registry.hasNeuroAction('mcp_get_file_content'); // => true
  * registry.hasMCPTool('GetFileContent'); // => true
  */
 export class ToolRegistry {

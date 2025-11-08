@@ -9,7 +9,7 @@
 
 import { NEURO } from '../constants';
 import { logOutput } from '../utils';
-import { isActionEnabled, PERMISSIONS, PermissionLevel, MCP } from '../config';
+import { isActionEnabled, PERMISSIONS, PermissionLevel, MCP, getPermissionLevel } from '../config';
 import { ActionData, RCEAction, stripToActions } from '../neuro_client_helper';
 import { MCPManager } from './mcp_manager';
 import type { NeuroAction } from './translation';
@@ -70,6 +70,14 @@ export async function registerMCPActions(config: MCPServerConfig): Promise<numbe
             const enabledActions = rceActions.filter(a => isActionEnabled(a));
             NEURO.client.registerActions(stripToActions(enabledActions));
             logOutput('INFO', `MCP: Registered ${enabledActions.length} tools as Neuro actions`);
+
+            // Send context message to Neuro about the new tools
+            const toolCount = enabledActions.length;
+            if (toolCount > 0) {
+                const contextMessage = `An MCP server with ${toolCount} tool${toolCount === 1 ? '' : 's'} is now connected. You may access these tools whose names start with \`mcp_\`.`;
+                NEURO.client.sendContext(contextMessage);
+                logOutput('INFO', 'MCP: Sent connection notification to Neuro');
+            }
         } else {
             logOutput('WARN', 'MCP: Neuro client not connected, actions will be registered on next connection');
         }
@@ -95,6 +103,13 @@ export async function unregisterMCPActions(): Promise<boolean> {
         }
 
         const actionNames = Object.keys(mcpActions);
+
+        // Send context message to Neuro about disconnection
+        if (NEURO.client && NEURO.connected && actionNames.length > 0) {
+            const contextMessage = 'The MCP server is now disconnected. You can\'t access the tools whose names start with `mcp_` anymore.';
+            NEURO.client.sendContext(contextMessage);
+            logOutput('INFO', 'MCP: Sent disconnection notification to Neuro');
+        }
 
         // Unregister from Neuro client
         if (NEURO.client && actionNames.length > 0) {
@@ -305,11 +320,12 @@ export function getMCPAction(actionName: string): RCEAction | undefined {
 /**
  * Auto-connects to MCP server if configured.
  * Should be called when Neuro client connects.
- * Checks MCP.enabled, MCP.autoConnect, and MCP.serverUrl before connecting.
+ * Checks permission level, MCP.autoConnect, and MCP.serverUrl before connecting.
  */
 export async function autoConnectMCP(): Promise<void> {
-    if (!MCP.enabled) {
-        logOutput('DEBUG', 'MCP: Auto-connect skipped (not enabled)');
+    const permissionLevel = getPermissionLevel(PERMISSIONS.mcpTools);
+    if (permissionLevel === PermissionLevel.OFF) {
+        logOutput('DEBUG', 'MCP: Auto-connect skipped (permission is Off)');
         return;
     }
 

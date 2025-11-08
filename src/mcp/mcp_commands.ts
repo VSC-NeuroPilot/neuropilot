@@ -10,7 +10,7 @@
 
 import * as vscode from 'vscode';
 import { registerMCPActions, unregisterMCPActions, refreshMCPActions, getMCPStatus } from './mcp_actions';
-import { MCP } from '../config';
+import { MCP, PERMISSIONS, getPermissionLevel, PermissionLevel } from '../config';
 import { logOutput } from '../utils';
 
 /**
@@ -19,15 +19,30 @@ import { logOutput } from '../utils';
  */
 async function connectToMCPServer(): Promise<void> {
     try {
-        // Check if MCP is enabled
-        if (!MCP.enabled) {
+        // Check if MCP permission is enabled
+        const permissionLevel = getPermissionLevel(PERMISSIONS.mcpTools);
+        if (permissionLevel === PermissionLevel.OFF) {
             const enable = await vscode.window.showWarningMessage(
-                'MCP integration is not enabled. Would you like to enable it?',
-                'Enable', 'Cancel',
+                'MCP tools permission is set to "Off". Would you like to enable it?',
+                'Enable (Copilot)', 'Enable (Autopilot)', 'Cancel',
             );
 
-            if (enable === 'Enable') {
-                await vscode.workspace.getConfiguration('neuropilot').update('mcp.enabled', true, true);
+            if (enable === 'Enable (Copilot)' || enable === 'Enable (Autopilot)') {
+                const scope = await vscode.window.showQuickPick(
+                    ['this entire workspace', 'this user'],
+                    { title: 'Enable MCP tools permission for...' },
+                );
+
+                if (!scope) {
+                    return;
+                }
+
+                const permissionValue = enable === 'Enable (Copilot)' ? 'Copilot' : 'Autopilot';
+                const configTarget = scope === 'this entire workspace'
+                    ? vscode.ConfigurationTarget.Workspace
+                    : vscode.ConfigurationTarget.Global;
+
+                await vscode.workspace.getConfiguration('neuropilot').update('permission.mcpTools', permissionValue, configTarget);
             } else {
                 return;
             }
@@ -52,8 +67,20 @@ async function connectToMCPServer(): Promise<void> {
 
             if (!url) return;
 
+            // Ask user where to save the URL
+            const scope = await vscode.window.showQuickPick(
+                ['this entire workspace', 'this user'],
+                { title: 'Save MCP server URL for...' },
+            );
+
+            if (!scope) return;
+
+            const configTarget = scope === 'this entire workspace'
+                ? vscode.ConfigurationTarget.Workspace
+                : vscode.ConfigurationTarget.Global;
+
             // Save the URL
-            await vscode.workspace.getConfiguration('neuropilot').update('mcp.serverUrl', url, true);
+            await vscode.workspace.getConfiguration('neuropilot').update('mcp.serverUrl', url, configTarget);
         }
 
         // Show progress

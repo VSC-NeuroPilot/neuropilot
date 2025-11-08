@@ -175,27 +175,27 @@
 			{
 				"command": "neuropilot.mcp.connectServer",
 				"title": "Connect to MCP Server",
-				"category": "NeuroPilot MCP"
+				"category": "NeuroPilot"
 			},
 			{
 				"command": "neuropilot.mcp.disconnectServer",
 				"title": "Disconnect from MCP Server",
-				"category": "NeuroPilot MCP"
+				"category": "NeuroPilot"
 			},
 			{
 				"command": "neuropilot.mcp.refreshTools",
 				"title": "Refresh MCP Tools",
-				"category": "NeuroPilot MCP"
+				"category": "NeuroPilot"
 			},
 			{
 				"command": "neuropilot.mcp.showStatus",
 				"title": "Show MCP Status",
-				"category": "NeuroPilot MCP"
+				"category": "NeuroPilot"
 			},
 			{
 				"command": "neuropilot.mcp.testToolCall",
 				"title": "Test MCP Tool Call (Debug)",
-				"category": "NeuroPilot MCP"
+				"category": "NeuroPilot"
 			}
 		],
 		"configuration": [
@@ -759,7 +759,7 @@
 					},
 					"neuropilot.permission.mcpTools": {
 						"type": "string",
-						"default": "Copilot",
+						"default": "Off",
 						"enum": [
 							"Off",
 							"Copilot",
@@ -770,7 +770,7 @@
 							"Require approval before execution.",
 							"Execute without oversight."
 						],
-						"markdownDescription": "Allow Neuro to execute MCP (Model Context Protocol) tools from connected servers. MCP tools can perform various operations, so Copilot mode (requiring approval) is recommended for safety."
+						"markdownDescription": "Allow Neuro to execute MCP (Model Context Protocol) tools from connected servers. MCP tools can perform various operations. Set to Off by default for security."
 					},
 					"neuropilot.access.dotFiles": {
 						"type": "boolean",
@@ -955,11 +955,6 @@
 						"default": true,
 						"markdownDescription": "Whether or not to toggle schemas that may use \"unsupported\" schema properties.\n\nRequires reloading permissions if changed."
 					},
-					"neuropilot.mcp.enabled": {
-						"type": "boolean",
-						"default": false,
-						"markdownDescription": "Enable MCP (Model Context Protocol) integration. When enabled, NeuroPilot can connect to MCP servers and use their tools.\n\nRequires [reloading permissions](command:neuropilot.reloadPermissions) if changed."
-					},
 					"neuropilot.mcp.serverUrl": {
 						"type": "string",
 						"default": "",
@@ -975,7 +970,7 @@
 					"neuropilot.mcp.autoConnect": {
 						"type": "boolean",
 						"default": false,
-						"markdownDescription": "Automatically connect to the MCP server when NeuroPilot connects to Neuro API.\n\nRequires `neuropilot.mcp.enabled` to be `true` and `neuropilot.mcp.serverUrl` to be set."
+						"markdownDescription": "Automatically connect to the MCP server when NeuroPilot connects to Neuro API.\n\nRequires `neuropilot.mcp.serverUrl` to be set and `neuropilot.permission.mcpTools` to not be `Off`."
 					}
 				}
 			}
@@ -1101,7 +1096,6 @@
 		"typescript-eslint": "^8.26.0"
 	},
 	"dependencies": {
-		"@cfworker/json-schema": "4.1.1",
 		"@modelcontextprotocol/sdk": "1.21.0",
 		"file-type": "^21.0.0",
 		"glob-to-regexp": "^0.4.1",

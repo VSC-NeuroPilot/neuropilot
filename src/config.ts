@@ -352,7 +352,6 @@ class Actions {
 export const ACTIONS = new Actions();
 
 class MCPConfig {
-    get enabled(): boolean { return getMCPConfig<boolean>('enabled') ?? false; }
     get serverUrl(): string { return getMCPConfig<string>('serverUrl') ?? ''; }
     get timeout(): number { return getMCPConfig<number>('timeout') ?? 30000; }
     get autoConnect(): boolean { return getMCPConfig<boolean>('autoConnect') ?? false; }

@@ -18,6 +18,19 @@ Hello Neuro! If you're reading this, it means Vedal has let you read the changel
 - The way that ignoring the deprecated settings migration notice has been changed.
   - Before, telling the extension to ignore deprecated settings meant that the deprecated settings notice would be ignored forever.
   - As of this update, the extension will only ignore it for this version.
+- **Experimental** MCP Integration
+  - Currently supports single MCP server connection via HTTP transport, on desktop (works) and web (buggy as browser block cross-origin requests)
+  - MCP tools are controlled via the `neuropilot.permission.mcpTools` permission (Copilot/Autopilot/Off(default)).
+  - New settings: `neuropilot.mcp.serverUrl`, `neuropilot.mcp.timeout`, `neuropilot.mcp.autoConnect`.
+  - New commands: Connect to MCP Server, Disconnect from MCP Server, Refresh MCP Tools, Show MCP Status, Test MCP Tool Call (Debug).
+  - New context sent to Neuro (to notify her about MCP tools. The src/mcp/translation.ts will add `mcp_` prefix to translated MCP tools )
+    - On MCP connected: "An MCP server with xx tools is now connected. You may access these tools whose names start with `mcp_`."
+    - On MCP disconnected: "The MCP server is now disconnected. You can't access the tools whose names start with `mcp_` anymore."
+  - Known limitations: 
+    - No multi-server support 
+    - `/mcp` endpoint only 
+    - No individual tool-level control.
+    - **Web version requires MCP servers with CORS headers** (browsers block cross-origin requests without proper `Access-Control-Allow-Origin` headers).
 
 ## 2.2.3
 

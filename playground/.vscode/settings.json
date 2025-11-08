@@ -49,7 +49,6 @@
     "files.autoSaveDelay": 1000,
     "neuropilot.actions.hideCopilotRequests": false,
     "neuropilot.connection.nameOfAPI": "Neuro",
-    "neuropilot.mcp.enabled": true,
     "neuropilot.mcp.serverUrl": "http://127.0.0.1:3000",
     "neuropilot.mcp.autoConnect": false,
     "neuropilot.permission.mcpTools": "Copilot",

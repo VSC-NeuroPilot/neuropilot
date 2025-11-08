@@ -9,10 +9,8 @@
 // Export translation utilities
 export {
     sanitizeActionName,
-    simplifySchema,
     parseActionData,
     mcpToolToNeuroAction,
-    FORBIDDEN_SCHEMA_KEYS,
     type MCPTool,
     type NeuroAction,
 } from './translation';
