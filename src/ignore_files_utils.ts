@@ -114,10 +114,26 @@ export async function loadIgnoreFiles(baseDir: string): Promise<void> {
     const inheritFromIgnoreFiles = config.get<boolean>('inheritFromIgnoreFiles');
     const customIgnorePaths = config.get<string[]>('ignoreFiles') || [];
 
+    // Use global storage key for suppression
+    const suppressionKey = 'neuropilot.suppressIgnoreWarning';
+    const suppressed = vscode.workspace.getConfiguration().get<boolean>(suppressionKey, false);
+
     if (!inheritFromIgnoreFiles) {
-        vscode.window.showWarningMessage(
-            'Permission to inherit from ignore files is disabled. (neuropilot.access.inheritFromIgnoreFiles)',
-        );
+        if (!suppressed) {
+            const selection = await vscode.window.showWarningMessage(
+                'Permission to inherit from ignore files is disabled. (neuropilot.access.inheritFromIgnoreFiles)',
+                'Don’t show again',
+            );
+
+            if (selection === 'Don’t show again') {
+                // Save suppression in global settings
+                await vscode.workspace
+                    .getConfiguration()
+                    .update(suppressionKey, true, vscode.ConfigurationTarget.Global);
+
+                vscode.window.showInformationMessage('Ignore file warnings will no longer appear.');
+            }
+        }
         return;
     }
 
@@ -155,7 +171,7 @@ export async function findIgnoredFile(
         let relPath = vscode.workspace.asRelativePath(vscode.Uri.file(targetPath), false);
 
         // ensure it's truly relative (ignore requires normalized paths)
-        relPath = relPath.replace(/^[/\\]+/, ''); 
+        relPath = relPath.replace(/^[/\\]+/, '');
         if (GlobalIgnore.isIgnored(relPath)) {
             return targetPath;
         }
