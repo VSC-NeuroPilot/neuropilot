@@ -14,6 +14,9 @@ importers:
       glob-to-regexp:
         specifier: ^0.4.1
         version: 0.4.1
+      ignore:
+        specifier: ^7.0.5
+        version: 7.0.5
       jsonschema:
         specifier: ^1.5.0
         version: 1.5.0

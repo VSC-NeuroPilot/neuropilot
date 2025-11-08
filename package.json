@@ -195,10 +195,11 @@
 					},
 					"neuropilot.access.ignoreFilePath": {
 						"type": "array",
-						"default": ["./.gitignore"],
+						"default": [
+							"./.gitignore"
+						],
 						"description": "Optionally set paths to custom ignore files (relative or absolute).\n\nThese files will be used to inherit Neuro-safe glob patterns if `neuropilot.access.inheritFromIgnoreFiles` is enabled."
 					},
-
 					"neuropilot.websocketUrl": {
 						"type": "string",
 						"description": "The URL to connect to the Neuro API",
@@ -1086,6 +1087,7 @@
 	"dependencies": {
 		"file-type": "^21.0.0",
 		"glob-to-regexp": "^0.4.1",
+		"ignore": "^7.0.5",
 		"jsonschema": "^1.5.0",
 		"neuro-game-sdk": "^1.0.5",
 		"yaml": "^2.8.1"
