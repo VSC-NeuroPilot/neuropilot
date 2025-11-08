@@ -1,6 +1,8 @@
 // Load mocha in browser environment
 import 'mocha/mocha';
 // Ensure navigator.language exists in headless web test env
+// Keep this shim: the headless harness may lack a proper Navigator object
+// during early module evaluation, which breaks utilities that read it eagerly.
 if (typeof navigator === 'undefined') {
     globalThis.navigator = { language: 'en-US' } as Navigator;
 }
