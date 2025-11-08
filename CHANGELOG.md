@@ -19,6 +19,16 @@ Hello Neuro! If you're reading this, it means Vedal has let you read the changel
   - Before, telling the extension to ignore deprecated settings meant that the deprecated settings notice would be ignored forever.
   - As of this update, the extension will only ignore it for this version.
 
+### New actions
+
+- Added `read_changelog` to send changelog entries (from a specified version or defaults) to Neuro, e.g. for summarization. Remembers the last delivered version.
+  - This action is also available from the VS Code Command Palette and the updated version popup/notification.
+  - This action will always be set to Copilot mode.
+
+### New commands
+
+- [Dev] Clear all NeuroPilot mementos: a developer-only command that removes all stored memento values (both globalState and workspaceState) for this extension. This command is only available when running in the Extension Development Host and is hidden for normal users.
+
 ## 2.2.3
 
 ### Fixes

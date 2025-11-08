@@ -11,6 +11,7 @@ import { emergencyDenyRequests, acceptRceRequest, denyRceRequest, revealRceNotif
 import type { GitExtension } from '@typing/git';
 import { getGitExtension } from '@/git';
 import { openDocsOnTarget, registerDocsCommands, registerDocsLink } from './docs';
+import { readChangelogAndSendToNeuro } from '@/changelog';
 import { moveCursorEmitterDiposable } from '@events/cursor';
 
 // Shared commands
@@ -30,6 +31,8 @@ export function registerCommonCommands() {
         vscode.commands.registerCommand('neuropilot.switchNeuroAPIUser', switchCurrentNeuroAPIUser),
         vscode.commands.registerCommand('neuropilot.refreshExtensionDependencyState', obtainExtensionState),
         vscode.commands.registerCommand('neuropilot.resetTemporarilyDisabledActions', () => NEURO.tempDisabledActions = []),
+        vscode.commands.registerCommand('neuropilot.readChangelog', readChangelogAndSendToNeuro),
+        vscode.commands.registerCommand('neuropilot.dev.clearMementos', clearAllMementos),
         ...registerDocsCommands(),
     ];
 }
@@ -346,31 +349,41 @@ export function showUpdateReminder(context: vscode.ExtensionContext) {
     const manifest = context.extension.packageJSON;
     const version = manifest.version as string;
     const id = context.extension.id;
-    let showPopup = () => { }; // Exists so that showPopup isn't nullable, do not modify since if either of the if-else conditions are satisfied then this function will be called.
-    if (!lastVersion) {
-        showPopup = () => {
+    const askLabel = `Send ${CONNECTION.nameOfAPI} changelog`;
+    const showPopup = (modal: boolean) => {
+        if (!lastVersion) {
             vscode.window.showInformationMessage(
-                `Welcome to NeuroPilot! You have just installed version ${version}.`,
+                `Welcome to NeuroPilot. You have just installed version ${version}.`,
+                { modal },
+                askLabel,
+                'View Changelog',
                 'View Docs',
                 'Configure NeuroPilot',
             ).then(async selection => {
-                if (selection === 'View Docs') {
+                if (selection === 'View Changelog') {
+                    const changelogUri = vscode.Uri.joinPath(context.extensionUri, 'CHANGELOG.md');
+                    await vscode.commands.executeCommand('markdown.showPreview', changelogUri);
+                    // Re-show non-modally to avoid focus/sound
+                    showPopup(false);
+                } else if (selection === 'View Docs') {
                     await openDocsOnTarget('NeuroPilot', docsUrl);
-                    // Re-show popup to allow visiting both links
-                    showPopup();
+                    showPopup(false);
                 } else if (selection === 'Configure NeuroPilot') {
                     await vscode.commands.executeCommand('workbench.action.openSettings', `@ext:${id}`);
-                    // Re-show popup to allow visiting both links
-                    showPopup();
+                    showPopup(false);
+                } else if (selection === askLabel) {
+                    await vscode.commands.executeCommand('neuropilot.readChangelog');
+                    showPopup(false);
                 }
-                // If dismissed, do nothing
             });
-        };
-    } else if (lastVersion !== version) {
-        // Helper to show the popup and allow both links to be visited
-        showPopup = () => {
+            return;
+        }
+
+        if (lastVersion !== version) {
             vscode.window.showInformationMessage(
-                'NeuroPilot updated! Please check the changelog and docs for important changes.',
+                `NeuroPilot updated to version ${version}. Please check the changelog and docs for important changes. You can also let ${CONNECTION.nameOfAPI} read the changes now or later from the Command Palette.`,
+                { modal },
+                askLabel,
                 'View Changelog',
                 'View Docs',
             ).then(async selection => {
@@ -378,17 +391,59 @@ export function showUpdateReminder(context: vscode.ExtensionContext) {
                     // Open local CHANGELOG.md in markdown preview
                     const changelogUri = vscode.Uri.joinPath(context.extensionUri, 'CHANGELOG.md');
                     await vscode.commands.executeCommand('markdown.showPreview', changelogUri);
-                    // Re-show popup to allow visiting both links
-                    showPopup();
+                    // Re-show non-modally to allow visiting both
+                    showPopup(false);
                 } else if (selection === 'View Docs') {
                     await openDocsOnTarget('NeuroPilot', docsUrl);
-                    // Re-show popup to allow visiting both links
-                    showPopup();
+                    // Re-show non-modally to allow visiting both
+                    showPopup(false);
+                } else if (selection === askLabel) {
+                    await vscode.commands.executeCommand('neuropilot.readChangelog');
+                    showPopup(false);
                 }
-                // If dismissed, do nothing
             });
-        };
-    }
-    showPopup();
+        }
+    };
+    // Show as modal on first display; subsequent displays will be non-modal
+    showPopup(true);
     context.globalState.update(mementoKey, version);
+}
+
+/**
+ * Developer utility: clears all memento values stored by NeuroPilot for this profile.
+ * This removes keys from both globalState and workspaceState.
+ */
+async function clearAllMementos(): Promise<void> {
+    const context = NEURO.context;
+    if (!context) {
+        vscode.window.showErrorMessage('Extension context not initialized.');
+        return;
+    }
+
+    const isDev = context.extensionMode === vscode.ExtensionMode.Development;
+    if (!isDev) {
+        vscode.window.showErrorMessage('This developer utility is only available in the Extension Development Host.');
+        return;
+    }
+
+    const confirm = await vscode.window.showWarningMessage(
+        'Clear all NeuroPilot mementos (global and workspace)? This cannot be undone.',
+        { modal: true },
+        'Clear',
+    );
+    if (confirm !== 'Clear') return;
+
+    const globalKeys = context.globalState.keys();
+    const workspaceKeys = context.workspaceState.keys();
+
+    const updates: Thenable<void>[] = [];
+    for (const key of globalKeys) {
+        updates.push(context.globalState.update(key, undefined));
+    }
+    for (const key of workspaceKeys) {
+        updates.push(context.workspaceState.update(key, undefined));
+    }
+    await Promise.all(updates);
+
+    vscode.window.showInformationMessage('NeuroPilot mementos cleared.');
 }

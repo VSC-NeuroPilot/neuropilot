@@ -58,8 +58,8 @@ importers:
         specifier: ^2.5.2
         version: 2.5.2
       '@vscode/test-web':
-        specifier: ^0.0.74
-        version: 0.0.74
+        specifier: ^0.0.75
+        version: 0.0.75
       '@vscode/vsce':
         specifier: ^3.6.2
         version: 3.6.2
@@ -547,8 +547,8 @@ packages:
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
     engines: {node: '>=14'}
 
-  '@playwright/browser-chromium@1.56.0':
-    resolution: {integrity: sha512-+OABx0PwbzoWXO5qOmonvQlIZq0u89XpDkRYf+ZTOs+wsI3r/NV90rzGr8nsJZTj7o10tdPMmuGmZ3OKP9ag4Q==}
+  '@playwright/browser-chromium@1.56.1':
+    resolution: {integrity: sha512-n4xzZpOn4qOtZJylpIn8co2QDoWczfJ068sEeky3EE5Vvy+lHX2J3WAcC4MbXzcpfoBee1lJm8JtXuLZ9HBCBA==}
     engines: {node: '>=18'}
 
   '@secretlint/config-creator@10.2.2':
@@ -739,8 +739,8 @@ packages:
     resolution: {integrity: sha512-8ukpxv4wYe0iWMRQU18jhzJOHkeGKbnw7xWRX3Zw1WJA4cEKbHcmmLPdPrPtL6rhDcrlCZN+xKRpv09n4gRHYg==}
     engines: {node: '>=16'}
 
-  '@vscode/test-web@0.0.74':
-    resolution: {integrity: sha512-rXIcru66y56j1RPOhFJYSNs5MAw6yZCFUktqa5tPrxsRel/Lj6vDszq8E47XsVN1NjwsLj8L3FMqwR4/B+0QmA==}
+  '@vscode/test-web@0.0.75':
+    resolution: {integrity: sha512-/V+wPN2jDUrUxoT1nDbGTghwhKU6AlfLrnkq0lNvBqX3ka5QImmRnDTHFu1JKfwkCCp3WJEQgFZVrcpKmC+n2g==}
     engines: {node: '>=20'}
     hasBin: true
 
@@ -892,16 +892,16 @@ packages:
   balanced-match@1.0.2:
     resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
 
-  bare-events@2.8.0:
-    resolution: {integrity: sha512-AOhh6Bg5QmFIXdViHbMc2tLDsBIRxdkIaIddPslJF9Z5De3APBScuqGP2uThXnIpqFrgoxMNC6km7uXNIMLHXA==}
+  bare-events@2.8.2:
+    resolution: {integrity: sha512-riJjyv1/mHLIPX4RwiK+oW9/4c3TEUeORHKefKAKnZ5kyslbN+HXowtbaVEqt4IMUB7OXlfixcs6gsFeo/jhiQ==}
     peerDependencies:
       bare-abort-controller: '*'
     peerDependenciesMeta:
       bare-abort-controller:
         optional: true
 
-  bare-fs@4.4.10:
-    resolution: {integrity: sha512-arqVF+xX/rJHwrONZaSPhlzleT2gXwVs9rsAe1p1mIVwWZI2A76/raio+KwwxfWMO8oV9Wo90EaUkS2QwVmy4w==}
+  bare-fs@4.5.0:
+    resolution: {integrity: sha512-GljgCjeupKZJNetTqxKaQArLK10vpmK28or0+RwWjEl5Rk+/xG3wkpmkv+WrcBm3q1BwHKlnhXzR8O37kcvkXQ==}
     engines: {bare: '>=1.16.0'}
     peerDependencies:
       bare-buffer: '*'
@@ -927,8 +927,8 @@ packages:
       bare-events:
         optional: true
 
-  bare-url@2.2.2:
-    resolution: {integrity: sha512-g+ueNGKkrjMazDG3elZO1pNs3HY5+mMmOet1jtKyhOaCnkLzitxf26z7hoAEkDNgdNmnc1KIlt/dw6Po6xZMpA==}
+  bare-url@2.3.2:
+    resolution: {integrity: sha512-ZMq4gd9ngV5aTMa5p9+UfY0b3skwhHELaDkhEHetMdX0LRkW9kzaym4oo/Eh+Ghm0CCDuMTsRIGM/ytUc1ZYmw==}
 
   base64-js@1.5.1:
     resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
@@ -2046,6 +2046,7 @@ packages:
   keygrip@1.1.0:
     resolution: {integrity: sha512-iYSchDJ+liQ8iwbSI2QqsQOvqv58eJCEanyJPJi+Khyu8smkcKSFUCbPwzFcL7YVtZ6eONjqRX/38caJ7QjRAQ==}
     engines: {node: '>= 0.6'}
+    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
 
   keytar@7.9.0:
     resolution: {integrity: sha512-VPD8mtVtm5JNtA2AErl6Chp06JBfy7diFQ7TQQhdpWOl6MrCRB+eRbvAZUsbGQS9kiMq0coJsy0W0vHpDCkWsQ==}
@@ -2071,8 +2072,8 @@ packages:
     resolution: {integrity: sha512-UqyYyH5YEXaJrf9S8E23GoJFQZXkBVJ9zYYMPGz919MSX1KuvAcycIuS0ci150HCoPf4XQVhQ84Qf8xRPWxFaQ==}
     engines: {node: '>= 7.6.0'}
 
-  koa@3.0.1:
-    resolution: {integrity: sha512-oDxVkRwPOHhGlxKIDiDB2h+/l05QPtefD7nSqRgDfZt8P+QVYFWjfeK8jANf5O2YXjk8egd7KntvXKYx82wOag==}
+  koa@3.1.1:
+    resolution: {integrity: sha512-KDDuvpfqSK0ZKEO2gCPedNjl5wYpfj+HNiuVRlbhd1A88S3M0ySkdf2V/EJ4NWt5dwh5PXCdcenrKK2IQJAxsg==}
     engines: {node: '>= 18'}
 
   leven@3.1.0:
@@ -2473,8 +2474,18 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
+  playwright-core@1.56.1:
+    resolution: {integrity: sha512-hutraynyn31F+Bifme+Ps9Vq59hKuUCz7H1kDOcBs+2oGguKkWTU50bBWrtz34OUWmIwpBTWDxaRPXrIXkgvmQ==}
+    engines: {node: '>=18'}
+    hasBin: true
+
   playwright@1.56.0:
     resolution: {integrity: sha512-X5Q1b8lOdWIE4KAoHpW3SE8HvUB+ZZsUoN64ZhjnN8dOb1UpujxBtENGiZFE+9F/yhzJwYa+ca3u43FeLbboHA==}
+    engines: {node: '>=18'}
+    hasBin: true
+
+  playwright@1.56.1:
+    resolution: {integrity: sha512-aFi5B0WovBHTEvpM3DzXTUaeN6eN0qWnTkKx4NQaH4Wvcmc153PdaY2UBdSYKaGYw+UyWXSVyxDUg5DoPEttjw==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -2909,8 +2920,8 @@ packages:
   through2@2.0.5:
     resolution: {integrity: sha512-/mrRod8xqpA+IHSLyGCQ2s8SPHiCDEeQJSep1jqLYeEUClOFG2Qsh+4FU6G9VeqpZnGW/Su8LQGc4YKni5rYSQ==}
 
-  tinyglobby@0.2.14:
-    resolution: {integrity: sha512-tX5e7OM1HnYr2+a2C/4V0htOcSQcoSTH9KgJnVvNm5zm/cyEWKJ7j7YutsH9CxMdtOkkLFy2AHrMci9IM8IPZQ==}
+  tinyglobby@0.2.15:
+    resolution: {integrity: sha512-j2Zq4NyQYG5XMST4cbs02Ak8iJUdxRM0XI5QyxXuZOzKOINmWurp3smXu3y5wDcJrptwpSjgXHzIQxR0omXljQ==}
     engines: {node: '>=12.0.0'}
 
   tmp@0.2.5:
@@ -3565,9 +3576,9 @@ snapshots:
   '@pkgjs/parseargs@0.11.0':
     optional: true
 
-  '@playwright/browser-chromium@1.56.0':
+  '@playwright/browser-chromium@1.56.1':
     dependencies:
-      playwright-core: 1.56.0
+      playwright-core: 1.56.1
 
   '@secretlint/config-creator@10.2.2':
     dependencies:
@@ -3857,22 +3868,22 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@vscode/test-web@0.0.74':
+  '@vscode/test-web@0.0.75':
     dependencies:
       '@koa/cors': 5.0.0
       '@koa/router': 14.0.0
-      '@playwright/browser-chromium': 1.56.0
+      '@playwright/browser-chromium': 1.56.1
       gunzip-maybe: 1.4.2
       http-proxy-agent: 7.0.2
       https-proxy-agent: 7.0.6
-      koa: 3.0.1
+      koa: 3.1.1
       koa-morgan: 1.0.1
       koa-mount: 4.2.0
       koa-static: 5.0.0
       minimist: 1.2.8
-      playwright: 1.56.0
+      playwright: 1.56.1
       tar-fs: 3.1.1
-      tinyglobby: 0.2.14
+      tinyglobby: 0.2.15
       vscode-uri: 3.1.0
     transitivePeerDependencies:
       - bare-abort-controller
@@ -4045,14 +4056,14 @@ snapshots:
 
   balanced-match@1.0.2: {}
 
-  bare-events@2.8.0: {}
+  bare-events@2.8.2: {}
 
-  bare-fs@4.4.10:
+  bare-fs@4.5.0:
     dependencies:
-      bare-events: 2.8.0
+      bare-events: 2.8.2
       bare-path: 3.0.0
-      bare-stream: 2.7.0(bare-events@2.8.0)
-      bare-url: 2.2.2
+      bare-stream: 2.7.0(bare-events@2.8.2)
+      bare-url: 2.3.2
       fast-fifo: 1.3.2
     transitivePeerDependencies:
       - bare-abort-controller
@@ -4067,17 +4078,17 @@ snapshots:
       bare-os: 3.6.2
     optional: true
 
-  bare-stream@2.7.0(bare-events@2.8.0):
+  bare-stream@2.7.0(bare-events@2.8.2):
     dependencies:
       streamx: 2.23.0
     optionalDependencies:
-      bare-events: 2.8.0
+      bare-events: 2.8.2
     transitivePeerDependencies:
       - bare-abort-controller
       - react-native-b4a
     optional: true
 
-  bare-url@2.2.2:
+  bare-url@2.3.2:
     dependencies:
       bare-path: 3.0.0
     optional: true
@@ -4712,7 +4723,7 @@ snapshots:
 
   events-universal@1.0.1:
     dependencies:
-      bare-events: 2.8.0
+      bare-events: 2.8.2
     transitivePeerDependencies:
       - bare-abort-controller
 
@@ -5370,7 +5381,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  koa@3.0.1:
+  koa@3.1.1:
     dependencies:
       accepts: 1.3.8
       content-disposition: 0.5.4
@@ -5805,9 +5816,17 @@ snapshots:
 
   playwright-core@1.56.0: {}
 
+  playwright-core@1.56.1: {}
+
   playwright@1.56.0:
     dependencies:
       playwright-core: 1.56.0
+    optionalDependencies:
+      fsevents: 2.3.2
+
+  playwright@1.56.1:
+    dependencies:
+      playwright-core: 1.56.1
     optionalDependencies:
       fsevents: 2.3.2
 
@@ -6290,7 +6309,7 @@ snapshots:
       pump: 3.0.3
       tar-stream: 3.1.7
     optionalDependencies:
-      bare-fs: 4.4.10
+      bare-fs: 4.5.0
       bare-path: 3.0.0
     transitivePeerDependencies:
       - bare-abort-controller
@@ -6343,7 +6362,7 @@ snapshots:
       readable-stream: 2.3.8
       xtend: 4.0.2
 
-  tinyglobby@0.2.14:
+  tinyglobby@0.2.15:
     dependencies:
       fdir: 6.5.0(picomatch@4.0.3)
       picomatch: 4.0.3
