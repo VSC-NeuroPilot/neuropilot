@@ -108,7 +108,7 @@ export interface NeuroAction {
 /**
  * Converts an MCP tool definition to a Neuro action definition.
  *
- * This is the main translation function that
+ * This is the main translation function that:
  * - Sanitizes the tool name
  * - Extracts/defaults the description
  *

@@ -5,6 +5,7 @@
  * to communicate with MCP servers via the /mcp endpoint since SSE is deprecated
  */
 
+import { NEURO } from '../constants';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
@@ -83,7 +84,7 @@ export class MCPClient {
      */
     async connect(): Promise<void> {
         if (this.connected) {
-            logOutput('WARN', 'MCP Client already connected');
+            logOutput('WARN', 'MCP Client is already connected');
             return;
         }
 
@@ -111,6 +112,11 @@ export class MCPClient {
             await this.client.connect(this.transport);
 
             this.connected = true;
+
+            if (NEURO.client && NEURO.connected) {
+                NEURO.client.sendContext('A MCP server is connected but no MCP tools are registered yet.');
+            }
+
             logOutput('INFO', 'MCP Client connected successfully');
         } catch (erm) {
             this.connected = false;
@@ -275,6 +281,10 @@ export class MCPClient {
             this.transport = null;
             this.connected = false;
             this.tools = [];
+
+            if (NEURO.client && NEURO.connected) {
+                NEURO.client.sendContext('MCP server is disconnected, thus no MCP tools will be available from now on.');
+            }
 
             logOutput('INFO', 'MCP Client disconnected');
         } catch (erm) {

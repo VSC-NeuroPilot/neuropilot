@@ -27,14 +27,16 @@ Hello Neuro! If you're reading this, it means Vedal has let you read the changel
   - MCP tools are controlled via the `neuropilot.permission.mcpTools` permission (Copilot/Autopilot/Off(default)).
   - New settings: `neuropilot.mcp.serverUrl`, `neuropilot.mcp.timeout`, `neuropilot.mcp.autoConnect`.
   - New commands: Connect to MCP Server, Disconnect from MCP Server, Refresh MCP Tools, Show MCP Status, Configure MCP Tools, Test MCP Tool Call (Debug).
-  - New context sent to Neuro (to notify her about MCP tools. The src/mcp/translation.ts will add `mcp_` prefix to translated MCP tools )
-    - On MCP connected: "An MCP server with xx tools is now connected. You may access these tools whose names start with `mcp_`."
-    - On MCP disconnected: "The MCP server is now disconnected. You can't access the tools whose names start with `mcp_` anymore."
+  - Neuro is notified on MCP server connect/disconnect and tool enabled/disabled:
+    - When a MCP server is connected: "A MCP server is connected but no MCP tools are registered yet."
+    - When a MCP server is dis connected: "MCP server is disconnected, thus no MCP tools will be available from now on."
+    - When tools are enabled: "X new MCP tools available: [tool names]"
+    - When tools are disabled: "X MCP tools removed: [tool names]", followed by "Available MCP tools: [remaining tool names]"
   - MCP actions will automatically be registered or unregistered if the server is connected/disconnected.
   - Individual tool control: All MCP tools are disabled by default on first connection. Use the "Configure MCP Tools" command to select which tools to enable via checkbox dialog.
   - Known limitations:
     - No multi-server support (only one MCP server can be connected at a time)
-    - Only supports HTTP transport with `/mcp` endpoint (no `stdio` or legacy `/sse` SSE transport)
+    - Only supports HTTP transport with `/mcp` endpoint (no `stdio` or legacy `/sse` SSE transport, because these two connection method will require another 2 sets of code)
     - Tool selection is per-session (not persisted across VS Code restarts)
     - **Web version requires MCP servers with CORS headers** (browsers block cross-origin requests without proper `Access-Control-Allow-Origin` headers)
 

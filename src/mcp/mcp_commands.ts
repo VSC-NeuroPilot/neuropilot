@@ -19,6 +19,15 @@ import { logOutput } from '../utils';
  */
 async function connectToMCPServer(): Promise<void> {
     try {
+        // Check if already connected
+        const status = getMCPStatus();
+        if (status.connected) {
+            vscode.window.showWarningMessage(
+                `MCP: Already connected to ${status.serverUrl}. Disconnect first before connecting to a new server.`,
+            );
+            return;
+        }
+
         // Check if MCP permission is enabled
         const permissionLevel = getPermissionLevel(PERMISSIONS.mcpTools);
         if (permissionLevel === PermissionLevel.OFF) {

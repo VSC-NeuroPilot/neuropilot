@@ -83,11 +83,6 @@ export async function registerMCPActions(config: MCPServerConfig): Promise<numbe
             if (toolsToRegister.length > 0) {
                 NEURO.client.registerActions(stripToActions(toolsToRegister));
                 logOutput('INFO', `MCP: Registered ${toolsToRegister.length} tools as Neuro actions`);
-
-                // Send context message to Neuro about the new tools
-                const contextMessage = `An MCP server with ${toolsToRegister.length} tool${toolsToRegister.length === 1 ? '' : 's'} is now connected. You may access these tools whose names start with \`mcp_\`.`;
-                NEURO.client.sendContext(contextMessage);
-                logOutput('INFO', 'MCP: Sent connection notification to Neuro');
             }
         } else {
             logOutput('WARN', 'MCP: Neuro client not connected, actions will be registered on next connection');
@@ -115,14 +110,7 @@ export async function unregisterMCPActions(): Promise<boolean> {
 
         const actionNames = Object.keys(mcpActions);
 
-        // Send context message to Neuro about disconnection
-        if (NEURO.client && NEURO.connected && actionNames.length > 0) {
-            const contextMessage = 'The MCP server is now disconnected. You can\'t access the tools whose names start with `mcp_` anymore.';
-            NEURO.client.sendContext(contextMessage);
-            logOutput('INFO', 'MCP: Sent disconnection notification to Neuro');
-        }
-
-        // Unregister from Neuro client
+        // Unregister from Neuro client first
         if (NEURO.client && actionNames.length > 0) {
             NEURO.client.unregisterActions(actionNames);
             logOutput('INFO', `MCP: Unregistered ${actionNames.length} actions from Neuro`);
@@ -369,7 +357,6 @@ export async function setEnabledMCPTools(toolNames: string[]): Promise<void> {
 
 /**
  * Shows a checkbox dialog to configure which MCP tools are enabled.
- * Prompts user to select tools, then refreshes the registration.
  */
 export async function configureMCPTools(): Promise<void> {
     if (!mcpManager.isConnected) {
@@ -382,6 +369,9 @@ export async function configureMCPTools(): Promise<void> {
         vscode.window.showInformationMessage('No MCP tools available.');
         return;
     }
+
+    // Store previous enabled tools for diff calculation
+    const previouslyEnabled = new Set(enabledMCPTools);
 
     // Create quick pick items with current enabled status
     const items = allTools.map(tool => ({
@@ -401,20 +391,52 @@ export async function configureMCPTools(): Promise<void> {
         return; // User cancelled
     }
 
-    // Update enabled tools
-    const enabledToolNames = selected.map(item => item.label);
-    await setEnabledMCPTools(enabledToolNames);
+    // Calculate new enabled set
+    const newEnabled = new Set(selected.map(item => item.label));
 
-    // Refresh to apply changes
-    const refreshResult = await refreshMCPActions();
+    // Calculate diff
+    const added = [...newEnabled].filter(name => !previouslyEnabled.has(name));
+    const removed = [...previouslyEnabled].filter(name => !newEnabled.has(name));
 
-    if (refreshResult >= 0) {
-        vscode.window.showInformationMessage(
-            `MCP tools configured: ${enabledToolNames.length} enabled, ${allTools.length - enabledToolNames.length} disabled.`,
-        );
-    } else {
-        vscode.window.showErrorMessage('Failed to refresh MCP tools. Check the output panel for details.');
+    // If no changes, just return
+    if (added.length === 0 && removed.length === 0) {
+        vscode.window.showInformationMessage('No changes made to MCP tool configuration.');
+        return;
     }
+
+    // Update the enabled set
+    await setEnabledMCPTools([...newEnabled]);
+
+    // Selectively register/unregister based on diff
+    if (NEURO.client && NEURO.connected) {
+        // First register newly added tools
+        const availableList = [...newEnabled].join(', ');
+        if (added.length > 0) {
+            const actionsToRegister = added.map(name => mcpActions[name]).filter(a => a && isActionEnabled(a));
+
+            NEURO.client.registerActions(stripToActions(actionsToRegister));
+            NEURO.client.sendContext(`${added.length} new MCP tool${added.length === 1 ? '' : 's'} added: ${added.join(', ')}`);
+
+            logOutput('INFO', `MCP: Registered ${actionsToRegister.length} new tool(s) with Neuro`);
+        }
+
+        // Then unregister removed tools
+        if (removed.length > 0) {
+            NEURO.client.unregisterActions(removed);
+            NEURO.client.sendContext( `${removed.length} MCP tool${removed.length === 1 ? '' : 's'} removed: ${removed.join(', ')}.`);
+
+            logOutput('INFO', `MCP: Unregistering ${removed.length} tool(s) from Neuro`);
+        }
+
+        // Also remind Neuro what tools are still available
+        NEURO.client.sendContext(`${availableList === '' ? 'No MCP available tools from now on.' : `Currently available MCP tools: ${availableList}`}`);
+        logOutput('INFO', 'MCP: Notified Neuro about remaining available tools');
+    }
+
+    // Show result
+    vscode.window.showInformationMessage(
+        `MCP tools configured: ${newEnabled.size} enabled, ${allTools.length - newEnabled.size} disabled. (${added.length} added, ${removed.length} removed)`,
+    );
 }
 
 /**
