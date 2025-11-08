@@ -1,28 +1,40 @@
 {
+  // NOTE: Web test tsconfig is carefully tuned. Changing libs or includes can
+  // reintroduce TS6307 (files not in project) or lib conflicts between DOM & WebWorker.
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "target": "ES2024",
-    "lib": ["WebWorker"],
+    // Important: Keep DOM here and avoid adding WebWorker.
+    // Adding WebWorker alongside DOM on TS 5.9+ triggers duplicate lib symbol
+    // definitions (TS6200/TS2374) during test:web:tsc.
+    "lib": ["ES2024", "DOM"],
     "sourceMap": true,
     "outDir": "../out/test/web",
     "rootDir": "../src/",
     "strict": true,
     "esModuleInterop": true,
+    // Avoids duplicate declarations between DOM and VS Code web worker/vendor
+    // libs in the test harness. Do not disable unless you unify the lib set.
+    "skipLibCheck": true,
     "types": [
       "mocha",
       "vscode"
     ]
   },
+  // Tests import application modules via path aliases (e.g. '@/...'). Ensure
+  // the app sources are part of the TS program to prevent TS6307.
   "include": [
     "../src/test/suite/web/**/*.ts",
-    "../src/test/**/*.ts"
+    "../src/test/**/*.ts",
+    "../src/**/*.ts"
   ],
   "exclude": [
     "../node_modules",
     "../out",
     "../dist",
+    // Desktop tests are compiled separately; exclude them here.
     "../src/test/suite/desktop/**/*.ts"
   ]
 }

@@ -167,6 +167,17 @@
 				"category": "NeuroPilot"
 			},
 			{
+				"command": "neuropilot.readChangelog",
+				"title": "Ask Neuro to read changelog",
+				"category": "NeuroPilot"
+			},
+			{
+				"command": "neuropilot.dev.clearMementos",
+				"title": "[Dev] Clear all NeuroPilot mementos",
+				"category": "NeuroPilot",
+				"enablement": "isDevelopment"
+			},
+			{
 				"command": "neuropilot.sendSelectionToNeuro",
 				"title": "Send selection to Neuro",
 				"category": "NeuroPilot",

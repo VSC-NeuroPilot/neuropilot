@@ -4,6 +4,7 @@ import { editingActions, registerEditingActions } from '@/editing';
 import { ActionData, RCEAction } from '@/neuro_client_helper';
 import { lintActions, registerLintActions } from '@/lint_problems';
 import { cancelRequestAction, RCEActionHandler } from '@/rce';
+import { changelogActions, registerChangelogActions } from '@/changelog';
 
 /**
  * Register unsupervised actions with the Neuro API.
@@ -15,6 +16,7 @@ const neuroActions: Record<string, RCEAction> = {
     ...fileActions,
     ...editingActions,
     ...lintActions,
+    ...changelogActions,
 };
 
 const actionKeys: string[] = Object.keys(neuroActions);
@@ -26,6 +28,7 @@ export function registerUnsupervisedActions() {
     registerFileActions();
     registerEditingActions();
     registerLintActions();
+    registerChangelogActions();
 }
 
 /**

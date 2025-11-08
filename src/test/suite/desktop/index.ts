@@ -6,6 +6,7 @@ import '../file_actions.test';
 import '../utils.test';
 // Common integration tests that are environment-agnostic
 import '../common/editing_actions.test';
+import '../common/changelog_action.test';
 // Unit prompt-only tests (pure logic)
 import '../../unit-test/delete_lines.simple.test';
 import '../../unit-test/delete_text.simple.test';
