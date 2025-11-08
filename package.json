@@ -177,6 +177,17 @@
 			{
 				"title": "NeuroPilot",
 				"properties": {
+					"neuropilot.access.inheritFromIgnoreFiles": {
+						"type": "boolean",
+						"default": true,
+						"description": "Allow NeuroPilot to read ignore patterns from an ignore file (e.g. .gitignore)."
+					},
+					"neuropilot.access.ignoreFilePath": {
+						"type": "array",
+						"default": [],
+						"description": "Optional path to a custom ignore file (relative or absolute). Takes priority over .gitignore if set."
+					},
+
 					"neuropilot.websocketUrl": {
 						"type": "string",
 						"description": "The URL to connect to the Neuro API",
