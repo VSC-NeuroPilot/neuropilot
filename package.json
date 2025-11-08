@@ -770,7 +770,7 @@
 							"Require approval before execution.",
 							"Execute without oversight."
 						],
-						"markdownDescription": "Allow Neuro to execute MCP (Model Context Protocol) tools from connected servers. MCP tools can perform various operations. Set to Off by default for security."
+						"markdownDescription": "Allow Neuro to execute MCP (Model Context Protocol) tools from connected servers. MCP tools can perform various operations, but can also attempt context injections via tool descriptions."
 					},
 					"neuropilot.access.dotFiles": {
 						"type": "boolean",
