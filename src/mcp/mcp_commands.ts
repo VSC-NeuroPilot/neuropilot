@@ -9,7 +9,7 @@
  */
 
 import * as vscode from 'vscode';
-import { registerMCPActions, unregisterMCPActions, refreshMCPActions, getMCPStatus } from './mcp_actions';
+import { registerMCPActions, unregisterMCPActions, refreshMCPActions, getMCPStatus, configureMCPTools, clearEnabledMCPTools } from './mcp_actions';
 import { MCP, PERMISSIONS, getPermissionLevel, PermissionLevel } from '../config';
 import { logOutput } from '../utils';
 
@@ -98,13 +98,21 @@ async function connectToMCPServer(): Promise<void> {
                     timeout: MCP.timeout,
                 };
 
+                // Clear enabled tools for new connection (all disabled by default)
+                clearEnabledMCPTools();
+
                 const toolCount = await registerMCPActions(config);
 
                 if (toolCount > 0) {
-                    progress.report({ message: `Connected! Registered ${toolCount} tools.` });
+                    progress.report({ message: `Connected! Found ${toolCount} tools.` });
                     vscode.window.showInformationMessage(
-                        `MCP: Connected to ${config.url} and registered ${toolCount} tools.`,
-                    );
+                        `MCP: Connected to server with ${toolCount} tool${toolCount === 1 ? '' : 's'}. All tools are disabled by default.`,
+                        'Configure Tools',
+                    ).then(selection => {
+                        if (selection === 'Configure Tools') {
+                            vscode.commands.executeCommand('neuropilot.mcp.configureTools');
+                        }
+                    });
                 } else if (toolCount === 0) {
                     vscode.window.showWarningMessage(
                         `MCP: Connected to ${config.url}, but no tools are available.`,
@@ -333,6 +341,7 @@ export function registerMCPCommands(): vscode.Disposable[] {
         vscode.commands.registerCommand('neuropilot.mcp.disconnectServer', disconnectFromMCPServer),
         vscode.commands.registerCommand('neuropilot.mcp.refreshTools', refreshMCPTools),
         vscode.commands.registerCommand('neuropilot.mcp.showStatus', showMCPStatus),
+        vscode.commands.registerCommand('neuropilot.mcp.configureTools', configureMCPTools),
         vscode.commands.registerCommand('neuropilot.mcp.testToolCall', testMCPToolCall),
     ];
 }

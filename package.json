@@ -204,6 +204,11 @@
 				"category": "NeuroPilot"
 			},
 			{
+				"command": "neuropilot.mcp.configureTools",
+				"title": "Configure MCP Tools",
+				"category": "NeuroPilot"
+			},
+			{
 				"command": "neuropilot.mcp.testToolCall",
 				"title": "Test MCP Tool Call (Debug)",
 				"category": "NeuroPilot"

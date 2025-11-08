@@ -7,6 +7,7 @@
  * - Safety validation and confirmation dialogs (Copilot mode)
  */
 
+import * as vscode from 'vscode';
 import { NEURO } from '../constants';
 import { logOutput } from '../utils';
 import { isActionEnabled, PERMISSIONS, PermissionLevel, MCP, getPermissionLevel } from '../config';
@@ -26,6 +27,13 @@ export const mcpManager = new MCPManager();
  * Maps Neuro action names to RCEAction objects.
  */
 const mcpActions: Record<string, RCEAction> = {};
+
+/**
+ * Set of enabled MCP tool names.
+ * Tools not in this set will not be registered with Neuro.
+ * Resets on each new connection (in-memory only, not persisted).
+ */
+const enabledMCPTools = new Set<string>();
 
 /**
  * Connects to an MCP server and registers all available tools as Neuro actions.
@@ -60,21 +68,24 @@ export async function registerMCPActions(config: MCPServerConfig): Promise<numbe
         // Convert Neuro actions to RCE actions with handlers
         const rceActions = neuroActions.map(action => createMCPAction(action));
 
-        // Store actions for later reference
+        // Store all actions for later reference
         for (const action of rceActions) {
             mcpActions[action.name] = action;
         }
 
+        // Filter only enabled tools (initially none, user must configure)
+        const toolsToRegister = rceActions.filter(a =>
+            enabledMCPTools.has(a.name) && isActionEnabled(a),
+        );
+
         // Register with Neuro client
         if (NEURO.client && NEURO.connected) {
-            const enabledActions = rceActions.filter(a => isActionEnabled(a));
-            NEURO.client.registerActions(stripToActions(enabledActions));
-            logOutput('INFO', `MCP: Registered ${enabledActions.length} tools as Neuro actions`);
+            if (toolsToRegister.length > 0) {
+                NEURO.client.registerActions(stripToActions(toolsToRegister));
+                logOutput('INFO', `MCP: Registered ${toolsToRegister.length} tools as Neuro actions`);
 
-            // Send context message to Neuro about the new tools
-            const toolCount = enabledActions.length;
-            if (toolCount > 0) {
-                const contextMessage = `An MCP server with ${toolCount} tool${toolCount === 1 ? '' : 's'} is now connected. You may access these tools whose names start with \`mcp_\`.`;
+                // Send context message to Neuro about the new tools
+                const contextMessage = `An MCP server with ${toolsToRegister.length} tool${toolsToRegister.length === 1 ? '' : 's'} is now connected. You may access these tools whose names start with \`mcp_\`.`;
                 NEURO.client.sendContext(contextMessage);
                 logOutput('INFO', 'MCP: Sent connection notification to Neuro');
             }
@@ -315,6 +326,95 @@ export function isMCPAction(actionName: string): boolean {
  */
 export function getMCPAction(actionName: string): RCEAction | undefined {
     return mcpActions[actionName];
+}
+
+/**
+ * Gets information about all available MCP tools.
+ * Used for the tool configuration UI.
+ *
+ * @returns Array of tool info objects with name, description, and enabled status
+ */
+export function getAllMCPTools(): { name: string; description: string; enabled: boolean }[] {
+    return Object.values(mcpActions).map(action => ({
+        name: action.name,
+        description: action.description || '',
+        enabled: enabledMCPTools.has(action.name),
+    }));
+}
+
+/**
+ * Clears all enabled MCP tools.
+ * Called when establishing a new connection to start with all tools disabled.
+ */
+export function clearEnabledMCPTools(): void {
+    enabledMCPTools.clear();
+    logOutput('DEBUG', 'MCP: Cleared enabled tools list');
+}
+
+/**
+ * Sets which MCP tools are enabled.
+ * This updates the in-memory enabled tools set and triggers a refresh.
+ *
+ * @param toolNames - Array of tool names to enable
+ */
+export async function setEnabledMCPTools(toolNames: string[]): Promise<void> {
+    enabledMCPTools.clear();
+    for (const name of toolNames) {
+        if (name in mcpActions) {
+            enabledMCPTools.add(name);
+        }
+    }
+    logOutput('INFO', `MCP: Updated enabled tools: ${toolNames.length} enabled`);
+}
+
+/**
+ * Shows a checkbox dialog to configure which MCP tools are enabled.
+ * Prompts user to select tools, then refreshes the registration.
+ */
+export async function configureMCPTools(): Promise<void> {
+    if (!mcpManager.isConnected) {
+        vscode.window.showWarningMessage('No MCP server connected. Connect to a server first.');
+        return;
+    }
+
+    const allTools = getAllMCPTools();
+    if (allTools.length === 0) {
+        vscode.window.showInformationMessage('No MCP tools available.');
+        return;
+    }
+
+    // Create quick pick items with current enabled status
+    const items = allTools.map(tool => ({
+        label: tool.name,
+        description: tool.description || '(no description)',
+        picked: tool.enabled,
+    }));
+
+    // Show multi-select quick pick
+    const selected = await vscode.window.showQuickPick(items, {
+        canPickMany: true,
+        placeHolder: `Select tools to enable (${allTools.length} available)`,
+        title: 'Configure MCP Tools',
+    });
+
+    if (selected === undefined) {
+        return; // User cancelled
+    }
+
+    // Update enabled tools
+    const enabledToolNames = selected.map(item => item.label);
+    await setEnabledMCPTools(enabledToolNames);
+
+    // Refresh to apply changes
+    const refreshResult = await refreshMCPActions();
+
+    if (refreshResult >= 0) {
+        vscode.window.showInformationMessage(
+            `MCP tools configured: ${enabledToolNames.length} enabled, ${allTools.length - enabledToolNames.length} disabled.`,
+        );
+    } else {
+        vscode.window.showErrorMessage('Failed to refresh MCP tools. Check the output panel for details.');
+    }
 }
 
 /**
