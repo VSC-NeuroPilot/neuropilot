@@ -50,7 +50,7 @@ export async function findIgnoredFile(
 
         if (stat.type === vscode.FileType.Directory) {
             const entries = await vscode.workspace.fs.readDirectory(targetUri);
-            for (const [name, type] of entries) {
+            for (const [name] of entries) {
                 const childPath = path.join(targetPath, name);
                 const result = await checkRecursive(childPath);
                 if (result) return result;
