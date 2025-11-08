@@ -538,7 +538,7 @@ export function handleGetFiles(_actionData: ActionData): string | undefined {
 
         const result: vscode.Uri[] = [];
         for (const [childUri, fileType] of uriEntries) {
-			
+
             if (fileType === vscode.FileType.File) {
                 if (isPathNeuroSafe(childUri.fsPath))
                     result.push(childUri);

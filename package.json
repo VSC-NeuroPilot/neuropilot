@@ -188,6 +188,17 @@
 			{
 				"title": "NeuroPilot",
 				"properties": {
+					"neuropilot.access.inheritFromIgnoreFiles": {
+						"type": "boolean",
+						"default": true,
+						"description": "Allow NeuroPilot to read ignore patterns from an ignore file (e.g. .gitignore)."
+					},
+					"neuropilot.access.ignoreFilePath": {
+						"type": "array",
+						"default": ["./.gitignore"],
+						"description": "Optionally set paths to custom ignore files (relative or absolute).\n\nThese files will be used to inherit Neuro-safe glob patterns if `neuropilot.access.inheritFromIgnoreFiles` is enabled."
+					},
+
 					"neuropilot.websocketUrl": {
 						"type": "string",
 						"description": "The URL to connect to the Neuro API",
@@ -780,6 +791,28 @@
 							"CNAME"
 						],
 						"markdownDescription": "A case-sensitive glob pattern for files Neuro is not allowed to open. Applied after the include pattern. Patterns without a slash will match any file or folder with that name."
+					},
+					"neuropilot.access.ignoreFiles": {
+						"type": "array",
+						"items": {
+							"type": "string"
+						},
+						"default": [],
+						"markdownDescription": "A list of ignore-style files to inherit Neuro-safe glob paths from.\n\nSupports the full range of git's ignore pattern globs. Also automatically ignores comments (started with #).\n\nThe further down a file is on the list, the more priority it gets.\n\nNone of these files can override your own Neuro-safe patterns set in extension settings.\n\nEdit in settings.json for examples.",
+						"examples": [
+							[
+								".gitignore",
+								".npmignore",
+								".prettierignore"
+							],
+							[
+								".gitignore",
+								".vscodeignore"
+							],
+							[
+								".neuroignore"
+							]
+						]
 					},
 					"neuropilot.connection.websocketUrl": {
 						"type": "string",
