@@ -118,30 +118,47 @@ export async function findIgnoredFile(
     const config = vscode.workspace.getConfiguration('neuropilot.access');
     const inheritFromIgnoreFiles = config.get<boolean>('inheritFromIgnoreFiles');
 
+    // This variable takes priority from the default .gitignore path
+    const customIgnorePaths = config.get<string[]>('ignoreFilePath') || [];
+
+    // Fallback to default .gitignore if empty
+    if (customIgnorePaths.length === 0) {
+        customIgnorePaths.push(path.join(baseDir, '.gitignore'));
+    }
+
     // If permission is denied, return false
     if (!inheritFromIgnoreFiles) {
         vscode.window.showWarningMessage(
             'You disabled the permission for neuro to ignore the files (like libraries, lock files, etc) '
-      + 'that is critical for her to not get overly long context messages when she tries to get the list of files '
-      + 'and directories (neuropilot.access.inheritFromIgnoreFiles). You can enable it from the settings if you want to change this behavior.',
+            + 'that is critical for her to not get overly long context messages when she tries to get the list of files '
+            + 'and directories (neuropilot.access.inheritFromIgnoreFiles). You can enable it from the settings if you want to change this behavior.',
         );
         return false;
-    }
-    const gitignoreUri = vscode.Uri.file(path.join(baseDir, '.gitignore'));
-
-    // Check .gitignore existence
-    try {
-        await vscode.workspace.fs.stat(gitignoreUri);
-    } catch {
-        throw new Error(`.gitignore not found in: ${baseDir}`);
     }
 
     const ig = ignore();
 
-    // Load .gitignore content
-    const gitignoreBytes = await vscode.workspace.fs.readFile(gitignoreUri);
-    const gitignoreContent = Buffer.from(gitignoreBytes).toString('utf8');
-    ig.add(gitignoreContent);
+    // Load all ignore file's content
+    for (const filePath of customIgnorePaths) {
+        const ignoreFileUri = path.isAbsolute(filePath)
+            ? vscode.Uri.file(filePath)
+            : vscode.Uri.file(path.join(baseDir, filePath));
+
+        // Check the ignore list file's existence
+        try {
+            await vscode.workspace.fs.stat(ignoreFileUri);
+        } catch {
+            throw new Error(`.gitignore not found in: ${baseDir}`);
+        }
+
+        try {
+            const bytes = await vscode.workspace.fs.readFile(ignoreFileUri);
+            const content = Buffer.from(bytes).toString('utf8');
+            ig.add(content);
+        } catch {
+            vscode.window.showWarningMessage(`Ignore file not found: ${ignoreFileUri.fsPath}`);
+        }
+    }
 
     /**
    * Recursively walk through a folder and return first ignored file/folder
