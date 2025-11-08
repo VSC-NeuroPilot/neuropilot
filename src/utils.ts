@@ -304,7 +304,7 @@ export function combineGlobLinesToRegExp(lines: string[]): RegExp {
     return new RegExp(result);
 }
 
-import { isIgnoredFile } from './ignore_files_utils';
+import { isIgnoredFile } from '@/ignore_files_utils';
 
 /**
  * Check if an absolute path is safe for Neuro to access.

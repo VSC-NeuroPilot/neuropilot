@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import * as path from 'path';
 import ignore, { Ignore } from 'ignore';
 
 /**
@@ -123,7 +122,7 @@ export async function findIgnoredFile(
 
     // Fallback to default .gitignore if empty
     if (customIgnorePaths.length === 0) {
-        customIgnorePaths.push(path.join(baseDir, '.gitignore'));
+        customIgnorePaths.push(vscode.Uri.joinPath(vscode.Uri.file(baseDir), '.gitignore').fsPath);
     }
 
     // If permission is denied, return false
@@ -140,9 +139,8 @@ export async function findIgnoredFile(
 
     // Load all ignore file's content
     for (const filePath of customIgnorePaths) {
-        const ignoreFileUri = path.isAbsolute(filePath)
-            ? vscode.Uri.file(filePath)
-            : vscode.Uri.file(path.join(baseDir, filePath));
+        const baseUri = vscode.Uri.file(baseDir);
+        const ignoreFileUri = vscode.Uri.joinPath(baseUri, filePath);
 
         // Check the ignore list file's existence
         try {
@@ -164,7 +162,7 @@ export async function findIgnoredFile(
    * Recursively walk through a folder and return first ignored file/folder
    */
     async function checkRecursive(targetPath: string): Promise<string | false> {
-        const relPath = path.relative(baseDir, targetPath);
+        const relPath = vscode.workspace.asRelativePath(vscode.Uri.file(targetPath), false);
 
         // Check if this path itself is ignored
         if (ig.ignores(relPath)) {
@@ -183,8 +181,8 @@ export async function findIgnoredFile(
         if (stat.type === vscode.FileType.Directory) {
             const entries = await vscode.workspace.fs.readDirectory(targetUri);
             for (const [name] of entries) {
-                const childPath = path.join(targetPath, name);
-                const result = await checkRecursive(childPath);
+                const childPath = vscode.Uri.joinPath(vscode.Uri.file(targetPath), name);
+                const result = await checkRecursive(childPath.fsPath);
                 if (result) return result;
             }
         }
@@ -194,10 +192,11 @@ export async function findIgnoredFile(
 
     // Process targets
     for (const target of targets) {
-        const absPath = path.isAbsolute(target)
-            ? target
-            : path.join(baseDir, target);
-        const result = await checkRecursive(absPath);
+        const fileUri = vscode.Uri.file(target);
+        const absUri = target.startsWith(baseDir)
+            ? fileUri
+            : vscode.Uri.joinPath(vscode.Uri.file(baseDir), target);
+        const result = await checkRecursive(absUri.fsPath);
         if (result) return result;
     }
 

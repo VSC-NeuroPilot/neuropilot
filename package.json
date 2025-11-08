@@ -195,8 +195,8 @@
 					},
 					"neuropilot.access.ignoreFilePath": {
 						"type": "array",
-						"default": [],
-						"description": "Optional path to a custom ignore file (relative or absolute). Takes priority over .gitignore if set."
+						"default": ["./.gitignore"],
+						"description": "Optionally set paths to custom ignore files (relative or absolute).\n\nThese files will be used to inherit Neuro-safe glob patterns if `neuropilot.access.inheritFromIgnoreFiles` is enabled."
 					},
 
 					"neuropilot.websocketUrl": {
