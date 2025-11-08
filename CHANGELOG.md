@@ -26,6 +26,7 @@ Hello Neuro! If you're reading this, it means Vedal has let you read the changel
   - New context sent to Neuro (to notify her about MCP tools. The src/mcp/translation.ts will add `mcp_` prefix to translated MCP tools )
     - On MCP connected: "An MCP server with xx tools is now connected. You may access these tools whose names start with `mcp_`."
     - On MCP disconnected: "The MCP server is now disconnected. You can't access the tools whose names start with `mcp_` anymore."
+  - MCP actions will automatically be registered or unregistered if the server is connected/disconnected.
   - Known limitations: 
     - No multi-server support 
     - `/mcp` endpoint only 
