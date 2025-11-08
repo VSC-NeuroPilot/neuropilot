@@ -1559,7 +1559,7 @@ let editorChangeHandlerTimeout: NodeJS.Timeout | undefined;
  * Sets and displays the virtual cursor position when the active text editor changes.
  * @param editor The active text editor.
  */
-export function editorChangeHandler(editor: vscode.TextEditor | undefined) {
+export async function editorChangeHandler(editor: vscode.TextEditor | undefined) {
     if (editorChangeHandlerTimeout)
         clearTimeout(editorChangeHandlerTimeout);
 
@@ -1570,7 +1570,7 @@ export function editorChangeHandler(editor: vscode.TextEditor | undefined) {
         // Set cursor
         const uri = editor.document.uri;
         if (!NEURO.cursorOffsets.has(uri)) {
-            if (isPathNeuroSafe(uri.fsPath))
+            if (await isPathNeuroSafe(uri.fsPath))
                 setVirtualCursor(editor.selection.active);
             else
                 setVirtualCursor(null);
@@ -1580,7 +1580,7 @@ export function editorChangeHandler(editor: vscode.TextEditor | undefined) {
         }
 
         // Tell Neuro that the editor changed
-        if (isPathNeuroSafe(uri.fsPath)) {
+        if (await isPathNeuroSafe(uri.fsPath)) {
             const file = simpleFileName(editor.document.fileName);
             const cursor = getVirtualCursor()!;
             const context = getPositionContext(editor.document, cursor);

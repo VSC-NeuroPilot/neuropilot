@@ -21,7 +21,7 @@ import {
 import { registerUnsupervisedActions, registerUnsupervisedHandlers } from './unsupervised';
 import { registerSendSelectionToNeuro } from '@/editing';
 
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
     // Show update reminder if version changed
     showUpdateReminder(context);
 
@@ -63,7 +63,7 @@ export function activate(context: vscode.ExtensionContext) {
     NEURO.highlightDecorationType = vscode.window.createTextEditorDecorationType(getHighlightDecorationRenderOptions());
 
     // Set initial virtual cursor
-    if (vscode.window.activeTextEditor && isPathNeuroSafe(vscode.window.activeTextEditor.document.fileName)) {
+    if (vscode.window.activeTextEditor && await isPathNeuroSafe(vscode.window.activeTextEditor.document.fileName)) {
         setVirtualCursor(vscode.window.activeTextEditor.selection.active);
     }
 }

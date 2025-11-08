@@ -21,7 +21,7 @@ async function validatePath(path: string, shouldExist: boolean, pathType: string
 	};
 	const relativePath = normalizePath(path).replace(/^\/|\/$/g, '');
 	const absolutePath = (getWorkspacePath() ?? '') + '/' + relativePath;
-	if (!isPathNeuroSafe(absolutePath)) {
+	if (!await isPathNeuroSafe(absolutePath)) {
 		return actionValidationFailure(`You are not allowed to access this ${pathType}.`);
 	}
 	const base = vscode.workspace.workspaceFolders?.[0]?.uri;
@@ -506,7 +506,7 @@ export function handleDeleteFileOrFolder(actionData: ActionData): string | undef
 }
 
 export function handleGetFiles(_actionData: ActionData): string | undefined {
-    const workspaceFolder = vscode.workspace.workspaceFolders![0].uri;	
+    const workspaceFolder = vscode.workspace.workspaceFolders![0].uri;
     recurseWorkspace(workspaceFolder).then(
         (uris) => {
             const paths = uris
@@ -540,11 +540,11 @@ export function handleGetFiles(_actionData: ActionData): string | undefined {
         for (const [childUri, fileType] of uriEntries) {
 
             if (fileType === vscode.FileType.File) {
-                if (isPathNeuroSafe(childUri.fsPath))
+                if (await isPathNeuroSafe(childUri.fsPath))
                     result.push(childUri);
             }
             else if (fileType === vscode.FileType.Directory) {
-                if (isPathNeuroSafe(childUri.fsPath))
+                if (await isPathNeuroSafe(childUri.fsPath))
                     result.push(...await recurseWorkspace(childUri));
             }
             else {

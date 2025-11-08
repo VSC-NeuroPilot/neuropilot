@@ -314,7 +314,7 @@ import { isIgnoredFile } from '@/ignore_files_utils';
  * @param checkPatterns Whether to check against include and exclude patterns.
  * @returns True if Neuro may safely access the path.
  */
-export function isPathNeuroSafe(path: string, checkPatterns = true): boolean {
+export async function isPathNeuroSafe(path: string, checkPatterns = true): Promise<boolean> {
     const workspacePath = getWorkspacePath();
     const rootFolder = workspacePath ? normalizePath(workspacePath) : undefined;
     const normalizedPath = normalizePath(path);
@@ -322,6 +322,8 @@ export function isPathNeuroSafe(path: string, checkPatterns = true): boolean {
     const excludePattern = ACCESS.excludePattern;
     const includeRegExp: RegExp = checkPatterns ? combineGlobLinesToRegExp(includePattern) : REGEXP_ALWAYS;
     const excludeRegExp: RegExp = checkPatterns && excludePattern ? combineGlobLinesToRegExp(excludePattern) : REGEXP_NEVER;
+
+    const ignored = rootFolder ? await isIgnoredFile(rootFolder, normalizedPath) : false;
 
     return rootFolder !== undefined
         // Prevent access to the workspace folder itself
@@ -341,7 +343,7 @@ export function isPathNeuroSafe(path: string, checkPatterns = true): boolean {
         // Check against exclude pattern
         && !excludeRegExp.test(normalizedPath)
         // Check if the path is ignored by .gitignore (if so, it's likely a library, or something large and not necessarily needed to be viewed by the user or Neuro).
-        && !isIgnoredFile(rootFolder!, normalizedPath);
+        && !ignored;
 }
 
 export const delayAsync = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
