@@ -1,6 +1,6 @@
-import * as vscode from "vscode";
-import * as path from "path";
-import ignore, { Ignore } from "ignore";
+import * as vscode from 'vscode';
+import * as path from 'path';
+import ignore, { Ignore } from 'ignore';
 
 /**
  * A lightweight utility for managing and applying global ignore patterns,
@@ -37,71 +37,71 @@ import ignore, { Ignore } from "ignore";
  * from being loaded into the assistant’s context or processed by background tasks.
  */
 export class IgnoreItemsList {
-  private ig: Ignore;
-  private globals: string[];
+    private ig: Ignore;
+    private globals: string[];
 
-  constructor(globals: string[]) {
-    this.globals = globals;
-    this.ig = ignore();
-    this.addGlobals(globals);
-  }
+    constructor(globals: string[]) {
+        this.globals = globals;
+        this.ig = ignore();
+        this.addGlobals(globals);
+    }
 
-  /**
+    /**
    * Add or refresh the global ignore patterns
    * @param globals - Array of ignore patterns
    */
-  addGlobals(globals: string[]): void {
-    this.globals = globals;
-    this.ig = ignore(); // reset instance
-    this.ig.add(globals);
-  }
+    addGlobals(globals: string[]): void {
+        this.globals = globals;
+        this.ig = ignore(); // reset instance
+        this.ig.add(globals);
+    }
 
-  /**
+    /**
    * Check if a given relative path is ignored
    * @param relPath - Path relative to the base directory
    * @returns true if ignored, false otherwise
    */
-  isIgnored(relPath: string): boolean {
-    return this.ig.ignores(relPath);
-  }
+    isIgnored(relPath: string): boolean {
+        return this.ig.ignores(relPath);
+    }
 
-  /**
+    /**
    * Filter out ignored files/folders from a list
    * @param files - List of relative paths
    * @returns List of non-ignored files
    */
-  filterVisible(files: string[]): string[] {
-    return files.filter(file => !this.isIgnored(file));
-  }
+    filterVisible(files: string[]): string[] {
+        return files.filter(file => !this.isIgnored(file));
+    }
 
-  /**
+    /**
    * Add extra ignore patterns on top of the current globals
    * @param patterns - Array of ignore patterns
    */
-  addPatterns(patterns: string[]): void {
-    this.ig.add(patterns);
-  }
+    addPatterns(patterns: string[]): void {
+        this.ig.add(patterns);
+    }
 }
 
 /**
  * Example usage: test IgnoreItemsList directly
  */
 export async function testIgnoreItemsList() {
-  const globalPatterns = ["node_modules/", "*.log", "dist/"];
-  const ignoreList = new IgnoreItemsList(globalPatterns);
+    const globalPatterns = ['node_modules/', '*.log', 'dist/'];
+    const ignoreList = new IgnoreItemsList(globalPatterns);
 
-  console.log(ignoreList.isIgnored("node_modules/test")); // true
-  console.log(ignoreList.isIgnored("src/index.ts")); // false
+    console.log(ignoreList.isIgnored('node_modules/test')); // true
+    console.log(ignoreList.isIgnored('src/index.ts')); // false
 
-  ignoreList.addPatterns([".env"]);
-  console.log(ignoreList.isIgnored(".env")); // true
+    ignoreList.addPatterns(['.env']);
+    console.log(ignoreList.isIgnored('.env')); // true
 
-  const visible = ignoreList.filterVisible(["src", "node_modules", ".env"]);
-  console.log("Visible files:", visible); // ["src"]
+    const visible = ignoreList.filterVisible(['src', 'node_modules', '.env']);
+    console.log('Visible files:', visible); // ["src"]
 
-  vscode.window.showInformationMessage(
-    `IgnoreItemsList test finished. Visible: ${visible.join(", ")}`
-  );
+    vscode.window.showInformationMessage(
+        `IgnoreItemsList test finished. Visible: ${visible.join(', ')}`,
+    );
 }
 
 /**
@@ -111,95 +111,95 @@ export async function testIgnoreItemsList() {
  * @returns The first ignored path found, or false if none match
  */
 export async function findIgnoredFile(
-  baseDir: string,
-  targets: string[]
+    baseDir: string,
+    targets: string[],
 ): Promise<string | false> {
-  // Permission check
-  const config = vscode.workspace.getConfiguration("neuropilot.access");
-  const inheritFromIgnoreFiles = config.get<boolean>("inheritFromIgnoreFiles");
+    // Permission check
+    const config = vscode.workspace.getConfiguration('neuropilot.access');
+    const inheritFromIgnoreFiles = config.get<boolean>('inheritFromIgnoreFiles');
 
-  // If permission is denied, return false
-  if (!inheritFromIgnoreFiles) {
-    vscode.window.showWarningMessage(
-      "You disabled the permission for neuro to ignore the files (like libraries, lock files, etc) "
-      + "that is critical for her to not get overly long context messages when she tries to get the list of files "
-      + "and directories (neuropilot.access.inheritFromIgnoreFiles). You can enable it from the settings if you want to change this behavior."
-    );
-    return false;
-  }
-  const gitignoreUri = vscode.Uri.file(path.join(baseDir, ".gitignore"));
+    // If permission is denied, return false
+    if (!inheritFromIgnoreFiles) {
+        vscode.window.showWarningMessage(
+            'You disabled the permission for neuro to ignore the files (like libraries, lock files, etc) '
+      + 'that is critical for her to not get overly long context messages when she tries to get the list of files '
+      + 'and directories (neuropilot.access.inheritFromIgnoreFiles). You can enable it from the settings if you want to change this behavior.',
+        );
+        return false;
+    }
+    const gitignoreUri = vscode.Uri.file(path.join(baseDir, '.gitignore'));
 
-  // Check .gitignore existence
-  try {
-    await vscode.workspace.fs.stat(gitignoreUri);
-  } catch {
-    throw new Error(`.gitignore not found in: ${baseDir}`);
-  }
+    // Check .gitignore existence
+    try {
+        await vscode.workspace.fs.stat(gitignoreUri);
+    } catch {
+        throw new Error(`.gitignore not found in: ${baseDir}`);
+    }
 
-  const ig = ignore();
+    const ig = ignore();
 
-  // Load .gitignore content
-  const gitignoreBytes = await vscode.workspace.fs.readFile(gitignoreUri);
-  const gitignoreContent = Buffer.from(gitignoreBytes).toString("utf8");
-  ig.add(gitignoreContent);
+    // Load .gitignore content
+    const gitignoreBytes = await vscode.workspace.fs.readFile(gitignoreUri);
+    const gitignoreContent = Buffer.from(gitignoreBytes).toString('utf8');
+    ig.add(gitignoreContent);
 
-  /**
+    /**
    * Recursively walk through a folder and return first ignored file/folder
    */
-  async function checkRecursive(targetPath: string): Promise<string | false> {
-    const relPath = path.relative(baseDir, targetPath);
+    async function checkRecursive(targetPath: string): Promise<string | false> {
+        const relPath = path.relative(baseDir, targetPath);
 
-    // Check if this path itself is ignored
-    if (ig.ignores(relPath)) {
-      return targetPath;
+        // Check if this path itself is ignored
+        if (ig.ignores(relPath)) {
+            return targetPath;
+        }
+
+        // Check if directory
+        const targetUri = vscode.Uri.file(targetPath);
+        let stat: vscode.FileStat;
+        try {
+            stat = await vscode.workspace.fs.stat(targetUri);
+        } catch {
+            return false;
+        }
+
+        if (stat.type === vscode.FileType.Directory) {
+            const entries = await vscode.workspace.fs.readDirectory(targetUri);
+            for (const [name] of entries) {
+                const childPath = path.join(targetPath, name);
+                const result = await checkRecursive(childPath);
+                if (result) return result;
+            }
+        }
+
+        return false;
     }
 
-    // Check if directory
-    const targetUri = vscode.Uri.file(targetPath);
-    let stat: vscode.FileStat;
-    try {
-      stat = await vscode.workspace.fs.stat(targetUri);
-    } catch {
-      return false;
-    }
-
-    if (stat.type === vscode.FileType.Directory) {
-      const entries = await vscode.workspace.fs.readDirectory(targetUri);
-      for (const [name, type] of entries) {
-        const childPath = path.join(targetPath, name);
-        const result = await checkRecursive(childPath);
+    // Process targets
+    for (const target of targets) {
+        const absPath = path.isAbsolute(target)
+            ? target
+            : path.join(baseDir, target);
+        const result = await checkRecursive(absPath);
         if (result) return result;
-      }
     }
 
     return false;
-  }
-
-  // Process targets
-  for (const target of targets) {
-    const absPath = path.isAbsolute(target)
-      ? target
-      : path.join(baseDir, target);
-    const result = await checkRecursive(absPath);
-    if (result) return result;
-  }
-
-  return false;
 }
 
 // Example usage for testing inside VSCode extension (command)
 export async function testFindIgnoredFile() {
-  const baseDir = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-  if (!baseDir) {
-    vscode.window.showErrorMessage("No workspace folder found");
-    return;
-  }
+    const baseDir = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    if (!baseDir) {
+        vscode.window.showErrorMessage('No workspace folder found');
+        return;
+    }
 
-  const targets = ["src", "node_modules", "package-lock.json"];
-  const result = await findIgnoredFile(baseDir, targets);
-  vscode.window.showInformationMessage(
-    result ? `Ignored: ${result}` : "No ignored files found"
-  );
+    const targets = ['src', 'node_modules', 'package-lock.json'];
+    const result = await findIgnoredFile(baseDir, targets);
+    vscode.window.showInformationMessage(
+        result ? `Ignored: ${result}` : 'No ignored files found',
+    );
 }
 
 /**
@@ -209,29 +209,29 @@ export async function testFindIgnoredFile() {
  * @returns true if the file is ignored, false otherwise
  */
 export async function isIgnoredFile(
-  baseDir: string,
-  targetPath: string
+    baseDir: string,
+    targetPath: string,
 ): Promise<boolean> {
-  const result = await findIgnoredFile(baseDir, [targetPath]);
-  return !!result; // true if ignored, false otherwise
+    const result = await findIgnoredFile(baseDir, [targetPath]);
+    return !!result; // true if ignored, false otherwise
 }
 
 /**
  * Example usage: demonstrate using isIgnoredFile in a condition
  */
 export async function testIsIgnoredFile() {
-  const baseDir = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-  if (!baseDir) {
-    vscode.window.showErrorMessage("No workspace folder found");
-    return;
-  }
+    const baseDir = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    if (!baseDir) {
+        vscode.window.showErrorMessage('No workspace folder found');
+        return;
+    }
 
-  const checkPath = "node_modules"; // example
-  if (await isIgnoredFile(baseDir, checkPath)) {
-    vscode.window.showInformationMessage(`${checkPath} is ignored.`);
-  } else {
-    vscode.window.showInformationMessage(`${checkPath} is NOT ignored.`);
-  }
+    const checkPath = 'node_modules'; // example
+    if (await isIgnoredFile(baseDir, checkPath)) {
+        vscode.window.showInformationMessage(`${checkPath} is ignored.`);
+    } else {
+        vscode.window.showInformationMessage(`${checkPath} is NOT ignored.`);
+    }
 }
 
 
@@ -242,34 +242,34 @@ export async function testIsIgnoredFile() {
  * @returns A list of visible (non-ignored) files/folders
  */
 export async function getVisibleFiles(
-  baseDir: string,
-  files: string[]
+    baseDir: string,
+    files: string[],
 ): Promise<string[]> {
-  const visible: string[] = [];
-  for (const file of files) {
-    if (!(await isIgnoredFile(baseDir, file))) {
-      visible.push(file);
+    const visible: string[] = [];
+    for (const file of files) {
+        if (!await isIgnoredFile(baseDir, file)) {
+            visible.push(file);
+        }
     }
-  }
-  return visible;
+    return visible;
 }
 
 /**
  * Example usage: demonstrate using getVisibleFiles
  */
 export async function testGetVisibleFiles() {
-  const baseDir = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-  if (!baseDir) {
-    vscode.window.showErrorMessage("No workspace folder found");
-    return;
-  }
+    const baseDir = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    if (!baseDir) {
+        vscode.window.showErrorMessage('No workspace folder found');
+        return;
+    }
 
-  const files = ["src", "node_modules", "package-lock.json"];
-  const visible = await getVisibleFiles(baseDir, files);
+    const files = ['src', 'node_modules', 'package-lock.json'];
+    const visible = await getVisibleFiles(baseDir, files);
 
-  vscode.window.showInformationMessage(
-    visible.length
-      ? `Visible files: ${visible.join(", ")}`
-      : "All files are ignored."
-  );
+    vscode.window.showInformationMessage(
+        visible.length
+            ? `Visible files: ${visible.join(', ')}`
+            : 'All files are ignored.',
+    );
 }
