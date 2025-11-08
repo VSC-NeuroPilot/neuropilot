@@ -103,6 +103,42 @@ export async function testIgnoreItemsList() {
     );
 }
 
+// Create and export a single shared instance
+export const GlobalIgnore = new IgnoreItemsList(['node_modules/', '*.log', 'dist/']);
+
+/**
+ * Load .gitignore and custom ignore files into the global Ignore instance.
+ */
+export async function loadIgnoreFiles(baseDir: string): Promise<void> {
+    const config = vscode.workspace.getConfiguration('neuropilot.access');
+    const inheritFromIgnoreFiles = config.get<boolean>('inheritFromIgnoreFiles');
+    const customIgnorePaths = config.get<string[]>('ignoreFiles') || [];
+
+    if (!inheritFromIgnoreFiles) {
+        vscode.window.showWarningMessage(
+            'Permission to inherit from ignore files is disabled. (neuropilot.access.inheritFromIgnoreFiles)',
+        );
+        return;
+    }
+
+    // Fallback to .gitignore in baseDir
+    if (customIgnorePaths.length === 0) {
+        customIgnorePaths.push('.gitignore');
+    }
+
+    for (const relativePath of customIgnorePaths) {
+        const ignoreUri = vscode.Uri.joinPath(vscode.Uri.file(baseDir), relativePath);
+        try {
+            await vscode.workspace.fs.stat(ignoreUri);
+            const bytes = await vscode.workspace.fs.readFile(ignoreUri);
+            const content = Buffer.from(bytes).toString('utf8');
+            GlobalIgnore.addPatterns(content.split('\n'));
+        } catch {
+            vscode.window.showWarningMessage(`Ignore file not found: ${ignoreUri.fsPath}`);
+        }
+    }
+}
+
 /**
  * Recursively find the first path that is ignored by .gitignore
  * @param baseDir - Root directory where .gitignore is located (absolute path)
@@ -113,63 +149,17 @@ export async function findIgnoredFile(
     baseDir: string,
     targets: string[],
 ): Promise<string | false> {
-    // Permission check
-    const config = vscode.workspace.getConfiguration('neuropilot.access');
-    const inheritFromIgnoreFiles = config.get<boolean>('inheritFromIgnoreFiles');
+    await loadIgnoreFiles(baseDir);
 
-    // This variable takes priority from the default .gitignore path
-    const customIgnorePaths = config.get<string[]>('ignoreFiles') || [];
-
-    // Fallback to default .gitignore if empty
-    if (customIgnorePaths.length === 0) {
-        customIgnorePaths.push(vscode.Uri.joinPath(vscode.Uri.file(baseDir), '.gitignore').fsPath);
-    }
-
-    // If permission is denied, return false
-    if (!inheritFromIgnoreFiles) {
-        vscode.window.showWarningMessage(
-            'You disabled the permission for neuro to ignore the files (like libraries, lock files, etc) '
-            + 'that is critical for her to not get overly long context messages when she tries to get the list of files '
-            + 'and directories (neuropilot.access.inheritFromIgnoreFiles). You can enable it from the settings if you want to change this behavior.',
-        );
-        return false;
-    }
-
-    const ig = ignore();
-
-    // Load all ignore file's content
-    for (const filePath of customIgnorePaths) {
-        const baseUri = vscode.Uri.file(baseDir);
-        const ignoreFileUri = vscode.Uri.joinPath(baseUri, filePath);
-
-        // Check the ignore list file's existence
-        try {
-            await vscode.workspace.fs.stat(ignoreFileUri);
-        } catch {
-            throw new Error(`.gitignore not found in: ${baseDir}`);
-        }
-
-        try {
-            const bytes = await vscode.workspace.fs.readFile(ignoreFileUri);
-            const content = Buffer.from(bytes).toString('utf8');
-            ig.add(content);
-        } catch {
-            vscode.window.showWarningMessage(`Ignore file not found: ${ignoreFileUri.fsPath}`);
-        }
-    }
-
-    /**
-   * Recursively walk through a folder and return first ignored file/folder
-   */
     async function checkRecursive(targetPath: string): Promise<string | false> {
-        const relPath = vscode.workspace.asRelativePath(vscode.Uri.file(targetPath), false);
+        let relPath = vscode.workspace.asRelativePath(vscode.Uri.file(targetPath), false);
 
-        // Check if this path itself is ignored
-        if (ig.ignores(relPath)) {
+        // ensure it's truly relative (ignore requires normalized paths)
+        relPath = relPath.replace(/^[/\\]+/, ''); 
+        if (GlobalIgnore.isIgnored(relPath)) {
             return targetPath;
         }
 
-        // Check if directory
         const targetUri = vscode.Uri.file(targetPath);
         let stat: vscode.FileStat;
         try {
@@ -181,7 +171,7 @@ export async function findIgnoredFile(
         if (stat.type === vscode.FileType.Directory) {
             const entries = await vscode.workspace.fs.readDirectory(targetUri);
             for (const [name] of entries) {
-                const childPath = vscode.Uri.joinPath(vscode.Uri.file(targetPath), name);
+                const childPath = vscode.Uri.joinPath(targetUri, name);
                 const result = await checkRecursive(childPath.fsPath);
                 if (result) return result;
             }
@@ -190,7 +180,6 @@ export async function findIgnoredFile(
         return false;
     }
 
-    // Process targets
     for (const target of targets) {
         const fileUri = vscode.Uri.file(target);
         const absUri = target.startsWith(baseDir)
