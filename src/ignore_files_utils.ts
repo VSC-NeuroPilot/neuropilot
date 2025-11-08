@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import ignore, { Ignore } from 'ignore';
+import { ACCESS } from './config';
 
 /**
  * A lightweight utility for managing and applying global ignore patterns,
@@ -110,9 +111,8 @@ export const GlobalIgnore = new IgnoreItemsList(['node_modules/', '*.log', 'dist
  * Load .gitignore and custom ignore files into the global Ignore instance.
  */
 export async function loadIgnoreFiles(baseDir: string): Promise<void> {
-    const config = vscode.workspace.getConfiguration('neuropilot.access');
-    const inheritFromIgnoreFiles = config.get<boolean>('inheritFromIgnoreFiles');
-    const customIgnorePaths = config.get<string[]>('ignoreFiles') || [];
+    const inheritFromIgnoreFiles = ACCESS.inheritFromIgnoreFiles;
+    const customIgnorePaths = ACCESS.ignoreFiles;
 
     // Use global storage key for suppression
     const suppressionKey = 'neuropilot.access.suppressIgnoreWarning';
@@ -121,7 +121,7 @@ export async function loadIgnoreFiles(baseDir: string): Promise<void> {
     if (!inheritFromIgnoreFiles) {
         if (!suppressed) {
             const selection = await vscode.window.showWarningMessage(
-                'Permission to inherit from ignore files is disabled. (neuropilot.access.inheritFromIgnoreFiles)',
+                `Permission to inherit from ignore files is disabled. (${suppressionKey})`,
                 'Don’t show again',
             );
 
@@ -135,11 +135,6 @@ export async function loadIgnoreFiles(baseDir: string): Promise<void> {
             }
         }
         return;
-    }
-
-    // Fallback to .gitignore in baseDir
-    if (customIgnorePaths.length === 0) {
-        customIgnorePaths.push('.gitignore');
     }
 
     for (const relativePath of customIgnorePaths) {
