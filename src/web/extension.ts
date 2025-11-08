@@ -20,7 +20,6 @@ import {
 } from '@shared/extension';
 import { registerUnsupervisedActions, registerUnsupervisedHandlers } from './unsupervised';
 import { registerSendSelectionToNeuro } from '@/editing';
-import { registerMCPCommands, autoConnectMCP } from '@/mcp';
 
 export function activate(context: vscode.ExtensionContext) {
     // Show update reminder if version changed
@@ -37,14 +36,11 @@ export function activate(context: vscode.ExtensionContext) {
     // Register commands
     NEURO.context!.subscriptions.push(...registerCommonCommands());
 
-    // Register MCP commands
-    NEURO.context!.subscriptions.push(...registerMCPCommands(context));
-
     // Setup event handlers
     NEURO.context!.subscriptions.push(...setupCommonEventHandlers());
 
     // Setup client connected handlers
-    setupClientConnectedHandlers(registerUnsupervisedActions, registerUnsupervisedHandlers, autoConnectMCP);
+    setupClientConnectedHandlers(registerUnsupervisedActions, registerUnsupervisedHandlers);
 
     // Create status bar item
     createStatusBarItem();

@@ -12,6 +12,7 @@ import type { GitExtension } from '@typing/git';
 import { getGitExtension } from '@/git';
 import { openDocsOnTarget, registerDocsCommands, registerDocsLink } from './docs';
 import { moveCursorEmitterDiposable } from '@events/cursor';
+import { registerMCPCommands, autoConnectMCP } from '@/mcp';
 
 // Shared commands
 export function registerCommonCommands() {
@@ -31,6 +32,7 @@ export function registerCommonCommands() {
         vscode.commands.registerCommand('neuropilot.refreshExtensionDependencyState', obtainExtensionState),
         vscode.commands.registerCommand('neuropilot.resetTemporarilyDisabledActions', () => NEURO.tempDisabledActions = []),
         ...registerDocsCommands(),
+        ...registerMCPCommands(),
     ];
 }
 
@@ -116,6 +118,7 @@ export function setupClientConnectedHandlers(...extraHandlers: (() => void)[]) {
     onClientConnected(registerRequestCookieAction);
     onClientConnected(registerRequestCookieHandler);
     onClientConnected(registerPostActionHandler);
+    onClientConnected(autoConnectMCP);
 }
 
 export function createStatusBarItem() {

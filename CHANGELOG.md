@@ -27,11 +27,11 @@ Hello Neuro! If you're reading this, it means Vedal has let you read the changel
     - On MCP connected: "An MCP server with xx tools is now connected. You may access these tools whose names start with `mcp_`."
     - On MCP disconnected: "The MCP server is now disconnected. You can't access the tools whose names start with `mcp_` anymore."
   - MCP actions will automatically be registered or unregistered if the server is connected/disconnected.
-  - Known limitations: 
-    - No multi-server support 
-    - `/mcp` endpoint only 
-    - No individual tool-level control.
-    - **Web version requires MCP servers with CORS headers** (browsers block cross-origin requests without proper `Access-Control-Allow-Origin` headers).
+  - Known limitations:
+    - No multi-server support (only one MCP server can be connected at a time)
+    - Only supports Streamable-HTTP transport with `/mcp` endpoint (no `stdio` or legacy `/sse` SSE transport)
+    - No individual tool-level control (all tools from a server are registered/unregistered together)
+    - **Web version requires MCP servers with CORS headers** (browsers block cross-origin requests without proper `Access-Control-Allow-Origin` headers)
 
 ## 2.2.3
 

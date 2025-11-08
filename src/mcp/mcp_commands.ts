@@ -325,10 +325,9 @@ async function testMCPToolCall(): Promise<void> {
  * Registers all MCP commands with VSCode.
  * Should be called during extension activation.
  *
- * @param context - Extension context for disposable registration
  * @returns Array of disposables for cleanup
  */
-export function registerMCPCommands(_context: vscode.ExtensionContext): vscode.Disposable[] {
+export function registerMCPCommands(): vscode.Disposable[] {
     return [
         vscode.commands.registerCommand('neuropilot.mcp.connectServer', connectToMCPServer),
         vscode.commands.registerCommand('neuropilot.mcp.disconnectServer', disconnectFromMCPServer),
