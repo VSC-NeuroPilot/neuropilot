@@ -115,7 +115,7 @@ export async function loadIgnoreFiles(baseDir: string): Promise<void> {
     const customIgnorePaths = config.get<string[]>('ignoreFiles') || [];
 
     // Use global storage key for suppression
-    const suppressionKey = 'neuropilot.suppressIgnoreWarning';
+    const suppressionKey = 'neuropilot.access.suppressIgnoreWarning';
     const suppressed = vscode.workspace.getConfiguration().get<boolean>(suppressionKey, false);
 
     if (!inheritFromIgnoreFiles) {

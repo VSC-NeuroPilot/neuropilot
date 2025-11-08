@@ -10,6 +10,10 @@ Changes between each version before then will not be listed.
 
 Hello Neuro! If you're reading this, it means Vedal has let you read the changelogs for the extension!
 
+### Additions
+
+- 
+
 ### Fixes
 
 - `neuropilot.actions.disabledActions` is now given a `uniqueItems` property on its schema, meaning that all items inside it must be unique. It isn't strictly necessary but to ensure no breakage or anything we've added that.
@@ -22,6 +26,16 @@ Hello Neuro! If you're reading this, it means Vedal has let you read the changel
 - The way that ignoring the deprecated settings migration notice has been changed.
   - Before, telling the extension to ignore deprecated settings meant that the deprecated settings notice would be ignored forever.
   - As of this update, the extension will only ignore it for this version.
+
+### New settings
+
+- `neuropilot.access.inheritFromIgnoreFiles` - Whether or not NeuroPilot will inherit ignore-style files (e.g. `.gitignore`) for Neuro-safe path checks. **Default: `false`** (external contribution, thanks [cassitly](https://github.com/cassitly)!)
+  - This should help if Neuro works on many different types of projects at once.
+- `neuropilot.access.ignoreFiles` - The list of files to inherit Neuro-safe glob patterns from. (partially external contribution, thanks [cassitly](https://github.com/cassitly)!)
+  - These files must follow the `.gitignore` specification, which is mostly adopted across different ignore files anyways. However, as `.npmignore` is parsed using a different library, it may not be guaranteed to work the same if you use `.npmignore`.
+  - Patterns are matched **from the root directory!** Ignore files in subpaths may not work as intended. <!-- Should we patch before releasing? -->
+  - Defaults to `.gitignore` from workspace project root.
+- `neuropilot.access.suppressIgnoreWarning` - Whether or not to suppress warnings about ignore files. <!-- not sure if this is a good idea ngl, should've made it only for the session but sure ig --> (external contribution, thanks [cassitly](https://github.com/cassitly)!)
 
 ### New actions
 
