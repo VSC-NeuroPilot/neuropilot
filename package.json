@@ -188,6 +188,12 @@
 			{
 				"title": "NeuroPilot",
 				"properties": {
+					"neuropilot.suppressIgnoreWarning": {
+						"type": "boolean",
+						"default": false,
+						"description": "Suppress the warning about NeuroPilot ignoring ignore patterns."
+					},
+					
 					"neuropilot.access.inheritFromIgnoreFiles": {
 						"type": "boolean",
 						"default": true,
