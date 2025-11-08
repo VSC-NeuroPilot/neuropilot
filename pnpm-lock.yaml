@@ -8,9 +8,6 @@ importers:
 
   .:
     dependencies:
-      '@cfworker/json-schema':
-        specifier: 4.1.1
-        version: 4.1.1
       '@modelcontextprotocol/sdk':
         specifier: 1.21.0
         version: 1.21.0(@cfworker/json-schema@4.1.1)
@@ -3441,7 +3438,8 @@ snapshots:
 
   '@borewit/text-codec@0.1.1': {}
 
-  '@cfworker/json-schema@4.1.1': {}
+  '@cfworker/json-schema@4.1.1':
+    optional: true
 
   '@emnapi/core@1.5.0':
     dependencies:
