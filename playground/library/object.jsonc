@@ -1,0 +1,8 @@
+import assert from "assert"
+
+{ /** object shapes! */
+    JSON.parse("") // this is valid JSON???
+}
+{ /** O_O why are there two */
+    assert.ok(null, new TypeError("why does this work???"))
+}
