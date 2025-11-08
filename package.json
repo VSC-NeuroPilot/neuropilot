@@ -194,11 +194,6 @@
 						"description": "Suppress the warning about NeuroPilot ignoring ignore patterns."
 					},
 					
-					"neuropilot.access.inheritFromIgnoreFiles": {
-						"type": "boolean",
-						"default": true,
-						"description": "Allow NeuroPilot to read ignore patterns from an ignore file (e.g. .gitignore)."
-					},
 					"neuropilot.websocketUrl": {
 						"type": "string",
 						"description": "The URL to connect to the Neuro API",
@@ -791,6 +786,11 @@
 							"CNAME"
 						],
 						"markdownDescription": "A case-sensitive glob pattern for files Neuro is not allowed to open. Applied after the include pattern. Patterns without a slash will match any file or folder with that name."
+					},
+					"neuropilot.access.inheritFromIgnoreFiles": {
+						"type": "boolean",
+						"default": true,
+						"description": "Allow NeuroPilot to read ignore patterns from an ignore file (e.g. .gitignore)."
 					},
 					"neuropilot.access.ignoreFiles": {
 						"type": "array",
