@@ -480,6 +480,7 @@
 								"undo"
 							]
 						},
+						"uniqueItems": true,
 						"markdownDescription": "List of action names that Neuro can't use, regardless of other permission settings.\n\nRequires [reloading permissions](command:neuropilot.reloadPermissions) if changed.",
 						"markdownDeprecationMessage": "This setting has moved to neuropilot.actions.disabledActions"
 					},

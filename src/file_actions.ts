@@ -506,7 +506,7 @@ export function handleDeleteFileOrFolder(actionData: ActionData): string | undef
 }
 
 export function handleGetFiles(_actionData: ActionData): string | undefined {
-    const workspaceFolder = vscode.workspace.workspaceFolders![0].uri;
+    const workspaceFolder = vscode.workspace.workspaceFolders![0].uri;	
     recurseWorkspace(workspaceFolder).then(
         (uris) => {
             const paths = uris
