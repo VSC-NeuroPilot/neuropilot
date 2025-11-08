@@ -51,6 +51,6 @@
     "neuropilot.connection.nameOfAPI": "Neuro",
     "neuropilot.mcp.serverUrl": "http://127.0.0.1:3000",
     "neuropilot.mcp.autoConnect": false,
-    "neuropilot.permission.mcpTools": "Copilot",
+    "neuropilot.permission.mcpTools": "Off",
     "neuropilot.access.dotFiles": false
 }
