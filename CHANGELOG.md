@@ -30,7 +30,6 @@ Hello Neuro! If you're reading this, it means Vedal has let you read the changel
   - Known limitations:
     - No multi-server support (only one MCP server can be connected at a time)
     - Only supports Streamable-HTTP transport with `/mcp` endpoint (no `stdio` or legacy `/sse` SSE transport)
-    - No individual tool-level control (all tools from a server are registered/unregistered together)
     - **Web version requires MCP servers with CORS headers** (browsers block cross-origin requests without proper `Access-Control-Allow-Origin` headers)
 
 ### New actions
