@@ -11,7 +11,7 @@
     "neuropilot.permission.gitOperations": "Copilot",
     "neuropilot.permission.gitConfigs": "Copilot",
     "neuropilot.showTimeOnTerminalStart": true,
-    "neuropilot.permission.terminalAccess": "Off",
+    "neuropilot.permission.terminalAccess": "Copilot",
     "neuropilot.permission.accessLintingAnalysis": "Copilot",
     "neuropilot.permission.getUserSelection": "Copilot",
     "neuropilot.terminals": [
