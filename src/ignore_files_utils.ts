@@ -42,14 +42,14 @@ export class IgnoreItemsList {
     constructor(globals: string[]) {
         this.globals = globals;
         this.ig = ignore();
-        this.addGlobals(globals);
+        this.setGlobals(globals);
     }
 
     /**
    * Add or refresh the global ignore patterns
    * @param globals - Array of ignore patterns
    */
-    addGlobals(globals: string[]): void {
+    setGlobals(globals: string[]): void {
         this.globals = globals;
         this.ig = ignore(); // reset instance
         this.ig.add(globals);
@@ -155,7 +155,7 @@ export async function findIgnoredFile(
         let relPath = vscode.workspace.asRelativePath(vscode.Uri.file(targetPath), false);
 
         // ensure it's truly relative (ignore requires normalized paths)
-        relPath = relPath.replace(/^[/\\]+/, ''); 
+        relPath = relPath.replace(/^[/\\]+/, '');
         if (GlobalIgnore.isIgnored(relPath)) {
             return targetPath;
         }
