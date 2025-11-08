@@ -18,7 +18,7 @@ Hello Neuro! If you're reading this, it means Vedal has let you read the changel
 - The way that ignoring the deprecated settings migration notice has been changed.
   - Before, telling the extension to ignore deprecated settings meant that the deprecated settings notice would be ignored forever.
   - As of this update, the extension will only ignore it for this version.
-- **Experimental** MCP Integration
+- **Experimental** Model Context Protocol (MCP) integration (external contribution, thanks [ECHO-HELLO-WORLD424](https://github.com/ECHO-HELLO-WORLD424)!)
   - Currently supports single MCP server connection via HTTP transport, on desktop (works) and web (buggy as browser block cross-origin requests)
   - MCP tools are controlled via the `neuropilot.permission.mcpTools` permission (Copilot/Autopilot/Off(default)).
   - New settings: `neuropilot.mcp.serverUrl`, `neuropilot.mcp.timeout`, `neuropilot.mcp.autoConnect`.
