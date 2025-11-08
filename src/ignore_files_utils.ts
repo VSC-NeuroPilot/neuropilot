@@ -118,7 +118,7 @@ export async function findIgnoredFile(
     const inheritFromIgnoreFiles = config.get<boolean>('inheritFromIgnoreFiles');
 
     // This variable takes priority from the default .gitignore path
-    const customIgnorePaths = config.get<string[]>('ignoreFilePath') || [];
+    const customIgnorePaths = config.get<string[]>('ignoreFiles') || [];
 
     // Fallback to default .gitignore if empty
     if (customIgnorePaths.length === 0) {

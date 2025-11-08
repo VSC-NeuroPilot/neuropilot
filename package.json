@@ -193,13 +193,6 @@
 						"default": true,
 						"description": "Allow NeuroPilot to read ignore patterns from an ignore file (e.g. .gitignore)."
 					},
-					"neuropilot.access.ignoreFilePath": {
-						"type": "array",
-						"default": [
-							"./.gitignore"
-						],
-						"description": "Optionally set paths to custom ignore files (relative or absolute).\n\nThese files will be used to inherit Neuro-safe glob patterns if `neuropilot.access.inheritFromIgnoreFiles` is enabled."
-					},
 					"neuropilot.websocketUrl": {
 						"type": "string",
 						"description": "The URL to connect to the Neuro API",
