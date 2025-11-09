@@ -7,7 +7,7 @@ import { getWorkspaceUri } from '@/utils';
  * Wrapper event to check if a specific file is created.
  * This creates the EventEmitter and returns the event, and will auto-fire if the specified file is affected.
  * 
- * @param file An absolute path to the file.
+ * @param file A relative path to the file.
  */
 export function targetedFileCreatedEvent(file: string) {
     return new RCECancelEvent<vscode.FileCreateEvent>({
@@ -27,7 +27,7 @@ export function targetedFileCreatedEvent(file: string) {
  * Wrapper event to check if a specific file is deleted.
  * This creates the EventEmitter and returns the event, and will auto-fire if the specified file is affected.
  * 
- * @param file An absolute path to the file.
+ * @param file A relative path to the file.
  */
 export function targetedFileDeletedEvent(file: string) {
     return new RCECancelEvent<vscode.FileDeleteEvent>({

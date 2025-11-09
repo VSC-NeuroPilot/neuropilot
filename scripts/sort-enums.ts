@@ -54,11 +54,20 @@ function trySortEnumOnProps(props: Record<string, any>): boolean {
 }
 
 // 1) Search in contributes.configuration.properties
-if (pkg.contributes && pkg.contributes.configuration && pkg.contributes.configuration.properties) {
-    found = trySortEnumOnProps(pkg.contributes.configuration.properties) || found;
+const contributes = pkg?.contributes;
+const configuration = contributes?.configuration;
+
+if (configuration && !Array.isArray(configuration) && configuration.properties) {
+    found = trySortEnumOnProps(configuration.properties) || found;
 }
 
-found = trySortEnumOnProps(pkg.contributes.configuration[0].properties) || found;
+if (Array.isArray(configuration)) {
+    for (const entry of configuration) {
+        if (entry && typeof entry === 'object' && entry.properties) {
+            found = trySortEnumOnProps(entry.properties) || found;
+        }
+    }
+}
 
 if (!found) {
     console.warn(`Did not find an items.enum array for setting '${targetSetting}'. Nothing changed.`);

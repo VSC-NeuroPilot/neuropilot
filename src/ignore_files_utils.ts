@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import ignore, { Ignore } from 'ignore';
+import { ACCESS } from './config';
 
 /**
  * A lightweight utility for managing and applying global ignore patterns,
@@ -106,22 +107,26 @@ export async function testIgnoreItemsList() {
 // Create and export a single shared instance
 export const GlobalIgnore = new ProfessionalIgnorer(['node_modules/', '*.log', 'dist/']);
 
+// Cache flag + timestamp (optional future invalidation)
+let ignoreLoaded = false;
+
 /**
  * Load .gitignore and custom ignore files into the global Ignore instance.
  */
 export async function loadIgnoreFiles(baseDir: string): Promise<void> {
-    const config = vscode.workspace.getConfiguration('neuropilot.access');
-    const inheritFromIgnoreFiles = config.get<boolean>('inheritFromIgnoreFiles');
-    const customIgnorePaths = config.get<string[]>('ignoreFiles') || [];
+    if (ignoreLoaded) return; // ✅ Skip if already loaded once
+
+    const inheritFromIgnoreFiles = ACCESS.inheritFromIgnoreFiles;
+    const customIgnorePaths = ACCESS.ignoreFiles;
 
     // Use global storage key for suppression
-    const suppressionKey = 'neuropilot.suppressIgnoreWarning';
+    const suppressionKey = 'neuropilot.access.suppressIgnoreWarning';
     const suppressed = vscode.workspace.getConfiguration().get<boolean>(suppressionKey, false);
 
     if (!inheritFromIgnoreFiles) {
         if (!suppressed) {
             const selection = await vscode.window.showWarningMessage(
-                'Permission to inherit from ignore files is disabled. (neuropilot.access.inheritFromIgnoreFiles)',
+                'Permission to inherit Neuro-unsafe paths from ignore files is disabled.',
                 'Don’t show again',
             );
 
@@ -137,11 +142,6 @@ export async function loadIgnoreFiles(baseDir: string): Promise<void> {
         return;
     }
 
-    // Fallback to .gitignore in baseDir
-    if (customIgnorePaths.length === 0) {
-        customIgnorePaths.push('.gitignore');
-    }
-
     for (const relativePath of customIgnorePaths) {
         const ignoreUri = vscode.Uri.joinPath(vscode.Uri.file(baseDir), relativePath);
         try {
@@ -153,6 +153,8 @@ export async function loadIgnoreFiles(baseDir: string): Promise<void> {
             vscode.window.showWarningMessage(`Ignore file not found: ${ignoreUri.fsPath}`);
         }
     }
+
+    ignoreLoaded = true;
 }
 
 /**
@@ -224,6 +226,27 @@ export async function testFindIgnoredFile() {
 }
 
 /**
+ * Find the first ignored path from a list (non-recursive).
+ * @returns The first ignored file, or false if none.
+ */
+export async function fastIsFileIgnored(
+    baseDir: string,
+    targets: string[],
+): Promise<string | false> {
+    await loadIgnoreFiles(baseDir);
+
+    for (const target of targets) {
+        let relPath = vscode.workspace.asRelativePath(vscode.Uri.file(target), false);
+        relPath = relPath.replace(/^[/\\]+/, '');
+        if (GlobalIgnore.isIgnored(relPath)) {
+            return target;
+        }
+    }
+
+    return false;
+}
+
+/**
  * Check whether a given file or folder is ignored by .gitignore
  * @param baseDir - The root directory containing .gitignore
  * @param targetPath - The path (absolute or relative to baseDir) to check
@@ -253,6 +276,18 @@ export async function testIsIgnoredFile() {
     } else {
         vscode.window.showInformationMessage(`${checkPath} is NOT ignored.`);
     }
+}
+
+/**
+ * Fast check whether a given file or folder is ignored by .gitignore (non-recursive).
+ */
+export async function fastIsItIgnored(baseDir: string, targetPath: string): Promise<boolean> {
+    await loadIgnoreFiles(baseDir);
+
+    // Convert to relative path for ignore.js
+    let relPath = vscode.workspace.asRelativePath(vscode.Uri.file(targetPath), false);
+    relPath = relPath.replace(/^[/\\]+/, '');
+    return GlobalIgnore.isIgnored(relPath);
 }
 
 
@@ -293,4 +328,21 @@ export async function testGetVisibleFiles() {
             ? `Visible files: ${visible.join(', ')}`
             : 'All files are ignored.',
     );
+}
+
+/**
+ * Filter out ignored files/folders based on cached .gitignore rules.
+ */
+export async function fastIsTheFilesVisible(
+    baseDir: string,
+    files: string[],
+): Promise<string[]> {
+    await loadIgnoreFiles(baseDir);
+
+    // Normalize all to relative paths first
+    const relFiles = files.map(f =>
+        vscode.workspace.asRelativePath(vscode.Uri.file(f), false).replace(/^[/\\]+/, ''),
+    );
+
+    return GlobalIgnore.filterVisible(relFiles);
 }

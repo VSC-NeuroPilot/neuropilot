@@ -188,12 +188,6 @@
 			{
 				"title": "NeuroPilot",
 				"properties": {
-					"neuropilot.suppressIgnoreWarning": {
-						"type": "boolean",
-						"default": false,
-						"description": "Suppress the warning about NeuroPilot ignoring ignore patterns."
-					},
-					
 					"neuropilot.websocketUrl": {
 						"type": "string",
 						"description": "The URL to connect to the Neuro API",
@@ -789,7 +783,7 @@
 					},
 					"neuropilot.access.inheritFromIgnoreFiles": {
 						"type": "boolean",
-						"default": true,
+						"default": false,
 						"description": "Allow NeuroPilot to read ignore patterns from an ignore file (e.g. .gitignore)."
 					},
 					"neuropilot.access.ignoreFiles": {
@@ -797,7 +791,7 @@
 						"items": {
 							"type": "string"
 						},
-						"default": [],
+						"default": [".gitignore"],
 						"markdownDescription": "A list of ignore-style files to inherit Neuro-safe glob paths from.\n\nSupports the full range of git's ignore pattern globs. Also automatically ignores comments (started with #).\n\nThe further down a file is on the list, the more priority it gets.\n\nNone of these files can override your own Neuro-safe patterns set in extension settings.\n\nEdit in settings.json for examples.",
 						"examples": [
 							[
@@ -813,6 +807,11 @@
 								".neuroignore"
 							]
 						]
+					},
+					"neuropilot.access.suppressIgnoreWarning": {
+						"type": "boolean",
+						"default": false,
+						"description": "Suppress the warning about NeuroPilot ignoring ignore patterns."
 					},
 					"neuropilot.connection.websocketUrl": {
 						"type": "string",

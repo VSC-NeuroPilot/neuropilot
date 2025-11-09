@@ -319,6 +319,9 @@ class Access {
     get dotFiles(): boolean { return getAccess<boolean>('dotFiles')!; }
     get externalFiles(): boolean { return getAccess<boolean>('externalFiles')!; }
     get environmentVariables(): boolean { return getAccess<boolean>('environmentVariables')!; }
+    get inheritFromIgnoreFiles(): boolean { return getAccess<boolean>('inheritFromIgnoreFiles')!; }
+    get ignoreFiles(): string[] { return getAccess<string[]>('ignoreFiles')!; }
+    get suppressIgnoreWarning(): boolean { return getAccess<boolean>('suppressIgnoreWarning')!; }
 }
 
 export const ACCESS = new Access();
