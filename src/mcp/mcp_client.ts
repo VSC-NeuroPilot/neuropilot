@@ -27,6 +27,8 @@ export interface MCPServerConfig {
     url: string;
     /** Optional timeout in milliseconds for requests (default: 30000) */
     timeout?: number;
+    /** Optional maximum character length for tool results (default: 50000). If exceeded, returns an error message instead. */
+    maxResultLength?: number;
 }
 
 /**
@@ -59,6 +61,7 @@ export class MCPClient {
         this.config = {
             url: config.url,
             timeout: config.timeout ?? 30000,
+            maxResultLength: config.maxResultLength ?? 5000,
         };
     }
 
@@ -201,6 +204,17 @@ export class MCPClient {
             }
 
             const result = messages.join('\n');
+
+            // Check if result exceeds maximum length
+            if (result.length > this.config.maxResultLength) {
+                const errorMsg = `The length of returned string of your tool call is too long (${result.length} characters, max: ${this.config.maxResultLength})`;
+                logOutput('WARN', `MCP tool ${toolName} result truncated: ${errorMsg}`);
+                return {
+                    success: false,
+                    result: errorMsg,
+                };
+            }
+
             logOutput('DEBUG', `MCP tool ${toolName} completed successfully`);
 
             return {

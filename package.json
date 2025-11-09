@@ -984,6 +984,13 @@
 						"maximum": 300000,
 						"markdownDescription": "Timeout in milliseconds for MCP tool execution (1000-300000ms).\n\nDefault: 30000 (30 seconds)"
 					},
+					"neuropilot.mcp.maxResultLength": {
+						"type": "number",
+						"default": 5000,
+						"minimum": 1000,
+						"maximum": 10000,
+						"markdownDescription": "Maximum character length for MCP tool results.\n\nIf a tool returns a result longer than this, it will be rejected with an error message to prevent overwhelming the model.\n\nDefault: 5000 characters"
+					},
 					"neuropilot.mcp.autoConnect": {
 						"type": "boolean",
 						"default": false,

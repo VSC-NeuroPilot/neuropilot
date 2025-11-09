@@ -354,6 +354,7 @@ export const ACTIONS = new Actions();
 class MCPConfig {
     get serverUrl(): string { return getMCPConfig<string>('serverUrl') ?? ''; }
     get timeout(): number { return getMCPConfig<number>('timeout') ?? 30000; }
+    get maxResultLength(): number { return getMCPConfig<number>('maxResultLength') ?? 5000; }
     get autoConnect(): boolean { return getMCPConfig<boolean>('autoConnect') ?? false; }
 }
 

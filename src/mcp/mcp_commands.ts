@@ -105,6 +105,7 @@ async function connectToMCPServer(): Promise<void> {
                 const config = {
                     url: MCP.serverUrl,
                     timeout: MCP.timeout,
+                    maxResultLength: MCP.maxResultLength,
                 };
 
                 // Clear enabled tools for new connection (all disabled by default)

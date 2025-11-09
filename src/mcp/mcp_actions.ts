@@ -467,6 +467,7 @@ export async function autoConnectMCP(): Promise<void> {
         const config = {
             url: MCP.serverUrl,
             timeout: MCP.timeout,
+            maxResultLength: MCP.maxResultLength,
         };
 
         const toolCount = await registerMCPActions(config);
