@@ -35,7 +35,7 @@ import ignore, { Ignore } from 'ignore';
  * irrelevant files (e.g. lock files, build artifacts, dependency directories)
  * from being loaded into the assistant’s context or processed by background tasks.
  */
-export class IgnoreItemsList {
+export class ProfessionalIgnorer {
     private ig: Ignore;
     private globals: string[];
 
@@ -87,7 +87,7 @@ export class IgnoreItemsList {
  */
 export async function testIgnoreItemsList() {
     const globalPatterns = ['node_modules/', '*.log', 'dist/'];
-    const ignoreList = new IgnoreItemsList(globalPatterns);
+    const ignoreList = new ProfessionalIgnorer(globalPatterns);
 
     console.log(ignoreList.isIgnored('node_modules/test')); // true
     console.log(ignoreList.isIgnored('src/index.ts')); // false
@@ -104,7 +104,7 @@ export async function testIgnoreItemsList() {
 }
 
 // Create and export a single shared instance
-export const GlobalIgnore = new IgnoreItemsList(['node_modules/', '*.log', 'dist/']);
+export const GlobalIgnore = new ProfessionalIgnorer(['node_modules/', '*.log', 'dist/']);
 
 /**
  * Load .gitignore and custom ignore files into the global Ignore instance.
