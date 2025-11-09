@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
 import { NEURO } from '@/constants';
-import { DiffRangeType, escapeRegExp, getDiffRanges, getFence, getPositionContext, getProperty, getVirtualCursor, showDiffRanges, isPathNeuroSafe, logOutput, NeuroPositionContext, setVirtualCursor, simpleFileName, substituteMatch, clearDecorations, formatContext, filterFileContents, positionFromIndex, indexFromPosition } from '@/utils';
+import { DiffRangeType, escapeRegExp, getDiffRanges, getFence, getPositionContext, getProperty, getVirtualCursor, showDiffRanges, isPathNeuroSafe, logOutput, NeuroPositionContext, setVirtualCursor, simpleFileName, substituteMatch, clearDecorations, formatContext, filterFileContents, positionFromIndex, indexFromPosition, getWorkspacePath, normalizePath } from '@/utils';
 import { ActionData, actionValidationAccept, actionValidationFailure, ActionValidationResult, RCEAction, contextFailure, stripToActions, actionValidationRetry, contextNoAccess } from '@/neuro_client_helper';
 import { PERMISSIONS, getPermissionLevel, CONFIG, isActionEnabled, CONNECTION } from '@/config';
 import { createCursorPositionChangedEvent } from '@events/cursor';
@@ -1559,7 +1559,7 @@ let editorChangeHandlerTimeout: NodeJS.Timeout | undefined;
  * Sets and displays the virtual cursor position when the active text editor changes.
  * @param editor The active text editor.
  */
-export async function editorChangeHandler(editor: vscode.TextEditor | undefined) {
+export function editorChangeHandler(editor: vscode.TextEditor | undefined) {
     if (editorChangeHandlerTimeout)
         clearTimeout(editorChangeHandlerTimeout);
 
@@ -1570,7 +1570,7 @@ export async function editorChangeHandler(editor: vscode.TextEditor | undefined)
         // Set cursor
         const uri = editor.document.uri;
         if (!NEURO.cursorOffsets.has(uri)) {
-            if (await isPathNeuroSafe(uri.fsPath))
+            if (isPathNeuroSafe(uri.fsPath))
                 setVirtualCursor(editor.selection.active);
             else
                 setVirtualCursor(null);
@@ -1580,7 +1580,7 @@ export async function editorChangeHandler(editor: vscode.TextEditor | undefined)
         }
 
         // Tell Neuro that the editor changed
-        if (await isPathNeuroSafe(uri.fsPath)) {
+        if (isPathNeuroSafe(uri.fsPath)) {
             const file = simpleFileName(editor.document.fileName);
             const cursor = getVirtualCursor()!;
             const context = getPositionContext(editor.document, cursor);
@@ -1603,14 +1603,25 @@ export async function editorChangeHandler(editor: vscode.TextEditor | undefined)
     }
 }
 
+import { loadIgnoreFiles } from './ignore_files_utils';
+
 /**
  * Moves the virtual cursor when the text document changes.
  * @param event The editing event.
  * @returns 
  */
-export function workspaceEditHandler(event: vscode.TextDocumentChangeEvent) {
+export async function workspaceEditHandler(event: vscode.TextDocumentChangeEvent) {
     if (event.contentChanges.length === 0) return;
     if (event.document !== vscode.window.activeTextEditor?.document) return;
+    if (
+        vscode.workspace.getConfiguration('neuropilot.access.ignoreFiles')
+            .has(normalizePath(event.document.fileName))
+    ) {
+        await loadIgnoreFiles(
+            getWorkspacePath() || '',
+        );
+        return;
+    }
     if (!getPermissionLevel(PERMISSIONS.editActiveDocument)) return;
     if (event.document.fileName.startsWith('extension-output-')) return; // Ignore extension output to avoid infinite logging
 

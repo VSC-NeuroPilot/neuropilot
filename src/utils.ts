@@ -320,7 +320,7 @@ import { fastIsItIgnored } from '@/ignore_files_utils';
  * @param checkPatterns Whether to check against include and exclude patterns.
  * @returns True if Neuro may safely access the path.
  */
-export async function isPathNeuroSafe(path: string, checkPatterns = true): Promise<boolean> {
+export function isPathNeuroSafe(path: string, checkPatterns = true): boolean {
     const workspacePath = getWorkspacePath();
     const rootFolder = workspacePath ? normalizePath(workspacePath) : undefined;
     const normalizedPath = normalizePath(path);
@@ -350,7 +350,7 @@ export async function isPathNeuroSafe(path: string, checkPatterns = true): Promi
         excludeRegExp = cachedExcludeRegExp;
     }
 
-    const ignored = rootFolder ? await fastIsItIgnored(rootFolder, normalizedPath) : false;
+    const ignored = rootFolder ? fastIsItIgnored(normalizedPath) : false;
 
     return rootFolder !== undefined
         // Prevent access to the workspace folder itself
