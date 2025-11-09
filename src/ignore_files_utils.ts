@@ -107,10 +107,15 @@ export async function testIgnoreItemsList() {
 // Create and export a single shared instance
 export const GlobalIgnore = new IgnoreItemsList(['node_modules/', '*.log', 'dist/']);
 
+// Cache flag + timestamp (optional future invalidation)
+let ignoreLoaded = false;
+
 /**
  * Load .gitignore and custom ignore files into the global Ignore instance.
  */
 export async function loadIgnoreFiles(baseDir: string): Promise<void> {
+    if (ignoreLoaded) return; // ✅ Skip if already loaded once
+    
     const inheritFromIgnoreFiles = ACCESS.inheritFromIgnoreFiles;
     const customIgnorePaths = ACCESS.ignoreFiles;
 
@@ -148,6 +153,8 @@ export async function loadIgnoreFiles(baseDir: string): Promise<void> {
             vscode.window.showWarningMessage(`Ignore file not found: ${ignoreUri.fsPath}`);
         }
     }
+
+    ignoreLoaded = true;
 }
 
 /**
