@@ -308,3 +308,20 @@ export async function testGetVisibleFiles() {
             : 'All files are ignored.',
     );
 }
+
+/**
+ * Filter out ignored files/folders based on cached .gitignore rules.
+ */
+export async function fastIsTheFilesVisible(
+    baseDir: string,
+    files: string[],
+): Promise<string[]> {
+    await loadIgnoreFiles(baseDir);
+
+    // Normalize all to relative paths first
+    const relFiles = files.map(f =>
+        vscode.workspace.asRelativePath(vscode.Uri.file(f), false).replace(/^[/\\]+/, '')
+    );
+
+    return GlobalIgnore.filterVisible(relFiles);
+}
