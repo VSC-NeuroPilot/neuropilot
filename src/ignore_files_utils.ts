@@ -226,6 +226,27 @@ export async function testFindIgnoredFile() {
 }
 
 /**
+ * Find the first ignored path from a list (non-recursive).
+ * @returns The first ignored file, or false if none.
+ */
+export async function fastIsFileIgnored(
+    baseDir: string,
+    targets: string[],
+): Promise<string | false> {
+    await loadIgnoreFiles(baseDir);
+
+    for (const target of targets) {
+        let relPath = vscode.workspace.asRelativePath(vscode.Uri.file(target), false);
+        relPath = relPath.replace(/^[/\\]+/, '');
+        if (GlobalIgnore.isIgnored(relPath)) {
+            return target;
+        }
+    }
+
+    return false;
+}
+
+/**
  * Check whether a given file or folder is ignored by .gitignore
  * @param baseDir - The root directory containing .gitignore
  * @param targetPath - The path (absolute or relative to baseDir) to check
