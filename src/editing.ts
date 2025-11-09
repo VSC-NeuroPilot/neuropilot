@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
 import { NEURO } from '@/constants';
-import { DiffRangeType, escapeRegExp, getDiffRanges, getFence, getPositionContext, getProperty, getVirtualCursor, showDiffRanges, isPathNeuroSafe, logOutput, NeuroPositionContext, setVirtualCursor, simpleFileName, substituteMatch, clearDecorations, formatContext, filterFileContents, positionFromIndex, indexFromPosition, getWorkspacePath, normalizePath } from '@/utils';
+import { DiffRangeType, escapeRegExp, getDiffRanges, getFence, getPositionContext, getProperty, getVirtualCursor, showDiffRanges, isPathNeuroSafe, logOutput, NeuroPositionContext, setVirtualCursor, simpleFileName, substituteMatch, clearDecorations, formatContext, filterFileContents, positionFromIndex, indexFromPosition } from '@/utils';
 import { ActionData, actionValidationAccept, actionValidationFailure, ActionValidationResult, RCEAction, contextFailure, stripToActions, actionValidationRetry, contextNoAccess } from '@/neuro_client_helper';
 import { PERMISSIONS, getPermissionLevel, CONFIG, isActionEnabled, CONNECTION } from '@/config';
 import { createCursorPositionChangedEvent } from '@events/cursor';
@@ -1603,8 +1603,6 @@ export function editorChangeHandler(editor: vscode.TextEditor | undefined) {
     }
 }
 
-import { loadIgnoreFiles } from './ignore_files_utils';
-
 /**
  * Moves the virtual cursor when the text document changes.
  * @param event The editing event.
@@ -1613,15 +1611,6 @@ import { loadIgnoreFiles } from './ignore_files_utils';
 export async function workspaceEditHandler(event: vscode.TextDocumentChangeEvent) {
     if (event.contentChanges.length === 0) return;
     if (event.document !== vscode.window.activeTextEditor?.document) return;
-    if (
-        vscode.workspace.getConfiguration('neuropilot.access.ignoreFiles')
-            .has(normalizePath(event.document.fileName))
-    ) {
-        await loadIgnoreFiles(
-            getWorkspacePath() || '',
-        );
-        return;
-    }
     if (!getPermissionLevel(PERMISSIONS.editActiveDocument)) return;
     if (event.document.fileName.startsWith('extension-output-')) return; // Ignore extension output to avoid infinite logging
 
