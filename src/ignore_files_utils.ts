@@ -281,13 +281,12 @@ export async function testIsIgnoredFile() {
 /**
  * Fast check whether a given file or folder is ignored by .gitignore (non-recursive).
  */
-export async function fastIsItIgnored(targetPath: string): Promise<boolean> {
+export function fastIsItIgnored(targetPath: string): boolean {
     // Convert to relative path for ignore.js
     let relPath = vscode.workspace.asRelativePath(vscode.Uri.file(targetPath), false);
     relPath = relPath.replace(/^[/\\]+/, '');
     return GlobalIgnore.isIgnored(relPath);
 }
-
 
 /**
  * Filter out ignored files/folders based on .gitignore
