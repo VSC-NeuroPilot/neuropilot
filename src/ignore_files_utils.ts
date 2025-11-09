@@ -2,6 +2,36 @@ import * as vscode from 'vscode';
 import ignore, { Ignore } from 'ignore';
 import { ACCESS } from './config';
 
+const ignoreCache = new Map<string, boolean>();
+
+function clearIgnoreCache(): void {
+    ignoreCache.clear();
+}
+
+export function resetIgnoreCache(): void {
+    clearIgnoreCache();
+}
+
+function cacheKeyFor(path: string): string {
+    return process.platform === 'win32' ? path.toLowerCase() : path;
+}
+
+function toRelativePath(targetPath: string): string {
+    const relPath = vscode.workspace.asRelativePath(targetPath, false);
+    return relPath.replace(/^[/\\]+/, '').replace(/\\/g, '/');
+}
+
+function isAbsolutePath(targetPath: string): boolean {
+    return /^[a-zA-Z]:[\\/]/.test(targetPath) || targetPath.startsWith('/') || targetPath.startsWith('\\');
+}
+
+function resolveTargetPath(baseDir: string, targetPath: string): string {
+    if (isAbsolutePath(targetPath)) {
+        return targetPath;
+    }
+    return vscode.Uri.joinPath(vscode.Uri.file(baseDir), targetPath).fsPath;
+}
+
 /**
  * A lightweight utility for managing and applying global ignore patterns,
  * similar to how `.gitignore` files work.
@@ -54,6 +84,7 @@ export class ProfessionalIgnorer {
         this.globals = globals;
         this.ig = ignore(); // reset instance
         this.ig.add(globals);
+        clearIgnoreCache();
     }
 
     /**
@@ -80,6 +111,7 @@ export class ProfessionalIgnorer {
    */
     addPatterns(patterns: string[]): void {
         this.ig.add(patterns);
+        clearIgnoreCache();
     }
 }
 
@@ -170,11 +202,8 @@ export async function findIgnoredFile(
     await loadIgnoreFiles(baseDir);
 
     async function checkRecursive(targetPath: string): Promise<string | false> {
-        let relPath = vscode.workspace.asRelativePath(vscode.Uri.file(targetPath), false);
-
-        // ensure it's truly relative (ignore requires normalized paths)
-        relPath = relPath.replace(/^[/\\]+/, '');
-        if (GlobalIgnore.isIgnored(relPath)) {
+        const relPath = toRelativePath(targetPath);
+        if (relPath !== '' && GlobalIgnore.isIgnored(relPath)) {
             return targetPath;
         }
 
@@ -199,11 +228,8 @@ export async function findIgnoredFile(
     }
 
     for (const target of targets) {
-        const fileUri = vscode.Uri.file(target);
-        const absUri = target.startsWith(baseDir)
-            ? fileUri
-            : vscode.Uri.joinPath(vscode.Uri.file(baseDir), target);
-        const result = await checkRecursive(absUri.fsPath);
+        const absPath = resolveTargetPath(baseDir, target);
+        const result = await checkRecursive(absPath);
         if (result) return result;
     }
 
@@ -236,9 +262,8 @@ export async function fastIsFileIgnored(
     await loadIgnoreFiles(baseDir);
 
     for (const target of targets) {
-        let relPath = vscode.workspace.asRelativePath(vscode.Uri.file(target), false);
-        relPath = relPath.replace(/^[/\\]+/, '');
-        if (GlobalIgnore.isIgnored(relPath)) {
+        const absPath = resolveTargetPath(baseDir, target);
+        if (fastIsItIgnored(absPath)) {
             return target;
         }
     }
@@ -282,10 +307,24 @@ export async function testIsIgnoredFile() {
  * Fast check whether a given file or folder is ignored by .gitignore (non-recursive).
  */
 export function fastIsItIgnored(targetPath: string): boolean {
-    // Convert to relative path for ignore.js
-    let relPath = vscode.workspace.asRelativePath(vscode.Uri.file(targetPath), false);
-    relPath = relPath.replace(/^[/\\]+/, '');
-    return GlobalIgnore.isIgnored(relPath);
+    const relPath = toRelativePath(targetPath);
+    if (
+        relPath === ''
+        || relPath.startsWith('..')
+        || /^[a-z]:/i.test(relPath)
+    ) {
+        return false;
+    }
+
+    const key = cacheKeyFor(relPath);
+    const cached = ignoreCache.get(key);
+    if (cached !== undefined) {
+        return cached;
+    }
+
+    const ignored = GlobalIgnore.isIgnored(relPath);
+    ignoreCache.set(key, ignored);
+    return ignored;
 }
 
 /**
@@ -298,9 +337,12 @@ export async function getVisibleFiles(
     baseDir: string,
     files: string[],
 ): Promise<string[]> {
+    await loadIgnoreFiles(baseDir);
+
     const visible: string[] = [];
     for (const file of files) {
-        if (!await isIgnoredFile(baseDir, file)) {
+        const absPath = resolveTargetPath(baseDir, file);
+        if (!fastIsItIgnored(absPath)) {
             visible.push(file);
         }
     }
@@ -336,10 +378,8 @@ export async function fastIsTheFilesVisible(
 ): Promise<string[]> {
     await loadIgnoreFiles(baseDir);
 
-    // Normalize all to relative paths first
-    const relFiles = files.map(f =>
-        vscode.workspace.asRelativePath(vscode.Uri.file(f), false).replace(/^[/\\]+/, ''),
-    );
-
-    return GlobalIgnore.filterVisible(relFiles);
+    return files.filter(file => {
+        const absPath = resolveTargetPath(baseDir, file);
+        return !fastIsItIgnored(absPath);
+    });
 }
