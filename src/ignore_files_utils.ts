@@ -115,7 +115,7 @@ let ignoreLoaded = false;
  */
 export async function loadIgnoreFiles(baseDir: string): Promise<void> {
     if (ignoreLoaded) return; // ✅ Skip if already loaded once
-    
+
     const inheritFromIgnoreFiles = ACCESS.inheritFromIgnoreFiles;
     const customIgnorePaths = ACCESS.ignoreFiles;
 
@@ -126,7 +126,7 @@ export async function loadIgnoreFiles(baseDir: string): Promise<void> {
     if (!inheritFromIgnoreFiles) {
         if (!suppressed) {
             const selection = await vscode.window.showWarningMessage(
-                `Permission to inherit from ignore files is disabled. (${suppressionKey})`,
+                'Permission to inherit Neuro-unsafe paths from ignore files is disabled.',
                 'Don’t show again',
             );
 
@@ -341,7 +341,7 @@ export async function fastIsTheFilesVisible(
 
     // Normalize all to relative paths first
     const relFiles = files.map(f =>
-        vscode.workspace.asRelativePath(vscode.Uri.file(f), false).replace(/^[/\\]+/, '')
+        vscode.workspace.asRelativePath(vscode.Uri.file(f), false).replace(/^[/\\]+/, ''),
     );
 
     return GlobalIgnore.filterVisible(relFiles);

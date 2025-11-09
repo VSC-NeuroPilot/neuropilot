@@ -617,7 +617,7 @@ export function handleGetWorkspaceFiles(actionData: ActionData): string | undefi
 
         const result: [vscode.Uri, vscode.FileType][] = [];
         for (const [childUri, fileType] of uriEntries) {
-            if (isPathNeuroSafe(childUri.fsPath)) {
+            if (await isPathNeuroSafe(childUri.fsPath)) {
                 if (fileType === vscode.FileType.File) result.push([childUri, fileType]);
                 else if (fileType === vscode.FileType.Directory) {
                     if (actionData.params?.recursive) {
