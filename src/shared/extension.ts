@@ -81,8 +81,8 @@ export function setupCommonEventHandlers() {
             if (event.affectsConfiguration('neuropilot.access.ignoreFiles')) {
                 await loadIgnoreFiles(
                     normalizePath(
-                        getWorkspacePath() || ''
-                    ) || ''
+                        getWorkspacePath() || '',
+                    ) || '',
                 );
             }
         }),

@@ -26,11 +26,11 @@ import { registerUnsupervisedActions, registerUnsupervisedHandlers } from './uns
 import { registerSendSelectionToNeuro } from '@/editing';
 import { loadIgnoreFiles } from '@/ignore_files_utils';
 
-export async function activate(context: vscode.ExtensionContext) {
-    await loadIgnoreFiles(
+export function activate(context: vscode.ExtensionContext) {
+    loadIgnoreFiles(
         normalizePath(
-            getWorkspacePath() || ''
-        ) || ''
+            getWorkspacePath() || '',
+        ) || '',
     );
 
     // Initialize common state
@@ -76,7 +76,7 @@ export async function activate(context: vscode.ExtensionContext) {
     NEURO.highlightDecorationType = vscode.window.createTextEditorDecorationType(getHighlightDecorationRenderOptions());
 
     // Set initial virtual cursor
-    if (vscode.window.activeTextEditor && await isPathNeuroSafe(vscode.window.activeTextEditor.document.fileName)) {
+    if (vscode.window.activeTextEditor && isPathNeuroSafe(vscode.window.activeTextEditor.document.fileName)) {
         setVirtualCursor(vscode.window.activeTextEditor.selection.active);
     }
 
