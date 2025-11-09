@@ -28,7 +28,6 @@ Hello Neuro! If you're reading this, it means Vedal has let you read the changel
 - **Experimental** Model Context Protocol (MCP) integration (external contribution, thanks [ECHO-HELLO-WORLD424](https://github.com/ECHO-HELLO-WORLD424)!)
   - Currently supports single MCP server connection via HTTP transport, on desktop (works) and web (buggy as browser block cross-origin requests)
   - MCP tools are controlled via the `neuropilot.permission.mcpTools` permission (Copilot/Autopilot/Off(default)).
-  - New settings: `neuropilot.mcp.serverUrl`, `neuropilot.mcp.timeout`, `neuropilot.mcp.autoConnect`, `neuropilot.mcp.maxResultLength`.
   - Neuro is notified on MCP server connect/disconnect, tool enabled/disabled and tool call results:
     - When a MCP server is connected: "A MCP server is connected but no MCP tools are registered yet."
     - When a MCP server is dis connected: "MCP server is disconnected, thus no MCP tools will be available from now on."
@@ -43,6 +42,7 @@ Hello Neuro! If you're reading this, it means Vedal has let you read the changel
     - **Web version requires MCP servers with CORS headers** (browsers block cross-origin requests without proper `Access-Control-Allow-Origin` headers)
   - Trouble shooting:
     - If a MCP setting is not working, check if it is also set properly in `workspace`.
+    - `127.0.0.1` and `localhost` are not the same. Write the MCP server URL exactly the same as how you start your MCP server.
 
 ### New actions
 
@@ -55,10 +55,16 @@ Hello Neuro! If you're reading this, it means Vedal has let you read the changel
 - [Dev] Clear all NeuroPilot mementos: a developer-only command that removes all stored memento values (both globalState and workspaceState) for this extension. This command is only available when running in the Extension Development Host and is hidden for normal users.
 - `neuropilot.mcp.connectServer`: Connect to a MCP server, but don't register tools. Will notify Neuro about MCP server connected.
 - `neuropilot.mcp.disconnectServer`: Disconnect from a MCP server, will also un-register all MCP tools and notify Neuro.
-- `neuropilot.mcp.refreshTools`: Refresh available tools from a MCP server, but will not register any to Neuro
+- `neuropilot.mcp.refreshTools`: Refresh available tools from a MCP server, but will not register any to Neuro.
 - `neuropilot.mcp.showStatus`: Check MCP server connection status.
 - `neuropilot.mcp.configureTools`: Choose the tools that Neuro can see and use.
 - `neuropilot.mcp.testToolCall`: Let user manually call a MCP tool from the extension, for debugging the communication with MCP server only.
+
+### New settings
+- `neuropilot.mcp.serverUrl`: The URL of MCP server. Only the base URL, no need to write `/mcp` endpoint. Example: `http://127.0.0.1:3000`
+- `neuropilot.mcp.timeout`: Timeout in milliseconds for MCP tool execution.
+- `neuropilot.mcp.autoConnect`: Automatically connect to the MCP server when NeuroPilot connects to Neuro API.\n\nRequires `neuropilot.mcp.serverUrl` to be set and `neuropilot.permission.mcpTools` to not be `Off`.
+- `neuropilot.mcp.maxResultLength`: Maximum character length for MCP tool results. If a tool returns a result longer than this, the result will be replaced with a warning message to prevent overwhelming Neuro's context
 
 ### Meta fixes
 
