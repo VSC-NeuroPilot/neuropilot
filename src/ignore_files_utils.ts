@@ -14,7 +14,6 @@ export function resetIgnoreCache(): void {
 
 export function resetIgnoreState(globals?: string[]): void {
     GlobalIgnore.setGlobals(globals ?? ['node_modules/', '*.log', 'dist/']);
-    ignoreLoaded = false;
     clearIgnoreCache();
 }
 
@@ -83,7 +82,7 @@ export class ProfessionalIgnorer {
     }
 
     /**
-   * Add or refresh the global ignore patterns
+   * Refresh the global ignore patterns
    * @param globals - Array of ignore patterns
    */
     setGlobals(globals: string[]): void {
@@ -145,15 +144,10 @@ export async function testIgnoreItemsList() {
 // Create and export a single shared instance
 export const GlobalIgnore = new ProfessionalIgnorer(['node_modules/', '*.log', 'dist/']);
 
-// Cache flag + timestamp (optional future invalidation)
-let ignoreLoaded = false;
-
 /**
  * Load .gitignore and custom ignore files into the global Ignore instance.
  */
 export async function loadIgnoreFiles(baseDir: string): Promise<void> {
-    if (ignoreLoaded) return; // ✅ Skip if already loaded once
-
     const inheritFromIgnoreFiles = ACCESS.inheritFromIgnoreFiles;
     const customIgnorePaths = ACCESS.ignoreFiles;
 
@@ -186,13 +180,11 @@ export async function loadIgnoreFiles(baseDir: string): Promise<void> {
             await vscode.workspace.fs.stat(ignoreUri);
             const bytes = await vscode.workspace.fs.readFile(ignoreUri);
             const content = Buffer.from(bytes).toString('utf8');
-            GlobalIgnore.addPatterns(content.split('\n'));
+            GlobalIgnore.setGlobals(content.split('\n'));
         } catch {
             vscode.window.showWarningMessage(`Ignore file not found: ${ignoreUri.fsPath}`);
         }
     }
-
-    ignoreLoaded = true;
 }
 
 /**
