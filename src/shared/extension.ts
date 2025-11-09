@@ -42,7 +42,11 @@ export function registerCommonCommands() {
 export function setupCommonEventHandlers() {
     const handlers = [
         vscode.languages.onDidChangeDiagnostics(sendDiagnosticsDiff),
-        vscode.workspace.onDidSaveTextDocument(fileSaveListener),
+        vscode.workspace.onDidSaveTextDocument(async (e) => {
+            fileSaveListener(e);
+            const isIgnoreFile = ACCESS.ignoreFiles.some(f => normalizePath(getWorkspacePath() + '/' + f) === e.fileName);
+            if (isIgnoreFile) await loadIgnoreFiles(getWorkspacePath() || '');
+        }),
         vscode.window.onDidChangeActiveTextEditor(editorChangeHandler),
         vscode.workspace.onDidChangeTextDocument(workspaceEditHandler),
         vscode.workspace.onDidChangeConfiguration(async (event) => {
