@@ -22,26 +22,27 @@ Hello Neuro! If you're reading this, it means Vedal has let you read the changel
 - The way that ignoring the deprecated settings migration notice has been changed.
   - Before, telling the extension to ignore deprecated settings meant that the deprecated settings notice would be ignored forever.
   - As of this update, the extension will only ignore it for this version.
+- `get_workspace_files` has been changed for better handling in large workspaces:
+  - Neuro can now specify in her actions if she wants to narrow down to a specific folder and which, allowing her to fine-grain her context from the action's result.
+  - Neuro can also choose if she wants to recursively get all files in the workspace, meaning that the default is not letting her see all files in the workspace, helping cut down on sent context.
 - **Experimental** Model Context Protocol (MCP) integration (external contribution, thanks [ECHO-HELLO-WORLD424](https://github.com/ECHO-HELLO-WORLD424)!)
   - Currently supports single MCP server connection via HTTP transport, on desktop (works) and web (buggy as browser block cross-origin requests)
   - MCP tools are controlled via the `neuropilot.permission.mcpTools` permission (Copilot/Autopilot/Off(default)).
-  - New settings: `neuropilot.mcp.serverUrl`, `neuropilot.mcp.timeout`, `neuropilot.mcp.autoConnect`.
-  - New commands: Connect to MCP Server, Disconnect from MCP Server, Refresh MCP Tools, Show MCP Status, Configure MCP Tools, Test MCP Tool Call (Debug).
-  - Neuro is notified on MCP server connect/disconnect and tool enabled/disabled:
+  - New settings: `neuropilot.mcp.serverUrl`, `neuropilot.mcp.timeout`, `neuropilot.mcp.autoConnect`, `neuropilot.mcp.maxResultLength`.
+  - Neuro is notified on MCP server connect/disconnect, tool enabled/disabled and tool call results:
     - When a MCP server is connected: "A MCP server is connected but no MCP tools are registered yet."
     - When a MCP server is dis connected: "MCP server is disconnected, thus no MCP tools will be available from now on."
     - When tools are enabled: "X new MCP tools available: [tool names]"
     - When tools are disabled: "X MCP tools removed: [tool names]", followed by "Available MCP tools: [remaining tool names]"
-  - MCP actions will automatically be registered or unregistered if the server is connected/disconnected.
-  - Individual tool control: All MCP tools are disabled by default on first connection. Use the "Configure MCP Tools" command to select which tools to enable via checkbox dialog.
+    - When the returned result is too long: "The length of returned string of your tool call is too long ( XX characters, max: XXX)"
+  - Individual tool control: All MCP tools are disabled by default on first connection. Use the `neuropilot.mcp.configureTools` command to select which tools to enable via checkbox dialog.
   - Known limitations:
     - No multi-server support (only one MCP server can be connected at a time)
     - Only supports HTTP transport with `/mcp` endpoint (no `stdio` or legacy `/sse` SSE transport, because these two connection method will require another 2 sets of code)
     - Tool selection is per-session (not persisted across VS Code restarts)
     - **Web version requires MCP servers with CORS headers** (browsers block cross-origin requests without proper `Access-Control-Allow-Origin` headers)
-- `get_workspace_files` has been changed for better handling in large workspaces:
-  - Neuro can now specify in her actions if she wants to narrow down to a specific folder and which, allowing her to fine-grain her context from the action's result.
-  - Neuro can also choose if she wants to recursively get all files in the workspace, meaning that the default is not letting her see all files in the workspace, helping cut down on sent context.
+  - Trouble shooting:
+    - If a MCP setting is not working, check if it is also set properly in `workspace`.
 
 ### New actions
 
@@ -52,6 +53,12 @@ Hello Neuro! If you're reading this, it means Vedal has let you read the changel
 ### New commands
 
 - [Dev] Clear all NeuroPilot mementos: a developer-only command that removes all stored memento values (both globalState and workspaceState) for this extension. This command is only available when running in the Extension Development Host and is hidden for normal users.
+- `neuropilot.mcp.connectServer`: Connect to a MCP server, but don't register tools. Will notify Neuro about MCP server connected.
+- `neuropilot.mcp.disconnectServer`: Disconnect from a MCP server, will also un-register all MCP tools and notify Neuro.
+- `neuropilot.mcp.refreshTools`: Refresh available tools from a MCP server, but will not register any to Neuro
+- `neuropilot.mcp.showStatus`: Check MCP server connection status.
+- `neuropilot.mcp.configureTools`: Choose the tools that Neuro can see and use.
+- `neuropilot.mcp.testToolCall`: Let user manually call a MCP tool from the extension, for debugging the communication with MCP server only.
 
 ### Meta fixes
 

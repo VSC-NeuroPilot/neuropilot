@@ -207,11 +207,11 @@ export class MCPClient {
 
             // Check if result exceeds maximum length
             if (result.length > this.config.maxResultLength) {
-                const errorMsg = `The length of returned string of your tool call is too long (${result.length} characters, max: ${this.config.maxResultLength})`;
-                logOutput('WARN', `MCP tool ${toolName} result truncated: ${errorMsg}`);
+                const warnMsg = `The MCP tool call is a success, but the length of returned string is too long (${result.length} characters, max: ${this.config.maxResultLength}) thus not shown`;
+                logOutput('WARN', `MCP tool ${toolName} result truncated: ${warnMsg}`);
                 return {
-                    success: false,
-                    result: errorMsg,
+                    success: true,
+                    result: warnMsg,
                 };
             }
 
