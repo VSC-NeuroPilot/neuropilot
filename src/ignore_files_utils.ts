@@ -12,6 +12,12 @@ export function resetIgnoreCache(): void {
     clearIgnoreCache();
 }
 
+export function resetIgnoreState(globals?: string[]): void {
+    GlobalIgnore.setGlobals(globals ?? ['node_modules/', '*.log', 'dist/']);
+    ignoreLoaded = false;
+    clearIgnoreCache();
+}
+
 function cacheKeyFor(path: string): string {
     return process.platform === 'win32' ? path.toLowerCase() : path;
 }
