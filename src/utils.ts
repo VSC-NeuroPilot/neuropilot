@@ -14,6 +14,12 @@ import { fireCursorPositionChangedEvent } from '@events/cursor';
 export const REGEXP_ALWAYS = /^/;
 export const REGEXP_NEVER = /^\b$/;
 
+// Cache compiled include/exclude regexes to avoid recompiling on every call
+let cachedIncludeKey = '';
+let cachedExcludeKey = '';
+let cachedIncludeRegExp: RegExp = REGEXP_ALWAYS;
+let cachedExcludeRegExp: RegExp = REGEXP_NEVER;
+
 export function logOutput(tag: string, message: string) {
     if (!NEURO.outputChannel) {
         console.error('Output channel not initialized');
@@ -320,8 +326,29 @@ export async function isPathNeuroSafe(path: string, checkPatterns = true): Promi
     const normalizedPath = normalizePath(path);
     const includePattern = ACCESS.includePattern || ['**/*'];
     const excludePattern = ACCESS.excludePattern;
-    const includeRegExp: RegExp = checkPatterns ? combineGlobLinesToRegExp(includePattern) : REGEXP_ALWAYS;
-    const excludeRegExp: RegExp = checkPatterns && excludePattern ? combineGlobLinesToRegExp(excludePattern) : REGEXP_NEVER;
+
+    // Use cached regexes when pattern checking is enabled
+    let includeRegExp: RegExp = REGEXP_ALWAYS;
+    let excludeRegExp: RegExp = REGEXP_NEVER;
+    if (checkPatterns) {
+        const includeKey = includePattern.join('\n');
+        const excludeKey = (excludePattern ?? []).join('\n');
+
+        if (includeKey !== cachedIncludeKey) {
+            cachedIncludeRegExp = combineGlobLinesToRegExp(includePattern);
+            cachedIncludeKey = includeKey;
+        }
+        if (!excludePattern || excludeKey === '') {
+            cachedExcludeRegExp = REGEXP_NEVER;
+            cachedExcludeKey = '';
+        } else if (excludeKey !== cachedExcludeKey) {
+            cachedExcludeRegExp = combineGlobLinesToRegExp(excludePattern);
+            cachedExcludeKey = excludeKey;
+        }
+
+        includeRegExp = cachedIncludeRegExp;
+        excludeRegExp = cachedExcludeRegExp;
+    }
 
     const ignored = rootFolder ? await fastIsItIgnored(rootFolder, normalizedPath) : false;
 
@@ -939,4 +966,13 @@ export function notifyOnCaughtException(name: string, error: Error | unknown): v
             }
         },
     );
+}
+
+/**
+ * Filter out trailing slashes.
+ * @param string String with trailing slashes
+ * @returns Filtered string.
+ */
+export function stripTailSlashes(string: string): string {
+    return string.replace(/^\/+|\/+$/g, '');
 }
