@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { NEURO, EXTENSIONS } from '@/constants';
-import { logOutput, createClient, onClientConnected, setVirtualCursor, showAPIMessage, disconnectClient, reconnectClient } from '@/utils';
+import { logOutput, createClient, onClientConnected, setVirtualCursor, showAPIMessage, disconnectClient, reconnectClient, getWorkspaceUri } from '@/utils';
 import { completionsProvider, registerCompletionResultHandler } from '@/completions';
 import { giveCookie, registerRequestCookieAction, registerRequestCookieHandler, sendCurrentFile } from '@/context';
 import { registerChatResponseHandler } from '@/chat';
@@ -44,8 +44,11 @@ export function setupCommonEventHandlers() {
         vscode.languages.onDidChangeDiagnostics(sendDiagnosticsDiff),
         vscode.workspace.onDidSaveTextDocument(async (e) => {
             fileSaveListener(e);
-            const isIgnoreFile = ACCESS.ignoreFiles.some(f => normalizePath(getWorkspacePath() + '/' + f) === e.fileName);
-            if (isIgnoreFile) await loadIgnoreFiles(getWorkspacePath() || '');
+            const workspaceUri = getWorkspaceUri();
+            if (workspaceUri) {
+                const isIgnoreFile = ACCESS.ignoreFiles.some(f => vscode.Uri.joinPath(workspaceUri, f).fsPath === e.fileName);
+                if (isIgnoreFile) await loadIgnoreFiles(getWorkspacePath() || '');
+            }
         }),
         vscode.window.onDidChangeActiveTextEditor(editorChangeHandler),
         vscode.workspace.onDidChangeTextDocument(workspaceEditHandler),
