@@ -304,7 +304,7 @@ export function combineGlobLinesToRegExp(lines: string[]): RegExp {
     return new RegExp(result);
 }
 
-import { isIgnoredFile } from '@/ignore_files_utils';
+import { fastIsItIgnored } from '@/ignore_files_utils';
 
 /**
  * Check if an absolute path is safe for Neuro to access.
@@ -323,7 +323,7 @@ export async function isPathNeuroSafe(path: string, checkPatterns = true): Promi
     const includeRegExp: RegExp = checkPatterns ? combineGlobLinesToRegExp(includePattern) : REGEXP_ALWAYS;
     const excludeRegExp: RegExp = checkPatterns && excludePattern ? combineGlobLinesToRegExp(excludePattern) : REGEXP_NEVER;
 
-    const ignored = rootFolder ? await isIgnoredFile(rootFolder, normalizedPath) : false;
+    const ignored = rootFolder ? await fastIsItIgnored(rootFolder, normalizedPath) : false;
 
     return rootFolder !== undefined
         // Prevent access to the workspace folder itself
