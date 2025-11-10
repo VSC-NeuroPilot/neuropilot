@@ -10,9 +10,31 @@ Changes between each version before then will not be listed.
 
 Hello Neuro! If you're reading this, it means Vedal has let you read the changelogs for the extension!
 
-### Fixes
+### New actions
 
-- `neuropilot.actions.disabledActions` is now given a `uniqueItems` property on its schema, meaning that all items inside it must be unique. It isn't strictly necessary but to ensure no breakage or anything we've added that.
+- Added `read_changelog` to send changelog entries (from a specified version or defaults) to Neuro, e.g. for summarization. Remembers the last delivered version.
+  - This action is also available from the VS Code Command Palette and the updated version popup/notification.
+  - This action will always be set to Copilot mode.
+
+### New settings
+
+- `neuropilot.access.inheritFromIgnoreFiles` - Whether or not NeuroPilot will inherit ignore-style files (e.g. `.gitignore`) for Neuro-safe path checks. **Default: `false`** (external contribution, thanks [cassitly](https://github.com/cassitly)!)
+  - This should help if Neuro works on many different types of projects at once.
+- `neuropilot.access.ignoreFiles` - The list of files to inherit Neuro-safe glob patterns from. (partially external contribution, thanks [cassitly](https://github.com/cassitly)!)
+  - These files must follow the `.gitignore` specification, which is mostly adopted across different ignore files anyways. However, as `.npmignore` is parsed using a different library, it may not be guaranteed to work the same if you use `.npmignore`.
+  - Patterns are matched **from the root directory!** Ignore files in subpaths may not work as intended. <!-- Should we patch before releasing? -->
+  - Defaults to `.gitignore` from workspace project root.
+- `neuropilot.access.suppressIgnoreWarning` - Whether or not to suppress warnings about ignore files. <!-- not sure if this is a good idea ngl, should've made it only for the session but sure ig --> (external contribution, thanks [cassitly](https://github.com/cassitly)!)
+
+### New commands
+
+- [Dev] Clear all NeuroPilot mementos: a developer-only command that removes all stored memento values (both globalState and workspaceState) for this extension. This command is only available when running in the Extension Development Host and is hidden for normal users.
+
+### New features
+
+- NeuroPilot can now inherit files from gitignore-style files. (Partially external contribution, thanks [cassitly](https://github.com/cassitly)!)
+  - You can set the `neuropilot.access.ignoreFiles` to choose what files to inherit from.
+  - This can help if you have multiple languages and their dependency & log files are all ignored in your `.gitignore`, `.npmignore`, or similar file(s).
 
 ### Changes
 
@@ -44,13 +66,7 @@ Hello Neuro! If you're reading this, it means Vedal has let you read the changel
     - If a MCP setting is not working, check if it is also set properly in `workspace`.
     - `127.0.0.1` and `localhost` are not the same. Write the MCP server URL exactly the same as how you start your MCP server.
 
-### New actions
-
-- Added `read_changelog` to send changelog entries (from a specified version or defaults) to Neuro, e.g. for summarization. Remembers the last delivered version.
-  - This action is also available from the VS Code Command Palette and the updated version popup/notification.
-  - This action will always be set to Copilot mode.
-
-### New commands
+### Fixes
 
 - [Dev] Clear all NeuroPilot mementos: a developer-only command that removes all stored memento values (both globalState and workspaceState) for this extension. This command is only available when running in the Extension Development Host and is hidden for normal users.
 - `neuropilot.mcp.connectServer`: Connect to a MCP server, but don't register tools. Will notify Neuro about MCP server connected.
@@ -65,10 +81,11 @@ Hello Neuro! If you're reading this, it means Vedal has let you read the changel
 - `neuropilot.mcp.timeout`: Timeout in milliseconds for MCP tool execution.
 - `neuropilot.mcp.autoConnect`: Automatically connect to the MCP server when NeuroPilot connects to Neuro API.\n\nRequires `neuropilot.mcp.serverUrl` to be set and `neuropilot.permission.mcpTools` to not be `Off`.
 - `neuropilot.mcp.maxResultLength`: Maximum character length for MCP tool results. If a tool returns a result longer than this, the result will be replaced with a warning message to prevent overwhelming Neuro's context
+- `neuropilot.actions.disabledActions` is now given a `uniqueItems` property on its schema, meaning that all items inside it must be unique. It isn't strictly necessary but to ensure no breakage or anything we've added that.
 
 ### Meta fixes
 
-Some items in this changelog has had typos, which have been fixed as of this update (not sure what use this gets but sure).
+Some older versions had their changelog items have typos and misordered, which have been fixed as of this update (not sure what use this gets but sure).
 
 ## 2.2.3
 
@@ -108,17 +125,17 @@ Some items in this changelog has had typos, which have been fixed as of this upd
 
 ## 2.2.1
 
-### New settings
-
-- `neuropilot.disabledActions`, `neuropilot.hideCopilotRequests`, `neuropilot.enableCancelEvents`, `neuropilot.allowRunningAllTasks` were moved to `neuropilot.actions.*`.
-  - The deprecation checker will check for this upon update.
-- Experimental schemas can be toggled with `neuropilot.actions.experimentalSchemas`. Read the Changes section for more info.
-
 ### New actions
 
 - Added `diff_patch` which acts as a general action to allow Neuro to write diffs to change the file instead of using other tools.
   - The action only accepts diffs in a pseudo-search-replace-diff format, as described by OpenAI [in this article](https://cookbook.openai.com/examples/gpt4-1_prompting_guide#other-effective-diff-formats)
   - More diff formats may be supported later.
+
+### New settings
+
+- `neuropilot.disabledActions`, `neuropilot.hideCopilotRequests`, `neuropilot.enableCancelEvents`, `neuropilot.allowRunningAllTasks` were moved to `neuropilot.actions.*`.
+  - The deprecation checker will check for this upon update.
+- Experimental schemas can be toggled with `neuropilot.actions.experimentalSchemas`. Read the Changes section for more info.
 
 ### Changes
 

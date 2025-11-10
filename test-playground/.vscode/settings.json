@@ -16,4 +16,8 @@
     "neuropilot.permission.accessLintingAnalysis": "Autopilot",
     "neuropilot.sendContentsOnFileChange": false,
     "neuropilot.cursorPositionContextStyle": "both",
+    "neuropilot.access.inheritFromIgnoreFiles": false,
+    "neuropilot.access.ignoreFiles": [
+        ".gitignore"
+    ],
 }

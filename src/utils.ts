@@ -310,6 +310,8 @@ export function combineGlobLinesToRegExp(lines: string[]): RegExp {
     return new RegExp(result);
 }
 
+import { fastIsItIgnored } from '@/ignore_files_utils';
+
 /**
  * Check if an absolute path is safe for Neuro to access.
  * Neuro may not access paths outside the workspace, or files and folders starting with a dot.
@@ -348,6 +350,8 @@ export function isPathNeuroSafe(path: string, checkPatterns = true): boolean {
         excludeRegExp = cachedExcludeRegExp;
     }
 
+    const ignored = rootFolder ? fastIsItIgnored(normalizedPath) : false;
+
     return rootFolder !== undefined
         // Prevent access to the workspace folder itself
         && (ACCESS.externalFiles || normalizedPath !== rootFolder)
@@ -364,7 +368,9 @@ export function isPathNeuroSafe(path: string, checkPatterns = true): boolean {
         // Check against include pattern
         && includeRegExp.test(normalizedPath)
         // Check against exclude pattern
-        && !excludeRegExp.test(normalizedPath);
+        && !excludeRegExp.test(normalizedPath)
+        // Check if the path is ignored by .gitignore (if so, it's likely a library, or something large and not necessarily needed to be viewed by the user or Neuro).
+        && !ignored;
 }
 
 export const delayAsync = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));

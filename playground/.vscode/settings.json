@@ -53,4 +53,5 @@
     "neuropilot.mcp.autoConnect": false,
     "neuropilot.permission.mcpTools": "Off",
     "neuropilot.access.dotFiles": false
+    "neuropilot.access.ignoreFiles": ["./.neuroignore"]
 }

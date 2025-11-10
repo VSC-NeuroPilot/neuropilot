@@ -112,7 +112,7 @@ export const lintActions = {
             assert(workspacePath);
             const normalizedFolderPath = normalizePath(workspacePath + '/' + relativeFolder);
             const diagnostics = vscode.languages.getDiagnostics();
-            const folderDiagnostics = diagnostics.filter(([diagUri, diags]) => {
+            const folderDiagnostics = diagnostics.filter(async ([diagUri, diags]) => {
                 return normalizePath(diagUri.fsPath).startsWith(normalizedFolderPath) &&
                 isPathNeuroSafe(diagUri.fsPath) && diags.length > 0;
             });
@@ -242,8 +242,8 @@ export function handleGetFolderLintProblems(actionData: ActionData): string | un
 
         // Filter diagnostics to those that belong to files in this folder.
         const folderDiagnostics = diagnostics.filter(([diagUri, diags]) => {
-            return normalizePath(diagUri.fsPath).startsWith(normalizedFolderPath) &&
-                isPathNeuroSafe(diagUri.fsPath) && diags.length > 0;
+            return normalizePath(diagUri.fsPath).startsWith(normalizedFolderPath)
+                && isPathNeuroSafe(diagUri.fsPath) && diags.length > 0;
         });
 
         if (folderDiagnostics.length === 0) {

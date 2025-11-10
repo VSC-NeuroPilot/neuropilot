@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { isPathNeuroSafe, setVirtualCursor } from '@/utils';
+import { isPathNeuroSafe, setVirtualCursor, normalizePath, getWorkspacePath } from '@/utils';
 import { NEURO } from '@/constants';
 import {
     initializeCommonState,
@@ -20,8 +20,15 @@ import {
 } from '@shared/extension';
 import { registerUnsupervisedActions, registerUnsupervisedHandlers } from './unsupervised';
 import { registerSendSelectionToNeuro } from '@/editing';
+import { loadIgnoreFiles } from '@/ignore_files_utils';
 
 export function activate(context: vscode.ExtensionContext) {
+    loadIgnoreFiles(
+        normalizePath(
+            getWorkspacePath() || '',
+        ) || '',
+    );
+
     // Show update reminder if version changed
     showUpdateReminder(context);
 

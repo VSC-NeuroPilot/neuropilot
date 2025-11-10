@@ -1608,7 +1608,7 @@ export function editorChangeHandler(editor: vscode.TextEditor | undefined) {
  * @param event The editing event.
  * @returns 
  */
-export function workspaceEditHandler(event: vscode.TextDocumentChangeEvent) {
+export async function workspaceEditHandler(event: vscode.TextDocumentChangeEvent) {
     if (event.contentChanges.length === 0) return;
     if (event.document !== vscode.window.activeTextEditor?.document) return;
     if (!getPermissionLevel(PERMISSIONS.editActiveDocument)) return;

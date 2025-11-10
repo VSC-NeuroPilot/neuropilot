@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { handleTerminateTask, reloadTasks, taskEndedHandler } from '@/tasks';
 import { emergencyTerminalShutdown } from '@/pseudoterminal';
-import { isPathNeuroSafe, setVirtualCursor } from '@/utils';
+import { isPathNeuroSafe, setVirtualCursor, normalizePath, getWorkspacePath } from '@/utils';
 import { NEURO } from '@/constants';
 import {
     initializeCommonState,
@@ -24,8 +24,14 @@ import {
 import { registerChatParticipant } from '@/chat';
 import { registerUnsupervisedActions, registerUnsupervisedHandlers } from './unsupervised';
 import { registerSendSelectionToNeuro } from '@/editing';
+import { loadIgnoreFiles } from '@/ignore_files_utils';
 
 export function activate(context: vscode.ExtensionContext) {
+    loadIgnoreFiles(
+        normalizePath(
+            getWorkspacePath() || '',
+        ) || '',
+    );
 
     // Initialize common state
     initializeCommonState(context);

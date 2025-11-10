@@ -16,6 +16,7 @@ import 'mocha';
 import './extension.test';
 import '../file_actions.test';
 import '../utils.test';
+import '../ignore_files_utils.test';
 // Common integration tests that are environment-agnostic
 import '../common/editing_actions.test';
 import '../common/changelog_action.test';
@@ -41,8 +42,6 @@ import '../../unit-test/undo_and_save.simple.test';
 
 // Testing the meta stuff
 import '../test_utils.test';
-// Common env-agnostic tests
-import '../../unit-test/rewrite_all.simple.test';
 
 export function run(): Promise<void> {
     const mocha = new Mocha({ ui: 'tdd', color: true });
