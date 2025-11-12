@@ -780,11 +780,10 @@
 	"devDependencies": {
 		"@eslint/js": "^9.39.1",
 		"@stylistic/eslint-plugin": "^5.5.0",
-		"@types/eslint__js": "^9.14.0",
 		"@types/glob-to-regexp": "^0.4.4",
 		"@types/json-schema": "^7.0.15",
 		"@types/mocha": "^10.0.10",
-		"@types/node": "^24",
+		"@types/node": "^20",
 		"@types/vscode": "^1.95.0",
 		"@types/vscode-webview": "^1.57.5",
 		"@types/ws": "^8.18.0",
