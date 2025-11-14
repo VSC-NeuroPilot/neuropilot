@@ -6,12 +6,16 @@
 import * as vscode from 'vscode';
 import { RCEAction, stripToAction } from '@/neuro_client_helper';
 import { NEURO } from '@/constants';
-import { checkVirtualWorkspace, checkWorkspaceTrust, logOutput, notifyOnCaughtException } from '@/utils';
-import { ACTIONS, CONFIG, CONNECTION, getPermissionLevel, isActionEnabled, PERMISSIONS } from '@/config';
+import { logOutput, notifyOnCaughtException } from '@/utils';
+import { ACTIONS as ACTIONS_CONFIG, CONFIG, CONNECTION, getAllPermissions, getPermissionLevel, stringToPermissionLevel } from '@/config';
 import { PermissionLevel, ActionData } from '@vsc-neuropilot/api-types';
-import { handleRunTask } from '@/tasks';
 import { validate } from 'jsonschema';
 import type { RCECancelEvent } from '@events/utils';
+
+export const CATEGORY_MISC = 'Miscellaneous';
+
+const ACTIONS: RCEAction[] = [];
+const REGISTERED_ACTIONS: Set<string> = /* @__PURE__ */ new Set<string>();
 
 /**
  * RCE request object
@@ -24,7 +28,7 @@ export interface RceRequest {
     /**
      * The callback function to be executed when the request is accepted.
      */
-    callback: () => string | undefined;
+    callback: () => string | undefined | void;
     /**
      * Resolve the request, closing all attached notifications and clearing timers.
      */
@@ -49,10 +53,19 @@ export interface RceRequest {
     actionData: ActionData;
 }
 
+export interface ExtendedActionInfo {
+    action: RCEAction;
+    isRegistered: boolean;
+    effectivePermissionLevel: PermissionLevel;
+    isConfigured: boolean;
+    configuredWorkspacePermission?: PermissionLevel;
+    configuredGlobalPermission?: PermissionLevel;
+}
+
 export const cancelRequestAction: RCEAction = {
     name: 'cancel_request',
     description: 'Cancel the current request.',
-    permissions: [],
+    category: null,
     handler: handleCancelRequest,
     promptGenerator: () => '', // No prompt needed for this action
     defaultPermission: PermissionLevel.AUTOPILOT,
@@ -108,7 +121,7 @@ export function clearRceRequest(): void {
  */
 export function createRceRequest(
     prompt: string,
-    callback: () => string | undefined,
+    callback: () => string | undefined | void,
     actionData: ActionData,
     cancelEvents?: vscode.Disposable[],
 ): void {
@@ -253,47 +266,176 @@ export function denyRceRequest(): void {
 }
 
 /**
+ * Adds multiple actions to the RCE system.
+ * @param actions The actions to add.
+ * @param register Whether to register the actions with Neuro immediately if the permissions allow.
+ */
+export function addActions(actions: RCEAction[], register = true): void {
+    const actionsToAdd = actions.filter(a => !ACTIONS.some(existing => existing.name === a.name));
+    const actionsNotToAdd = actions.filter(a => !actionsToAdd.includes(a));
+    if (actionsNotToAdd.length > 0) {
+        logOutput('WARN', `Tried to add actions that are already registered: ${actionsNotToAdd.map(a => a.name).join(', ')}`);
+    }
+    ACTIONS.push(...actionsToAdd);
+    if (register && NEURO.connected) {
+        const actionNames = actionsToAdd.map(a => a.name);
+        const actionsToRegister = actionNames
+            .map(name => ACTIONS.find(a => a.name === name)!)
+            .filter((action) => getPermissionLevel(action.name) && action.registerCondition?.() !== false)
+            .map(stripToAction);
+        actionsToRegister.forEach(a => REGISTERED_ACTIONS.add(a.name));
+        if (actionsToRegister.length > 0)
+            NEURO.client?.registerActions(actionsToRegister);
+    }
+    NEURO.viewProviders.actions?.refreshActions();
+}
+
+/**
+ * Removes multiple actions from the registry.
+ * @param actionNames The names of the actions to remove.
+ */
+export function removeActions(actionNames: string[]): void {
+    for (const actionName of actionNames) {
+        const actionIndex = ACTIONS.findIndex(a => a.name === actionName);
+        if (actionIndex !== -1) {
+            ACTIONS.splice(actionIndex, 1);
+        }
+    }
+    if (NEURO.connected) {
+        NEURO.client?.unregisterActions(actionNames);
+        actionNames.forEach(a => REGISTERED_ACTIONS.delete(a));
+    }
+    NEURO.viewProviders.actions?.refreshActions();
+}
+
+/**
+ * Registers an action with Neuro.
+ * The action to register must already be added to the registry via {@link addAction} or {@link addActions}.
+ * Will only register the action if it is not already registered.
+ * @param actionName The name of the action to register.
+ */
+export function registerAction(actionName: string): void {
+    const action = ACTIONS.find(a => a.name === actionName);
+    if (action && NEURO.connected && !REGISTERED_ACTIONS.has(action.name)) {
+        NEURO.client!.registerActions([stripToAction(action)]);
+        REGISTERED_ACTIONS.add(action.name);
+        NEURO.viewProviders.actions?.refreshActions();
+    }
+}
+
+/**
+ * Unregisters an action from Neuro.
+ * @param actionName The name of the action to unregister.
+ */
+export function unregisterAction(actionName: string): void {
+    NEURO.client?.unregisterActions([actionName]);
+    REGISTERED_ACTIONS.delete(actionName);
+    NEURO.viewProviders.actions?.refreshActions();
+}
+
+export function unregisterAllActions(): void {
+    const actionNames = Array.from(REGISTERED_ACTIONS);
+    NEURO.client?.unregisterActions(actionNames);
+    REGISTERED_ACTIONS.clear();
+    NEURO.viewProviders.actions?.refreshActions();
+}
+
+/**
+ * Reregisters all actions with the Neuro API.
+ * @param conservative Only reregister as necessary.
+ */
+export function reregisterAllActions(conservative: boolean): void {
+    // Can't reregister if no client is connected
+    if (!NEURO.connected) return;
+
+    const permissions = getAllPermissions();
+    const actionsToUnregister = conservative
+        ? ACTIONS
+            .filter(a => REGISTERED_ACTIONS.has(a.name) && !shouldBeRegistered(a))
+            .map(a => a.name)
+        : ACTIONS.map(a => a.name);
+
+    // Unregister actions
+    if (actionsToUnregister.length > 0)
+        NEURO.client?.unregisterActions(actionsToUnregister);
+    actionsToUnregister.forEach(a => REGISTERED_ACTIONS.delete(a));
+
+    // Determine which actions to register
+    const actionsToRegister = ACTIONS
+        // Skip actions that are already registered
+        .filter(a => !REGISTERED_ACTIONS.has(a.name))
+        .filter(shouldBeRegistered)
+        .map(stripToAction);
+
+    actionsToRegister.forEach(a => REGISTERED_ACTIONS.add(a.name));
+
+    // Register the actions with Neuro
+    if (actionsToRegister.length > 0)
+        NEURO.client?.registerActions(actionsToRegister);
+
+    NEURO.viewProviders.actions?.refreshActions();
+    return;
+
+    function shouldBeRegistered(action: RCEAction): boolean {
+        // Non-auto-registered actions should stay unregistered
+        if (action.autoRegister === false && !REGISTERED_ACTIONS.has(action.name))
+            return false;
+        // Check the register condition
+        if (action.registerCondition && !action.registerCondition())
+            return false;
+        // Check permissions
+        const effectivePermission = permissions[action.name] ?? action.defaultPermission ?? PermissionLevel.OFF;
+        return effectivePermission !== PermissionLevel.OFF;
+    }
+}
+
+/**
+ * Gets the list of registered actions.
+ * Do not modify the actions in the returned array directly.
+ * @returns The list of registered actions.
+ */
+export function getActions(): readonly RCEAction[] {
+    return ACTIONS;
+}
+
+export function getAction(actionName: string): RCEAction | undefined {
+    return ACTIONS.find(a => a.name === actionName);
+}
+
+export function getExtendedActionsInfo(): ExtendedActionInfo[] {
+    const configuration = vscode.workspace.getConfiguration('neuropilot');
+    const { workspaceValue, globalValue } = configuration.inspect<Record<string, string>>('actionPermissions') || {};
+    return ACTIONS.map(action => {
+        const configuredWorkspacePermission = workspaceValue?.[action.name] !== undefined ? stringToPermissionLevel(workspaceValue[action.name]) : undefined;
+        const configuredGlobalPermission = globalValue?.[action.name] !== undefined ? stringToPermissionLevel(globalValue[action.name]) : undefined;
+        return {
+            action,
+            isRegistered: REGISTERED_ACTIONS.has(action.name),
+            effectivePermissionLevel: getPermissionLevel(action.name),
+            configuredWorkspacePermission,
+            configuredGlobalPermission,
+            isConfigured: configuredWorkspacePermission !== undefined || configuredGlobalPermission !== undefined,
+        } satisfies ExtendedActionInfo;
+    });
+}
+
+/**
  * RCE action handler code for unsupervised requests.
  * Intended to be used with something like `NEURO.client?.onAction(async (actionData: ActionData) => await RCEActionHandler(actionData, actionList, true))
  * @param actionData The action data from Neuro.
  * @param actionList The list of actions currently registered.
  * @param checkTasks Whether or not to check for tasks.
  */
-export async function RCEActionHandler(actionData: ActionData, actionList: Record<string, RCEAction>, checkTasks: boolean) {
-    const actionKeys = Object.keys(actionList);
+export async function RCEActionHandler(actionData: ActionData) {
     try {
-        if (actionKeys.includes(actionData.name) || checkTasks === true && NEURO.tasks.find(task => task.id === actionData.name)) {
+        if (REGISTERED_ACTIONS.has(actionData.name)) {
             NEURO.actionHandled = true;
 
-            let action: RCEAction;
-            if (actionKeys.includes(actionData.name)) {
-                action = actionList[actionData.name];
-            }
-            else {
-                const task = NEURO.tasks.find(task => task.id === actionData.name)!;
-                action = {
-                    name: task.id,
-                    description: task.description,
-                    permissions: [PERMISSIONS.runTasks],
-                    handler: handleRunTask,
-                    validators: [checkVirtualWorkspace, checkWorkspaceTrust],
-                    promptGenerator: () => `run the task "${task.id}".`,
-                };
-            }
+            const action = getAction(actionData.name)!;
 
-            // 1. If the action is not enabled, permission is always OFF.
-            // 2. Otherwise, if the action has permissions, use the lowest permission level.
-            // 3. Otherwise, if the action has a default permission, use the default permission.
-            // 4. Otherwise, fall back to COPILOT.
-            const effectivePermission = isActionEnabled(action)
-                ? action.permissions.length > 0
-                    ? getPermissionLevel(...action.permissions) // 2.
-                    : action.defaultPermission                  // 3.
-                ?? PermissionLevel.COPILOT                  // 4.
-                : PermissionLevel.OFF;                          // 1.
+            const effectivePermission = getPermissionLevel(action.name);
             if (effectivePermission === PermissionLevel.OFF) {
-                const offPermission = action.permissions.find(permission => getPermissionLevel(permission) === PermissionLevel.OFF);
-                NEURO.client?.sendActionResult(actionData.id, true, `Action failed: You don't have permission to ${offPermission?.infinitive ?? 'execute this action'}.`);
+                NEURO.client?.sendActionResult(actionData.id, true, 'Action failed: You don\'t have permission to execute this action.');
                 return;
             }
 
@@ -327,7 +469,7 @@ export async function RCEActionHandler(actionData: ActionData, actionList: Recor
 
             const eventArray: vscode.Disposable[] = [];
 
-            if (ACTIONS.enableCancelEvents && action.cancelEvents) {
+            if (ACTIONS_CONFIG.enableCancelEvents && action.cancelEvents) {
                 const eventListener = (eventObject: RCECancelEvent) => {
                     let createdReason: string;
                     let createdLogReason: string;
@@ -362,9 +504,9 @@ export async function RCEActionHandler(actionData: ActionData, actionList: Recor
             if (effectivePermission === PermissionLevel.AUTOPILOT) {
                 for (const d of eventArray) d.dispose();
                 const result = action.handler(actionData);
-                NEURO.client?.sendActionResult(actionData.id, true, result);
+                NEURO.client?.sendActionResult(actionData.id, true, result ?? undefined);
             }
-            else { // permissionLevel === PermissionLevel.COPILOT
+            else { // effectivePermission === PermissionLevel.COPILOT
                 if (NEURO.rceRequest) {
                     NEURO.client?.sendActionResult(actionData.id, true, 'Action failed: Already waiting for permission to run another action.');
                     return;
@@ -389,7 +531,7 @@ export async function RCEActionHandler(actionData: ActionData, actionList: Recor
                 NEURO.statusBarItem!.color = new vscode.ThemeColor('statusBarItem.warningForeground');
 
                 // Show the RCE dialog immediately if the config says so
-                if (!ACTIONS.hideCopilotRequests)
+                if (!ACTIONS_CONFIG.hideCopilotRequests)
                     revealRceNotification();
 
                 // End of added code.

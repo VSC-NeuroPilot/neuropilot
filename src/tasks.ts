@@ -8,17 +8,21 @@ import * as vscode from 'vscode';
 
 import { NEURO } from '@/constants';
 import { logOutput, formatActionID, getFence, checkWorkspaceTrust, checkVirtualWorkspace } from '@/utils';
-import { RCEAction, actionValidationAccept, actionValidationFailure, stripToActions } from '@/neuro_client_helper';
+import { RCEAction, actionValidationAccept, actionValidationFailure } from '@/neuro_client_helper';
 import { ActionData } from '@vsc-neuropilot/api-types';
-import { ACTIONS, PERMISSIONS, getPermissionLevel, isActionEnabled } from '@/config';
+import { ACTIONS } from '@/config';
 import { notifyOnTaskFinish } from '@events/shells';
+import { addActions, getActions, removeActions } from './rce';
+
+const CATEGORY_TASKS = 'Tasks';
+const CATEGORY_REGISTERED_TASKS = 'Registered Tasks';
 
 export const taskHandlers = {
     // handleRunTask is used separately and not on this list
     terminate_task: {
         name: 'terminate_task',
         description: 'Terminate the currently running task',
-        permissions: [PERMISSIONS.runTasks],
+        category: CATEGORY_TASKS,
         handler: handleTerminateTask,
         cancelEvents: [
             notifyOnTaskFinish,
@@ -30,13 +34,12 @@ export const taskHandlers = {
     },
 } satisfies Record<string, RCEAction>;
 
-export function registerTaskActions() {
-    if (getPermissionLevel(PERMISSIONS.runTasks)) {
-        NEURO.client?.registerActions(stripToActions([
-            taskHandlers.terminate_task,
-        ]).filter(isActionEnabled));
-        // Tasks are registered asynchronously in reloadTasks()
-    }
+export function addTaskActions() {
+    // TODO: Maybe only register once a task is running?
+    addActions([
+        taskHandlers.terminate_task,
+    ]);
+    // Tasks are registered asynchronously in reloadTasks()
 }
 
 export function handleTerminateTask(_actionData: ActionData): string | undefined {
@@ -86,14 +89,11 @@ export function taskEndedHandler(event: vscode.TaskEndEvent) {
 }
 
 export function reloadTasks() {
-    if (NEURO.tasks.length)
-        NEURO.client?.unregisterActions(NEURO.tasks.map((task) => task.id));
-
     NEURO.tasks = [];
-
-    if (!getPermissionLevel(PERMISSIONS.runTasks)) {
-        return;
-    }
+    const tasks = getActions()
+        .filter(action => action.category === CATEGORY_REGISTERED_TASKS)
+        .map(action => action.name);
+    removeActions(tasks);
 
     vscode.tasks.fetchTasks().then((tasks) => {
         for (const task of tasks) {
@@ -122,16 +122,13 @@ export function reloadTasks() {
                 logOutput('INFO', `Ignoring task: ${task.name}`);
             }
         }
-
-        if (!getPermissionLevel(PERMISSIONS.runTasks)) {
-            return;
-        }
-
-        NEURO.client?.registerActions(NEURO.tasks.map((task) => {
-            return {
-                name: task.id,
-                description: task.description,
-            };
-        }));
+        addActions(NEURO.tasks.map((task) => ({
+            name: task.id,
+            description: task.description,
+            category: CATEGORY_REGISTERED_TASKS,
+            handler: handleRunTask,
+            promptGenerator: `run the task: ${task.description}`,
+            validators: [checkVirtualWorkspace, checkWorkspaceTrust],
+        })));
     });
 }

@@ -7,6 +7,7 @@ tsconfig.json
 src/
 node_modules/
 *.vsix
+**/*.tsbuildinfo
 
 # Project files
 project-files/
@@ -15,7 +16,7 @@ project-files/
 esbuild-configs/
 
 # Other meta scripts
-/scripts
+scripts/**
 
 # Krita
 *.kra
@@ -31,9 +32,12 @@ tony/
 # Ignored assets
 assets/ignore/**
 # Coverage
-/coverage-*
+coverage-*/**
 
 # Integration testing
 test-playground/
 .vscode-test.mjs
 out/test/**
+
+# Remove pnpm files
+pnpm-*.yaml

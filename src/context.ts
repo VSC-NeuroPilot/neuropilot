@@ -1,9 +1,11 @@
 import * as vscode from 'vscode';
 
-import { getFence, logOutput, notifyOnCaughtException, simpleFileName } from '@/utils';
+import { getFence, logOutput, simpleFileName } from '@/utils';
 import { NEURO } from '@/constants';
-import { CONNECTION, PERMISSIONS, getPermissionLevel, isActionEnabled } from '@/config';
-import { PermissionLevel } from '@vsc-neuropilot/api-types';
+import { CONNECTION, getPermissionLevel } from '@/config';
+import { addActions, CATEGORY_MISC } from '@/rce';
+import { RCEAction } from '@/neuro_client_helper';
+import { PermissionLevel, ActionData } from '@vsc-neuropilot/api-types';
 
 export function sendCurrentFile() {
     const editor = vscode.window.activeTextEditor;
@@ -28,83 +30,69 @@ export function sendCurrentFile() {
     NEURO.client?.sendContext(`${CONNECTION.userName} sent you the contents of the file ${fileName}.\n\nContent:\n\n${fence}${language}\n${text}\n${fence}`);
 }
 
-export function registerRequestCookieAction() {
-    NEURO.client?.unregisterActions(['request_cookie']);
-
-    if (!getPermissionLevel(PERMISSIONS.requestCookies) || !isActionEnabled('request_cookie'))
-        return;
-
-    NEURO.client?.registerActions([
-        {
-            name: 'request_cookie',
-            description: `Ask ${CONNECTION.userName} for a cookie. You can request a specific flavor, but it's up to ${CONNECTION.userName} to decide.`,
-            schema: {
-                type: 'object',
-                properties: {
-                    flavor: { type: 'string' },
-                },
-                additionalProperties: false,
-            },
+const REQUEST_COOKIE_ACTION: RCEAction = {
+    name: 'request_cookie',
+    description: `Ask ${CONNECTION.userName} for a cookie. You can request a specific flavor, but it's up to ${CONNECTION.userName} to decide.`,
+    category: CATEGORY_MISC,
+    schema: {
+        type: 'object',
+        properties: {
+            flavor: { type: 'string' },
         },
-    ]);
+        additionalProperties: false,
+    },
+    handler: handleRequestCookie,
+    promptGenerator: (actionData: ActionData) => `have a${actionData.params?.flavor ? ' ' + actionData.params.flavor : ''} cookie.`,
+    defaultPermission: PermissionLevel.COPILOT,
+};
+
+export function addRequestCookieAction() {
+    addActions([REQUEST_COOKIE_ACTION]);
 }
 
-export function registerRequestCookieHandler() {
-    NEURO.client?.onAction((actionData) => {
-        if (actionData.name === 'request_cookie') {
-            NEURO.actionHandled = true;
+function handleRequestCookie(actionData: ActionData) {
+    const permission = getPermissionLevel(actionData.name);
 
-            try {
-                if (NEURO.waitingForCookie) {
-                    logOutput('INFO', 'Already waiting for a cookie');
-                    NEURO.client?.sendActionResult(actionData.id, true, 'You already asked for a cookie.');
-                    return;
-                }
-
-                const permission = getPermissionLevel(PERMISSIONS.requestCookies);
-
-                switch (permission) {
-                    case PermissionLevel.OFF:
-                        logOutput('WARNING', 'Neuro attempted to request a cookie, but permission is disabled');
-                        NEURO.client?.sendActionResult(actionData.id, true, 'Permission to request cookies is disabled.');
-                        break;
-                    case PermissionLevel.COPILOT:
-                        NEURO.waitingForCookie = true;
-                        vscode.window.showInformationMessage(
-                            `${NEURO.currentController} is asking for a${actionData.params?.flavor ? ' ' + actionData.params.flavor : ''} cookie.`,
-                            'Give',
-                            'Deny',
-                        ).then((value) => {
-                            if (value === 'Give') {
-                                giveCookie(true, actionData.params?.flavor);
-                            } else if (value === 'Deny' || value === undefined) {
-                                denyCookie();
-                            }
-                            NEURO.waitingForCookie = false;
-                        });
-                        NEURO.client?.sendActionResult(actionData.id, true, 'Vedal has been asked for a cookie.');
-                        break;
-                    case PermissionLevel.AUTOPILOT:
-                        if (!actionData.params?.flavor) {
-                            NEURO.client?.sendActionResult(actionData.id, false, 'You need to specify a flavor!');
-                            break;
-                        }
-                        logOutput('INFO', `Neuro grabbed a ${actionData.params?.flavor} cookie.`);
-                        NEURO.client?.sendActionResult(actionData.id, true, `You grabbed a ${actionData.params?.flavor} cookie!`);
-                        break;
-                }
-            } catch (erm) {
-                const actionName = actionData.name;
-                notifyOnCaughtException(actionName, erm);
-                NEURO.client?.sendActionResult(actionData.id, true, `An error occured while executing the action "${actionName}". You may retry if you like, but it may be better to ask Vedal to check what's up.`);
-                return;
-            }
+    switch (permission) {
+        case PermissionLevel.COPILOT: {
+            giveCookie(true, actionData.params?.flavor);
+            return `Waiting on ${CONNECTION.userName} to decide on the flavor.`;
         }
-    });
+        case PermissionLevel.AUTOPILOT: {
+            logOutput('INFO', `Neuro grabbed a ${actionData.params?.flavor} cookie.`);
+            if (actionData.params?.flavor) {
+                // Return flavor as requested
+                return `You grabbed a ${actionData.params.flavor} cookie!`;
+            }
+            // Funny quotes if no flavor specified
+            const base = 'You grabbed an undefined cookie. ';
+            const quotes = [
+                'Wait a second...',
+                'Unfortunately, Vedal wasn\'t around to decide the flavor for you.',
+                'Maybe you should have defined it.',
+                'You could maybe write the Cookie class to define it.',
+                'Probably undefined taste as well.',
+                'It\'s still a cookie. Probably.',
+                'Isn\'t that just stale cookies?',
+                'You should probably #define it.',
+                'NullReferenceException: Flavor reference not set to an instance of a Cookie.',
+                'TypeError: Cannot read property \'flavor\' of undefined cookie.',
+                'Segmentation fault (core dumped).',
+            ];
+            const randomIndex = Math.floor(Math.random() * quotes.length);
+            return base + quotes[randomIndex];
+        }
+    }
+    // Removed the try-catch because this shoud be handled by the RCE system now
+    // catch (erm) {
+    //     const actionName = actionData.name;
+    //     notifyOnCaughtException(actionName, erm);
+    //     NEURO.client?.sendActionResult(actionData.id, true, `An error occured while executing the action "${actionName}". You may retry if you like, but it may be better to ask Vedal to check what's up.`);
+    //     return;
+    // }
 }
 
 export function giveCookie(isRequested = false, defaultFlavor = 'Chocolate Chip') {
-    NEURO.waitingForCookie = false;
     if (!NEURO.connected) {
         logOutput('ERROR', 'Attempted to give cookie while disconnected');
         vscode.window.showErrorMessage('Not connected to Neuro API.');
@@ -119,23 +107,29 @@ export function giveCookie(isRequested = false, defaultFlavor = 'Chocolate Chip'
     }).then((flavor) => {
         if (!flavor) {
             logOutput('INFO', 'No flavor given, canceling cookie');
-            if (isRequested)
-                NEURO.client?.sendContext(`${CONNECTION.userName} couldn't decide on a flavor for your cookie.`);
+            if (isRequested) {
+                // Funny quotes if cookie was requested but no flavor given
+                const quotes = [
+                    `${CONNECTION.userName} couldn't decide on a flavor for your cookie.`,
+                    `${CONNECTION.userName} accidentally dropped your cookie.`,
+                    `${CONNECTION.userName} ate your cookie.`,
+                    `${CONNECTION.userName} made the cookie of types null and void.`,
+                    `${CONNECTION.userName} mixed your cookie into banana rum.`,
+                    `${CONNECTION.userName} clicked the cookie circle to the beat.`,
+                    `${CONNECTION.userName} used the cookie to buy a cursor.`,
+                ];
+                if (CONNECTION.userName === 'Vedal') {
+                    quotes.push(
+                        'Vedal\'s robot dog ate the cookie.',
+                        'Vedal mixed your cookie into his banana rum.',
+                    );
+                }
+                const randomIndex = Math.floor(Math.random() * quotes.length);
+                NEURO.client?.sendContext(quotes[randomIndex]);
+            }
             return;
         }
         logOutput('INFO', 'Giving cookie to Neuro');
         NEURO.client?.sendContext(`${CONNECTION.userName} gave you a ${flavor} cookie!`);
     });
-}
-
-export function denyCookie() {
-    NEURO.waitingForCookie = false;
-    if (!NEURO.connected) {
-        logOutput('ERROR', 'Attempted to deny cookie while disconnected');
-        vscode.window.showErrorMessage('Not connected to Neuro API.');
-        return;
-    }
-
-    logOutput('INFO', 'Denying cookie to Neuro');
-    NEURO.client?.sendContext(`${CONNECTION.userName} denied you the cookie.`);
 }

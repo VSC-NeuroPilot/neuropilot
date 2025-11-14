@@ -1,6 +1,7 @@
 # Node.js
 out
 node_modules
+media/codicons
 
 # VS Code
 .vscode-test/

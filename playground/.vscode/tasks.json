@@ -7,6 +7,13 @@
             "command": "node ${file}",
             "problemMatcher": [],
             "detail": "[Neuro] Run the current JavaScript file using Node.js"
+        },
+        {
+            "label": "Run Python file",
+            "type": "shell",
+            "command": "python input_test.py",
+            "problemMatcher": [],
+            "detail": "[Neuro] Run the input_test Python file."
         }
     ]
 }

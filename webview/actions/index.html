@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; font-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    ${styles}
+    <title>Actions</title>
+</head>
+<body>
+    <details>
+        <summary><i class='codicon codicon-info'></i><span>Help</span></summary>
+        <p><i>Italics = Actual permission is controlled by the other context or the action's default permission.</i></p>
+        <!-- TODO: Doesn't look good with the category headings -->
+        <!-- <p><b>Bold = Permission is modified in the current settings context.</b></p> -->
+        <p><span class="disabled">Grayed out = Permission is not registered</span></p>
+        <p>Some actions may have secondary registration conditions and not be registered even if permission is granted.</p>
+        <p>
+            <b>A</b> = <b>A</b>utopilot<br>
+            <b>C</b> = <b>C</b>opilot<br>
+            <b>O</b> = <b>O</b>ff
+        </p>
+    </details>
+    <p class="context-switcher">
+        <!-- Dynamically added content -->
+    </p>
+    <div class="webview-header">
+        <div class="actions-header">
+            <div class="actions-header-label">Action Name</div>
+            <div class="permission-level-letter">A</div>
+            <div class="permission-level-letter">C</div>
+            <div class="permission-level-letter">O</div>
+        </div>
+    </div>
+    <div class="actions-list">
+        <!-- Dynamically added content -->
+    </div>
+    <script nonce="${nonce}" src="${scriptUri}"></script>
+</body>
+</html>

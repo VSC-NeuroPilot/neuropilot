@@ -1,19 +1,5 @@
 {
-    // NeuroPilot settings
-    "neuropilot.permission.editActiveDocument": "Copilot",
-    "neuropilot.permission.openFiles": "Copilot",
-    "neuropilot.permission.runTasks": "Copilot",
-    "neuropilot.permission.create": "Copilot",
-    "neuropilot.permission.delete": "Copilot",
-    "neuropilot.permission.rename": "Copilot",
-    "neuropilot.permission.gitRemotes": "Copilot",
-    "neuropilot.permission.gitTags": "Copilot",
-    "neuropilot.permission.gitOperations": "Copilot",
-    "neuropilot.permission.gitConfigs": "Copilot",
     "neuropilot.showTimeOnTerminalStart": true,
-    "neuropilot.permission.terminalAccess": "Copilot",
-    "neuropilot.permission.accessLintingAnalysis": "Copilot",
-    "neuropilot.permission.getUserSelection": "Copilot",
     "neuropilot.terminals": [
         {
             "name": "PowerShell",
@@ -37,7 +23,6 @@
     ],
     "neuropilot.sendNewLintingProblemsOn": "off",
     "neuropilot.requestExpiryTimeout": 10000,
-    "neuropilot.currentlyAsNeuroAPI": "Neuro",
     "neuropilot.cursorFollowsNeuro": false,
     "neuropilot.connection.autoConnect": true,
     "neuropilot.connection.retryAmount": 1,
@@ -48,5 +33,9 @@
     // VS Code settings
     "files.autoSave": "afterDelay",
     "files.autoSaveDelay": 1000,
-    "neuropilot.actions.hideCopilotRequests": false
+    "neuropilot.actions.hideCopilotRequests": false,
+    "neuropilot.connection.nameOfAPI": "Neuro",
+    "neuropilot.access.ignoreFiles": [
+        "./.neuroignore"
+    ],
 }

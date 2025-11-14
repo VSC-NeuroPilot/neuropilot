@@ -1,0 +1,99 @@
+name: New feature
+description: Request a new feature
+title: "[Feature] "
+type: Feature
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for coming up with a new feature!
+
+        Before requesting a feature, please check if it has already been discussed on the Neurocord thread.
+    
+  - type: input
+    id: idea
+    attributes:
+      label: Idea name
+      description: Put your idea's name here. If you don't have a concrete name for it, that's fine, just try to describe it very briefly, like a title.
+    validations:
+      required: true
+  
+  - type: dropdown
+    id: feature-type
+    attributes:
+      label: Feature type
+      description: Which type of feature is it?
+      multiple: true
+      options:
+        - Neuro action
+        - Control functionality
+        - Passive context
+        - Extension command
+        - "New system (examples: RCE system, live context updates, etc...)"
+        - Safety feature
+        - Other (specify below)
+        - I don't know
+      default: 7
+    validations:
+      required: true
+    
+  - type: textarea
+    id: description
+    attributes:
+      label: Idea description
+      description: Describe the idea in detail here.
+    validations:
+      required: true
+  
+  - type: markdown
+    attributes:
+      value: |
+        "## Technical section"
+        This section is intended for more technical people.
+        This section is not a requirement to submit a feature request, but it does help.
+
+        If you don't understand one or more questions, feel free to skip them.
+      
+  - type: textarea
+    attributes:
+      label: APIs to use
+      description: What APIs (VS Code, extension provided, or otherwise) does this feature use? Please point to specific links to the API documentation if possible.
+  
+  - type: textarea
+    attributes:
+      label: Implementation idea
+      description: |
+        If you happen to have an idea on how to implement this, please describe it here.
+        We aren't specifically looking for implementation code, in fact it's better if you try to explain it with words than with code, though code is fine to include as well.
+      
+  - type: checkboxes
+    attributes:
+      label: Checklist
+      description: A technical "checklist" for this feature
+      options:
+        - label: This feature requires a new npm dependency
+        - label: This feature can work in both Browser (WebWorker) and Desktop (Node.js) environments (without changes).
+        - label: This feature requires a new config setting
+  
+  - type: textarea
+    attributes:
+      label: Explainer for above
+      description: |
+        If this requires a new npm dependency, explain why.
+
+        If this cannot be ran in the browser environment without changes, explain why and (if possible) how it could be made to work across both environments.
+
+        If it requires a new npm dependency and can't work across both browser and desktop, use this section to explain both.
+  
+  - type: dropdown
+    attributes:
+      label: Contributing
+      description: |
+        How willing are you to help? This includes planning and implementing the feature.
+
+        If you do decide to help, be sure to join our Neurocord project thread as we'll be using it for communication.
+      options:
+        - I am willing to contribute substantially.
+        - I am willing to contribute a little or may need help to contribute.
+        - I am not willing to contribute.
+      default: 2

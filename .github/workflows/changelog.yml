@@ -1,0 +1,42 @@
+name: Check that changelog is updated
+
+on:
+  # Should run for every push to the PR branch
+  pull_request:
+    paths:
+      - 'assets/**'
+      - 'esbuild-configs/**'
+      - 'scripts/**'
+      - 'src/**'
+      - 'webview/**'
+      - '.vscodeignore'
+      - 'package.json'
+      - 'tsconfig*.json'
+
+jobs:
+  check-changelog:
+    runs-on: ubuntu-latest
+    # Only run if the PR is not a draft and does not have the 'refactor' label
+    if: github.event.pull_request.draft == false && !contains(github.event.pull_request.labels.*.name, 'refactor') && !contains(github.event.pull_request.labels.*.name, 'meta')
+    permissions:
+      pull-requests: read
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Check that changelog is updated
+        run: |
+          echo "Comparing ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
+          git fetch origin ${{ github.event.pull_request.base.ref }} ${{ github.event.pull_request.head.ref }}
+          changed=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }})
+          echo "Changed files:"
+          echo "$changed"
+
+          if echo "$changed" | grep -q '^CHANGELOG\.md$'; then
+            echo "✅ CHANGELOG.md modified — OK"
+          else
+            echo "::error file=CHANGELOG.md::Changelog must be updated in non-refactor PRs"
+            exit 1
+          fi

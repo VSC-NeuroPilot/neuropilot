@@ -4,14 +4,14 @@ import type { Change, CommitOptions, Commit, Repository, API, GitExtension } fro
 import { ForcePushMode } from '@typing/git.d';
 import { StatusStrings, RefTypeStrings } from '@typing/git_status';
 import { logOutput, simpleFileName, isPathNeuroSafe, normalizePath, getWorkspacePath } from '@/utils';
-import { actionValidationAccept, actionValidationFailure, RCEAction, contextFailure, stripToActions, actionValidationRetry } from '@/neuro_client_helper';
+import { actionValidationAccept, actionValidationFailure, RCEAction, contextFailure, actionValidationRetry } from '@/neuro_client_helper';
 import { ActionData, ActionValidationResult } from '@vsc-neuropilot/api-types';
-import { PERMISSIONS, getPermissionLevel, isActionEnabled } from '@/config';
 import assert from 'node:assert';
 import { RCECancelEvent } from '@events/utils';
 import { JSONSchema7Definition } from 'json-schema';
+import { addActions, registerAction, reregisterAllActions, unregisterAction } from './rce';
 
-/* All actions located in here requires neuropilot.permission.gitOperations to be enabled. */
+const CATEGORY_GIT = 'Git';
 
 // Get the Git extension
 let git: API | null = null;
@@ -24,7 +24,7 @@ export function getGitExtension() {
         logOutput('DEBUG', 'Git extension obtained.');
         repo = git.repositories[0];
         logOutput('DEBUG', 'Git repo obtained (if any).');
-        registerGitActions();
+        addGitActions();
     } else {
         git = null;
         repo = null;
@@ -132,7 +132,7 @@ export const gitActions = {
     init_git_repo: {
         name: 'init_git_repo',
         description: 'Initialize a new Git repository in the current workspace folder',
-        permissions: [PERMISSIONS.gitOperations],
+        category: CATEGORY_GIT,
         handler: handleNewGitRepo,
         promptGenerator: 'initialize a Git repository in the workspace.',
         cancelEvents: commonCancelEvents,
@@ -144,6 +144,7 @@ export const gitActions = {
     add_file_to_git: {
         name: 'add_file_to_git',
         description: 'Add a file to the staging area',
+        category: CATEGORY_GIT,
         schema: {
             type: 'object',
             properties: {
@@ -158,15 +159,16 @@ export const gitActions = {
             required: ['filePath'],
             additionalProperties: false,
         },
-        permissions: [PERMISSIONS.gitOperations],
         handler: handleAddFileToGit,
         cancelEvents: commonCancelEvents,
         promptGenerator: (actionData: ActionData) => `add the file "${actionData.params.filePath}" to the staging area.`,
         validators: [gitValidator, filePathGitValidator],
+        registerCondition: () => !!repo,
     },
     make_git_commit: {
         name: 'make_git_commit',
         description: 'Commit staged changes with a message',
+        category: CATEGORY_GIT,
         schema: {
             type: 'object',
             properties: {
@@ -180,15 +182,16 @@ export const gitActions = {
             required: ['message'],
             additionalProperties: false,
         },
-        permissions: [PERMISSIONS.gitOperations],
         handler: handleMakeGitCommit,
         cancelEvents: commonCancelEvents,
         promptGenerator: (actionData: ActionData) => `commit changes with the message "${actionData.params.message}".`,
         validators: [gitValidator],
+        registerCondition: () => !!repo,
     },
     merge_to_current_branch: {
         name: 'merge_to_current_branch',
         description: 'Merge another branch into the current branch.',
+        category: CATEGORY_GIT,
         schema: {
             type: 'object',
             properties: {
@@ -197,24 +200,26 @@ export const gitActions = {
             required: ['ref_to_merge'],
             additionalProperties: false,
         },
-        permissions: [PERMISSIONS.gitOperations],
         handler: handleGitMerge,
         cancelEvents: commonCancelEvents,
         promptGenerator: (actionData: ActionData) => `merge "${actionData.params.ref_to_merge}" into the current branch.`,
         validators: [gitValidator],
+        registerCondition: () => !!repo,
     },
     git_status: {
         name: 'git_status',
         description: 'Get the current status of the Git repository',
-        permissions: [PERMISSIONS.gitOperations],
+        category: CATEGORY_GIT,
         handler: handleGitStatus,
         cancelEvents: commonCancelEvents,
         promptGenerator: 'get the repository\'s Git status.',
         validators: [gitValidator],
+        registerCondition: () => !!repo,
     },
     remove_file_from_git: {
         name: 'remove_file_from_git',
         description: 'Remove a file from the staging area',
+        category: CATEGORY_GIT,
         schema: {
             type: 'object',
             properties: {
@@ -229,15 +234,16 @@ export const gitActions = {
             required: ['filePath'],
             additionalProperties: false,
         },
-        permissions: [PERMISSIONS.gitOperations],
         handler: handleRemoveFileFromGit,
         cancelEvents: commonCancelEvents,
         promptGenerator: (actionData: ActionData) => `remove the file "${actionData.params.filePath}" from the staging area.`,
         validators: [gitValidator, filePathGitValidator],
+        registerCondition: () => !!repo,
     },
     delete_git_branch: {
         name: 'delete_git_branch',
         description: 'Delete a branch in the current Git repository',
+        category: CATEGORY_GIT,
         schema: {
             type: 'object',
             properties: {
@@ -247,15 +253,16 @@ export const gitActions = {
             required: ['branchName'],
             additionalProperties: false,
         },
-        permissions: [PERMISSIONS.gitOperations],
         handler: handleDeleteGitBranch,
         cancelEvents: commonCancelEvents,
         promptGenerator: (actionData: ActionData) => `delete the branch "${actionData.params.branchName}".`,
         validators: [gitValidator],
+        registerCondition: () => !!repo,
     },
     switch_git_branch: {
         name: 'switch_git_branch',
         description: 'Switch to a different branch in the current Git repository',
+        category: CATEGORY_GIT,
         schema: {
             type: 'object',
             properties: {
@@ -264,15 +271,16 @@ export const gitActions = {
             required: ['branchName'],
             additionalProperties: false,
         },
-        permissions: [PERMISSIONS.gitOperations],
         handler: handleSwitchGitBranch,
         cancelEvents: commonCancelEvents,
         promptGenerator: (actionData: ActionData) => `switch to the branch "${actionData.params.branchName}".`,
         validators: [gitValidator],
+        registerCondition: () => !!repo,
     },
     new_git_branch: {
         name: 'new_git_branch',
         description: 'Create a new branch in the current Git repository',
+        category: CATEGORY_GIT,
         schema: {
             type: 'object',
             properties: {
@@ -281,15 +289,16 @@ export const gitActions = {
             required: ['branchName'],
             additionalProperties: false,
         },
-        permissions: [PERMISSIONS.gitOperations],
         handler: handleNewGitBranch,
         cancelEvents: commonCancelEvents,
         promptGenerator: (actionData: ActionData) => `create a new branch "${actionData.params.branchName}".`,
         validators: [gitValidator],
+        registerCondition: () => !!repo,
     },
     diff_files: {
         name: 'diff_files',
         description: 'Get the differences between two versions of a file in the Git repository',
+        category: CATEGORY_GIT,
         schema: {
             type: 'object',
             oneOf: [
@@ -335,15 +344,16 @@ export const gitActions = {
             },
             additionalProperties: false,
         },
-        permissions: [PERMISSIONS.gitOperations],
         handler: handleDiffFiles,
         cancelEvents: commonCancelEvents,
         promptGenerator: (actionData: ActionData) => `obtain ${actionData.params?.filePath ? `"${actionData.params.filePath}"'s` : 'a'} Git diff${actionData.params?.ref1 && actionData.params?.ref2 ? ` between ${actionData.params.ref1} and ${actionData.params.ref2}` : actionData.params?.ref1 ? ` at ref ${actionData.params.ref1}` : ''}${actionData.params?.diffType ? ` (of type "${actionData.params.diffType}")` : ''}.`,
         validators: [gitValidator, filePathGitValidator, gitDiffValidator],
+        registerCondition: () => !!repo,
     },
     git_log: {
         name: 'git_log',
         description: 'Get the commit history of the current branch',
+        category: CATEGORY_GIT,
         schema: {
             type: 'object',
             properties: {
@@ -355,15 +365,16 @@ export const gitActions = {
             },
             additionalProperties: false,
         },
-        permissions: [PERMISSIONS.gitOperations],
         handler: handleGitLog,
         cancelEvents: commonCancelEvents,
         promptGenerator: (actionData: ActionData) => `get the ${actionData.params?.log_limit ? `${actionData.params.log_limit} most recent commits in the ` : ''}Git log.`,
         validators: [gitValidator],
+        registerCondition: () => !!repo,
     },
     git_blame: {
         name: 'git_blame',
         description: 'Get commit attributions for each line in a file.',
+        category: CATEGORY_GIT,
         schema: {
             type: 'object',
             properties: {
@@ -372,17 +383,18 @@ export const gitActions = {
             required: ['filePath'],
             additionalProperties: false,
         },
-        permissions: [PERMISSIONS.gitOperations],
         handler: handleGitBlame,
         cancelEvents: commonCancelEvents,
         promptGenerator: (actionData: ActionData) => `get the Git blame for the file "${actionData.params.filePath}".`,
         validators: [gitValidator, filePathGitValidator],
+        registerCondition: () => !!repo,
     },
 
     // Requires gitTags
     tag_head: {
         name: 'tag_head',
         description: 'Tag the current commit using Git.',
+        category: CATEGORY_GIT,
         schema: {
             type: 'object',
             properties: {
@@ -392,15 +404,16 @@ export const gitActions = {
             required: ['name'],
             additionalProperties: false,
         },
-        permissions: [PERMISSIONS.gitOperations, PERMISSIONS.gitTags],
         handler: handleTagHEAD,
         cancelEvents: commonCancelEvents,
         promptGenerator: (actionData: ActionData) => `tag the current commit with the name "${actionData.params.name}" and associate it with the "${actionData.params.upstream}" remote.`,
         validators: [gitValidator],
+        registerCondition: () => !!repo,
     },
     delete_tag: {
         name: 'delete_tag',
         description: 'Delete a tag from Git.',
+        category: CATEGORY_GIT,
         schema: {
             type: 'object',
             properties: {
@@ -409,17 +422,18 @@ export const gitActions = {
             required: ['name'],
             additionalProperties: false,
         },
-        permissions: [PERMISSIONS.gitOperations, PERMISSIONS.gitTags],
         handler: handleDeleteTag,
         cancelEvents: commonCancelEvents,
         promptGenerator: (actionData: ActionData) => `delete the tag "${actionData.params.name}".`,
         validators: [gitValidator],
+        registerCondition: () => !!repo,
     },
 
     // Requires gitConfigs
     set_git_config: {
         name: 'set_git_config',
         description: 'Set a Git configuration value',
+        category: 'Git Config',
         schema: {
             type: 'object',
             properties: {
@@ -429,15 +443,16 @@ export const gitActions = {
             required: ['key', 'value'],
             additionalProperties: false,
         },
-        permissions: [PERMISSIONS.gitOperations, PERMISSIONS.gitConfigs],
         handler: handleSetGitConfig,
         cancelEvents: commonCancelEvents,
         promptGenerator: (actionData: ActionData) => `set the Git config key "${actionData.params.key}" to "${actionData.params.value}".`,
         validators: [gitValidator],
+        registerCondition: () => !!repo,
     },
     get_git_config: {
         name: 'get_git_config',
         description: 'Get a Git configuration value',
+        category: 'Git Config',
         schema: {
             type: 'object',
             properties: {
@@ -445,17 +460,18 @@ export const gitActions = {
             },
             additionalProperties: false,
         },
-        permissions: [PERMISSIONS.gitOperations, PERMISSIONS.gitConfigs],
         handler: handleGetGitConfig,
         cancelEvents: commonCancelEvents,
         promptGenerator: (actionData: ActionData) => actionData.params?.key ? `get the Git config key "${actionData.params.key}".` : 'get the Git config.',
         validators: [gitValidator],
+        registerCondition: () => !!repo,
     },
 
     // Requires gitRemotes
     fetch_git_commits: {
         name: 'fetch_git_commits',
         description: 'Fetch commits from the remote repository',
+        category: 'Git Remotes',
         schema: {
             type: 'object',
             properties: {
@@ -464,7 +480,6 @@ export const gitActions = {
             },
             additionalProperties: false,
         },
-        permissions: [PERMISSIONS.gitOperations, PERMISSIONS.gitRemotes],
         handler: handleFetchGitCommits,
         cancelEvents: commonCancelEvents,
         promptGenerator: (actionData: ActionData) => {
@@ -477,19 +492,22 @@ export const gitActions = {
             return 'fetch commits.';
         },
         validators: [gitValidator],
+        registerCondition: () => !!repo,
     },
     pull_git_commits: {
         name: 'pull_git_commits',
         description: 'Pull commits from the remote repository',
-        permissions: [PERMISSIONS.gitOperations, PERMISSIONS.gitRemotes],
+        category: 'Git Remotes',
         handler: handlePullGitCommits,
         cancelEvents: commonCancelEvents,
         promptGenerator: 'pull commits.',
         validators: [gitValidator],
+        registerCondition: () => !!repo,
     },
     push_git_commits: {
         name: 'push_git_commits',
         description: 'Push commits to the remote repository',
+        category: 'Git Remotes',
         schema: {
             type: 'object',
             properties: {
@@ -499,7 +517,6 @@ export const gitActions = {
             },
             additionalProperties: false,
         },
-        permissions: [PERMISSIONS.gitOperations, PERMISSIONS.gitRemotes],
         handler: handlePushGitCommits,
         cancelEvents: commonCancelEvents,
         promptGenerator: (actionData: ActionData) => {
@@ -513,12 +530,14 @@ export const gitActions = {
             return `${force}push commits.`;
         },
         validators: [gitValidator],
+        registerCondition: () => !!repo,
     },
 
     // Requires gitRemotes and editRemoteData
     add_git_remote: {
         name: 'add_git_remote',
         description: 'Add a new remote to the Git repository',
+        category: 'Git Remotes',
         schema: {
             type: 'object',
             properties: {
@@ -528,15 +547,16 @@ export const gitActions = {
             required: ['remoteName', 'remoteURL'],
             additionalProperties: false,
         },
-        permissions: [PERMISSIONS.gitOperations, PERMISSIONS.gitRemotes, PERMISSIONS.editRemoteData],
         handler: handleAddGitRemote,
         cancelEvents: commonCancelEvents,
         promptGenerator: (actionData: ActionData) => `add a new remote "${actionData.params.remoteName}" with URL "${actionData.params.remoteURL}".`,
         validators: [gitValidator],
+        registerCondition: () => !!repo,
     },
     remove_git_remote: {
         name: 'remove_git_remote',
         description: 'Remove a remote from the Git repository',
+        category: 'Git Remotes',
         schema: {
             type: 'object',
             properties: {
@@ -545,15 +565,16 @@ export const gitActions = {
             required: ['remoteName'],
             additionalProperties: false,
         },
-        permissions: [PERMISSIONS.gitOperations, PERMISSIONS.gitRemotes, PERMISSIONS.editRemoteData],
         handler: handleRemoveGitRemote,
         cancelEvents: commonCancelEvents,
         promptGenerator: (actionData: ActionData) => `remove the remote "${actionData.params.remoteName}".`,
         validators: [gitValidator],
+        registerCondition: () => !!repo,
     },
     rename_git_remote: {
         name: 'rename_git_remote',
         description: 'Rename a remote in the Git repository',
+        category: 'Git Remotes',
         schema: {
             type: 'object',
             properties: {
@@ -563,20 +584,22 @@ export const gitActions = {
             required: ['oldRemoteName', 'newRemoteName'],
             additionalProperties: false,
         },
-        permissions: [PERMISSIONS.gitOperations, PERMISSIONS.gitRemotes, PERMISSIONS.editRemoteData],
         handler: handleRenameGitRemote,
         cancelEvents: commonCancelEvents,
         promptGenerator: (actionData: ActionData) => `rename the remote "${actionData.params.oldRemoteName}" to "${actionData.params.newRemoteName}".`,
         validators: [gitValidator],
+        registerCondition: () => !!repo,
     },
+    // Special: Only registered during a merge conflict
     abort_merge: {
         name: 'abort_merge',
-        description: 'Aborts the current merge operation.',
-        permissions: [PERMISSIONS.gitOperations],
+        description: 'Abort the current merge operation.',
+        category: CATEGORY_GIT,
         handler: handleAbortMerge,
         cancelEvents: commonCancelEvents,
         promptGenerator: 'abort the current merge operation.',
         validators: [gitValidator],
+        autoRegister: false,
     },
 } satisfies Record<string, RCEAction>;
 
@@ -588,71 +611,49 @@ export const gitActions = {
 //     return actionResultFailure(NO_GIT_STRING);
 
 // Register all git commands
-export function registerGitActions() {
+export function addGitActions() {
+    const actionsToRegister = [
+        gitActions.add_file_to_git,
+        gitActions.make_git_commit,
+        gitActions.merge_to_current_branch,
+        gitActions.git_status,
+        gitActions.remove_file_from_git,
+        gitActions.delete_git_branch,
+        gitActions.switch_git_branch,
+        gitActions.new_git_branch,
+        gitActions.diff_files,
+        gitActions.git_log,
+        gitActions.git_blame,
+        gitActions.tag_head,
+        gitActions.delete_tag,
+        gitActions.set_git_config,
+        gitActions.get_git_config,
+        gitActions.fetch_git_commits,
+        gitActions.pull_git_commits,
+        gitActions.push_git_commits,
+        gitActions.add_git_remote,
+        gitActions.remove_git_remote,
+        gitActions.rename_git_remote,
+    ];
+
     if (git) {
-        if (getPermissionLevel(PERMISSIONS.gitOperations)) {
-            NEURO.client?.registerActions(stripToActions([
-                gitActions.init_git_repo,
-            ]).filter(isActionEnabled));
+        addActions([gitActions.init_git_repo]);
 
-            const root = vscode.workspace.workspaceFolders?.[0].uri;
-            if (!root) return;
-
-            git.openRepository(root).then((r) => {
-                if (r === null) {
-                    repo = null;
-                    return;
-                }
-
-                repo = r;
-
-                if (repo) {
-                    NEURO.client?.registerActions(stripToActions([
-                        gitActions.add_file_to_git,
-                        gitActions.make_git_commit,
-                        gitActions.merge_to_current_branch,
-                        gitActions.git_status,
-                        gitActions.remove_file_from_git,
-                        gitActions.delete_git_branch,
-                        gitActions.switch_git_branch,
-                        gitActions.new_git_branch,
-                        gitActions.diff_files,
-                        gitActions.git_log,
-                        gitActions.git_blame,
-                    ]).filter(isActionEnabled));
-
-                    if (getPermissionLevel(PERMISSIONS.gitTags)) {
-                        NEURO.client?.registerActions(stripToActions([
-                            gitActions.tag_head,
-                            gitActions.delete_tag,
-                        ]).filter(isActionEnabled));
-                    }
-
-                    if (getPermissionLevel(PERMISSIONS.gitConfigs)) {
-                        NEURO.client?.registerActions(stripToActions([
-                            gitActions.set_git_config,
-                            gitActions.get_git_config,
-                        ]).filter(isActionEnabled));
-                    }
-
-                    if (getPermissionLevel(PERMISSIONS.gitRemotes)) {
-                        NEURO.client?.registerActions(stripToActions([
-                            gitActions.fetch_git_commits,
-                            gitActions.pull_git_commits,
-                            gitActions.push_git_commits,
-                        ]).filter(isActionEnabled));
-
-                        if (getPermissionLevel(PERMISSIONS.editRemoteData)) {
-                            NEURO.client?.registerActions(stripToActions([
-                                gitActions.add_git_remote,
-                                gitActions.remove_git_remote,
-                                gitActions.rename_git_remote,
-                            ]).filter(isActionEnabled));
-                        }
-                    }
-                }
-            });
+        const root = vscode.workspace.workspaceFolders?.[0].uri;
+        if (!root) {
+            // Register actions immediately, but they will be disabled due to no repo being found
+            addActions([...actionsToRegister, gitActions.abort_merge], false);
+            return;
         }
+
+        git.openRepository(root).then((r) => {
+            repo = r;
+
+            addActions(actionsToRegister);
+
+            // Don't register abort_merge unless there is a merge in progress
+            addActions([gitActions.abort_merge], false);
+        });
     }
 }
 
@@ -670,7 +671,7 @@ export function handleNewGitRepo(_actionData: ActionData): string | undefined {
 
     git!.init(vscode.Uri.file(folderPath)).then(() => {
         repo = git!.repositories[0]; // Update the repo reference to the new repository, just in case
-        registerGitActions(); // Re-register commands
+        reregisterAllActions(true);
         NEURO.client?.sendContext('Initialized a new Git repository in the workspace folder. You should now be able to use git commands.');
     }, (erm: string) => {
         NEURO.client?.sendContext('Failed to initialize Git repository');
@@ -951,9 +952,7 @@ export function handleGitMerge(actionData: ActionData): string | undefined {
         NEURO.client?.sendContext(`Cleanly merged ${refToMerge} into the current branch.`);
     }, (erm: string) => {
         if (repo?.state.mergeChanges.some(() => true)) {
-            NEURO.client?.registerActions(stripToActions([
-                gitActions.abort_merge,
-            ]));
+            registerAction(gitActions.abort_merge.name);
         }
         NEURO.client?.sendContext(`Couldn't merge ${refToMerge}: ${erm}`);
         logOutput('ERROR', `Encountered an error when merging ${refToMerge}: ${erm}`);
@@ -966,7 +965,7 @@ export function handleAbortMerge(_actionData: ActionData): string | undefined {
     assert(repo);
 
     repo.mergeAbort().then(() => {
-        NEURO.client?.unregisterActions(['abort_merge']);
+        unregisterAction(gitActions.abort_merge.name);
         NEURO.client?.sendContext('Merge aborted.');
     }, (erm: string) => {
         NEURO.client?.sendContext("Couldn't abort merging!");

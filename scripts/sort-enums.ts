@@ -28,14 +28,13 @@ function localeSort(a: any, b: any) {
     return String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: 'base' });
 }
 
-const targetSetting = 'neuropilot.disabledActions';
+// TODO: I don't think we need this anymore, I'll leave it here for now
+const targetSetting = 'neuropilot.actions.disabledActions';
 let found = false;
 
 function trySortEnumOnProps(props: Record<string, any>): boolean {
-    console.log('hi 1');
     if (!props || typeof props !== 'object') return false;
     const prop = props[targetSetting];
-    console.log('hi 2');
     if (!prop) return false;
     // We expect the enum to live under prop.items.enum
     if (prop.items && Array.isArray(prop.items.enum)) {
@@ -56,11 +55,20 @@ function trySortEnumOnProps(props: Record<string, any>): boolean {
 }
 
 // 1) Search in contributes.configuration.properties
-if (pkg.contributes && pkg.contributes.configuration && pkg.contributes.configuration.properties) {
-    found = trySortEnumOnProps(pkg.contributes.configuration.properties) || found;
+const contributes = pkg?.contributes;
+const configuration = contributes?.configuration;
+
+if (configuration && !Array.isArray(configuration) && configuration.properties) {
+    found = trySortEnumOnProps(configuration.properties) || found;
 }
 
-found = trySortEnumOnProps(pkg.contributes.configuration[0].properties) || found;
+if (Array.isArray(configuration)) {
+    for (const entry of configuration) {
+        if (entry && typeof entry === 'object' && entry.properties) {
+            found = trySortEnumOnProps(entry.properties) || found;
+        }
+    }
+}
 
 if (!found) {
     console.warn(`Did not find an items.enum array for setting '${targetSetting}'. Nothing changed.`);

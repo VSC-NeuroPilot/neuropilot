@@ -9,10 +9,13 @@ import { spawn, ChildProcessWithoutNullStreams } from 'node:child_process';
 import { NEURO } from '@/constants';
 import { checkWorkspaceTrust, checkVirtualWorkspace } from '@/utils';
 import { logOutput, delayAsync, getFence } from '@/utils';
-import { actionValidationAccept, actionValidationFailure, RCEAction, contextFailure, stripToActions } from '@/neuro_client_helper';
+import { actionValidationAccept, actionValidationFailure, RCEAction, contextFailure } from '@/neuro_client_helper';
 import { ActionData, ActionValidationResult } from '@vsc-neuropilot/api-types';
-import { CONFIG, PERMISSIONS, getPermissionLevel, isActionEnabled } from '@/config';
+import { CONFIG } from '@/config';
 import { notifyOnTerminalClose } from '@events/shells';
+import { addActions } from './rce';
+
+const CATEGORY_TERMINAL = 'Terminal Access';
 
 /*
  * Extended interface for terminal sessions.
@@ -38,9 +41,10 @@ function checkLiveTerminals(actionData: ActionData): ActionValidationResult {
 }
 
 export const terminalAccessHandlers = {
-    'execute_in_terminal': {
+    execute_in_terminal: {
         name: 'execute_in_terminal',
         description: 'Run a command directly in the terminal',
+        category: CATEGORY_TERMINAL,
         schema: {
             type: 'object',
             properties: {
@@ -50,7 +54,6 @@ export const terminalAccessHandlers = {
             required: ['command', 'shell'],
             additionalProperties: false,
         },
-        permissions: [PERMISSIONS.terminalAccess],
         handler: handleRunCommand,
         cancelEvents: [
             (actionData: ActionData) => notifyOnTerminalClose(actionData.params?.shell),
@@ -58,9 +61,10 @@ export const terminalAccessHandlers = {
         validators: [checkVirtualWorkspace, checkWorkspaceTrust],
         promptGenerator: (actionData: ActionData) => `run "${actionData.params?.command}" in the "${actionData.params?.shell}" shell.`,
     },
-    'kill_terminal_process': {
+    kill_terminal_process: {
         name: 'kill_terminal_process',
         description: 'Kill a terminal process that is running.',
+        category: CATEGORY_TERMINAL,
         schema: {
             type: 'object',
             properties: {
@@ -69,7 +73,6 @@ export const terminalAccessHandlers = {
             required: ['shell'],
             additionalProperties: false,
         },
-        permissions: [PERMISSIONS.terminalAccess],
         handler: handleKillTerminal,
         cancelEvents: [
             (actionData: ActionData) => notifyOnTerminalClose(actionData.params?.shell),
@@ -77,24 +80,22 @@ export const terminalAccessHandlers = {
         validators: [checkLiveTerminals, checkVirtualWorkspace, checkWorkspaceTrust],
         promptGenerator: (actionData: ActionData) => `kill the "${actionData.params?.shell}" shell.`,
     },
-    'get_currently_running_shells': {
+    get_currently_running_shells: {
         name: 'get_currently_running_shells',
         description: 'Get the list of terminal processes that are spawned.',
-        permissions: [PERMISSIONS.terminalAccess],
+        category: CATEGORY_TERMINAL,
         handler: handleGetCurrentlyRunningShells,
         validators: [checkVirtualWorkspace, checkWorkspaceTrust],
         promptGenerator: 'get the list of currently running shells.',
     },
 } satisfies Record<string, RCEAction>;
 
-export function registerTerminalActions() {
-    if (getPermissionLevel(PERMISSIONS.terminalAccess)) {
-        NEURO.client?.registerActions(stripToActions([
-            terminalAccessHandlers.execute_in_terminal,
-            terminalAccessHandlers.kill_terminal_process,
-            terminalAccessHandlers.get_currently_running_shells,
-        ]).filter(isActionEnabled));
-    }
+export function addTerminalActions() {
+    addActions([
+        terminalAccessHandlers.execute_in_terminal,
+        terminalAccessHandlers.kill_terminal_process,
+        terminalAccessHandlers.get_currently_running_shells,
+    ]);
 }
 
 /**

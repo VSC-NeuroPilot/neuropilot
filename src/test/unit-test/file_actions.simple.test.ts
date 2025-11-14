@@ -4,12 +4,39 @@ import { ActionData } from '@/neuro_client_helper';
 
 // Tests for file action prompt generators using real logic with loose checks
 suite('file Actions', () => {
-    test('get_files has a non-empty fixed prompt', () => {
+    test('get_workspace_files has a non-empty prompt', () => {
         // === Arrange & Act ===
-        const prompt = fileActions.get_files.promptGenerator as string;
+        const prompt = fileActions.get_workspace_files.promptGenerator({} as ActionData);
 
         // === Assert ===
         assert.ok(typeof prompt === 'string' && prompt.length > 0);
+    });
+
+    test('get_workspace_files correctly includes the folder in prompt', () => {
+        // === Arrange & Act ===
+        const prompt = fileActions.get_workspace_files.promptGenerator({ params: { folder: 'src/' } } as ActionData);
+
+        // === Assert ===
+        assert.ok(typeof prompt === 'string' && prompt.length > 0);
+        assert.ok(prompt.includes('src'));
+    });
+
+    test('get_workspace_files correctly states if Neuro asked for recursive', () => {
+        // === Arrange & Act ===
+        const prompt = fileActions.get_workspace_files.promptGenerator({ params: { recursive: true } } as ActionData);
+
+        // === Assert ===
+        assert.ok(typeof prompt === 'string' && prompt.length > 0);
+        assert.ok(prompt.includes('Recursively'));
+    });
+
+    test('get_workspace_files correctly omits recursive if Neuro didn\'t ask', () => {
+        // === Arrange & Act ===
+        const prompt = fileActions.get_workspace_files.promptGenerator({ params: { recursive: false } } as ActionData);
+
+        // === Assert ===
+        assert.ok(typeof prompt === 'string' && prompt.length > 0);
+        assert.ok(!prompt.includes('recursively'));
     });
 
     test('open_file prompt formats path', () => {

@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { isPathNeuroSafe, setVirtualCursor } from '@/utils';
+import { isPathNeuroSafe, setVirtualCursor, normalizePath, getWorkspacePath } from '@/utils';
 import { NEURO } from '@/constants';
 import {
     initializeCommonState,
@@ -18,10 +18,18 @@ import {
     showUpdateReminder,
     startupCreateClient,
 } from '@shared/extension';
-import { registerUnsupervisedActions, registerUnsupervisedHandlers } from './unsupervised';
+import { addUnsupervisedActions, registerUnsupervisedHandlers } from './unsupervised';
 import { registerSendSelectionToNeuro } from '@/editing';
+import { loadIgnoreFiles } from '@/ignore_files_utils';
+import { reregisterAllActions } from '../rce';
 
 export function activate(context: vscode.ExtensionContext) {
+    loadIgnoreFiles(
+        normalizePath(
+            getWorkspacePath() || '',
+        ) || '',
+    );
+
     // Show update reminder if version changed
     showUpdateReminder(context);
 
@@ -29,6 +37,9 @@ export function activate(context: vscode.ExtensionContext) {
     initializeCommonState(context);
 
     vscode.commands.registerCommand('neuropilot.reloadPermissions', reloadWebPermissions);
+
+    // Add actions to the registry
+    addUnsupervisedActions();
 
     // Setup providers
     NEURO.context!.subscriptions.push(...setupCommonProviders());
@@ -40,7 +51,7 @@ export function activate(context: vscode.ExtensionContext) {
     NEURO.context!.subscriptions.push(...setupCommonEventHandlers());
 
     // Setup client connected handlers
-    setupClientConnectedHandlers(registerUnsupervisedActions, registerUnsupervisedHandlers);
+    setupClientConnectedHandlers(() => reregisterAllActions(false), registerUnsupervisedHandlers);
 
     // Create status bar item
     createStatusBarItem();
@@ -73,5 +84,5 @@ export function deactivate() {
 }
 
 function reloadWebPermissions() {
-    reloadPermissions(registerUnsupervisedActions);
+    reloadPermissions(() => reregisterAllActions(false));
 }

@@ -5,9 +5,7 @@
 	"tasks": [
 		{
 			"type": "npm",
-			"script": "watch:desktop",
-			"problemMatcher": "$tsc-watch",
-			"isBackground": true,
+			"script": "vendor-codicons",
 			"presentation": {
 				"reveal": "never"
 			},
@@ -20,7 +18,10 @@
 			"label": "watch:desktop",
 			"dependsOn": [
 				"npm: watch:desktop:tsc",
-				"npm: watch:desktop:esbuild"
+				"npm: watch:desktop:esbuild",
+				"npm: watch:webview:tsc",
+				"npm: watch:webview:esbuild",
+				"npm: vendor-codicons"
 			],
 			"presentation": {
 				"reveal": "never"
@@ -58,7 +59,10 @@
 			"label": "watch:web",
 			"dependsOn": [
 				"npm: watch:web:tsc",
-				"npm: watch:web:esbuild"
+				"npm: watch:web:esbuild",
+				"npm: watch:webview:tsc",
+				"npm: watch:webview:esbuild",
+				"npm: vendor-codicons"
 			],
 			"presentation": {
 				"reveal": "never"
@@ -87,6 +91,30 @@
 			"problemMatcher": "$tsc-watch",
 			"isBackground": true,
 			"label": "npm: watch:web:tsc",
+			"presentation": {
+				"group": "watch",
+				"reveal": "never"
+			}
+		},
+		{
+			"type": "npm",
+			"script": "watch:webview:esbuild",
+			"group": "build",
+			"problemMatcher": "$esbuild-watch",
+			"isBackground": true,
+			"label": "npm: watch:webview:esbuild",
+			"presentation": {
+				"group": "watch",
+				"reveal": "never"
+			}
+		},
+		{
+			"type": "npm",
+			"script": "watch:webview:tsc",
+			"group": "build",
+			"problemMatcher": "$tsc-watch",
+			"isBackground": true,
+			"label": "npm: watch:webview:tsc",
 			"presentation": {
 				"group": "watch",
 				"reveal": "never"

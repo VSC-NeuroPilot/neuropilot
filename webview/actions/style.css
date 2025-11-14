@@ -1,0 +1,112 @@
+body {
+    margin-bottom: 20px;
+    margin-top: 5px;
+}
+
+.webview-header {
+    position: sticky;
+    top: 0;
+    background-color: var(--vscode-sideBar-background);
+    border-bottom: 1px solid var(--vscode-menu-border);
+    padding-bottom: 5px;
+}
+
+summary {
+    cursor: pointer;
+}
+
+summary .codicon {
+    color: var(--vscode-notificationsInfoIcon-foreground);
+}
+
+summary i {
+    vertical-align: middle;
+    margin-right: 4px;
+}
+
+summary span {
+    vertical-align: middle;
+}
+
+.disabled {
+    color: var(--vscode-disabledForeground);
+}
+
+.current-context {
+    font-weight: bold;
+}
+
+.not-current-context {
+    cursor: pointer;
+}
+
+.actions-header {
+    font-weight: bold;
+    white-space: nowrap;
+    display: flex;
+    flex-direction: row;
+}
+
+.actions-header-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+.permission-level-letter {
+    width: 20px;
+    text-align: center;
+}
+
+.actions-list {
+    white-space: nowrap;
+}
+
+.category-header {
+    font-weight: bold;
+    margin-top: 12px;
+    margin-bottom: 4px;
+    display: flex;
+    flex-direction: row;
+}
+
+.category-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+.action-entry {
+    margin-left: 10px;
+    display: flex;
+    flex-direction: row;
+}
+
+.action-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+.modified-externally {
+    font-style: italic;
+}
+
+/* .modified-in-current-context {
+    font-weight: bold;
+} */
+
+.unregistered-action {
+    color: var(--vscode-disabledForeground);
+}
+
+.permission-radio-container {
+    display: flex;
+    align-items: center;
+    width: 20px;
+    margin: 0;
+    padding: 0;
+}
