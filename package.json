@@ -439,6 +439,11 @@
 							"L. {n}: "
 						]
 					},
+					"neuropilot.celebrations": {
+						"type": "boolean",
+						"default": true,
+						"description": "Whether or not to enable celebratory stuff. This is completely cosmetic and will not affect the main extension functionality."
+					},
 					"neuropilot.enableCancelEvents": {
 						"markdownDeprecationMessage": "This setting has been moved to neuropilot.actions.enableCancelEvents."
 					},
@@ -700,16 +705,16 @@
 			"neuropilot": [
 				{
 					"type": "webview",
-					"id": "neuropilot.actionsView",
-					"name": "Action Permissions",
-					"icon": "assets/neuropilot-font.svg"
+					"id": "neuropilot.imagesView",
+					"name": "Images",
+					"icon": "assets/neuropilot-font.svg",
+					"visibility": "visible"
 				},
 				{
 					"type": "webview",
-					"id": "neuropilot.testView",
-					"name": "Test",
-					"icon": "assets/neuropilot-font.svg",
-					"when": "isDevelopment"
+					"id": "neuropilot.actionsView",
+					"name": "Action Permissions",
+					"icon": "assets/neuropilot-font.svg"
 				}
 			]
 		}

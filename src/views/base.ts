@@ -24,6 +24,11 @@ export abstract class BaseWebviewViewProvider<TViewMessage extends Message, TPro
         webviewView.webview.onDidReceiveMessage((data: TViewMessage) => {
             this.handleMessage(data);
         });
+
+        // Call onViewReady if it exists (for subclasses that implement it)
+        if ('onViewReady' in this && typeof (this as unknown as { onViewReady?: () => void | Promise<void> }).onViewReady === 'function') {
+            void (this as unknown as { onViewReady: () => void | Promise<void> }).onViewReady();
+        }
     }
 
     protected abstract handleMessage(message: TViewMessage): void;

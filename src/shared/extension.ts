@@ -17,6 +17,7 @@ import { loadIgnoreFiles } from '@/ignore_files_utils';
 import { getWorkspacePath, normalizePath } from '@/utils';
 import { ActionsViewProvider } from '@/views/actions';
 import { PermissionLevel } from '@vsc-neuropilot/api-types';
+import { ImagesViewProvider } from '../views/image';
 
 // Shared commands
 export function registerCommonCommands() {
@@ -118,6 +119,7 @@ export function initializeCommonState(context: vscode.ExtensionContext) {
 
 export function setupCommonProviders() {
     NEURO.viewProviders.actions = new ActionsViewProvider();
+    NEURO.viewProviders.images = new ImagesViewProvider();
     const providers = [
         vscode.languages.registerInlineCompletionItemProvider({ pattern: '**' }, completionsProvider),
         vscode.languages.registerCodeActionsProvider(
@@ -126,6 +128,7 @@ export function setupCommonProviders() {
             { providedCodeActionKinds: NeuroCodeActionsProvider.providedCodeActionKinds },
         ),
         vscode.window.registerWebviewViewProvider(ActionsViewProvider.viewType, NEURO.viewProviders.actions),
+        vscode.window.registerWebviewViewProvider(ImagesViewProvider.viewType, NEURO.viewProviders.images),
     ];
 
     return providers;

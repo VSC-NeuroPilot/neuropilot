@@ -1,0 +1,3 @@
+[submodule "image-gallery"]
+	path = image-gallery
+	url = https://github.com/VSC-NeuroPilot/image-gallery.git

@@ -1,0 +1,99 @@
+/* 4-space indent, simple responsive viewer */
+@media (max-width: 300px) {
+    .toolbar {
+        flex-direction: column;
+    }
+    #setSelect,
+    .searchbar-container {
+        width: 100%;
+    }
+}
+@media (min-width: 301px) {
+    .toolbar {
+        flex-direction: row;
+    }
+    #setSelect {
+        max-width: 40%;
+    }
+}
+
+.viewer {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+    color: var(--vscode-editor-foreground);
+}
+
+.toolbar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.toolbar .spacer {
+    flex: 1 1 auto;
+}
+
+.toolbar button,
+.toolbar select,
+.toolbar input,
+.image-container button {
+    /* By default VS Code buttons have width: 100% */
+    width: unset;
+}
+
+.searchbar-container {
+    display: flex;
+    gap: 4px;
+    flex-direction: row;
+    flex-grow: 1;
+}
+
+#searchBox {
+    flex-grow: 1;
+}
+
+.image-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background-color: var(--vscode-editor-background);
+    border-radius: 6px;
+    padding: 8px;
+}
+
+.image-container img {
+    width: 75%;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    object-fit: contain;
+    object-position: center;
+}
+
+.nav {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: var(--vscode-editor-foreground);
+    padding: 6px;
+}
+
+.caption h2 {
+    margin: 0;
+    font-size: 14px;
+}
+
+.caption p {
+    margin: 4px 0 0 0;
+    color: var(--vscode-descriptionForeground);
+    font-size: 12px;
+}
+
+.footer {
+    display: flex;
+    justify-content: flex-end;
+}

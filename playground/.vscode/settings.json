@@ -38,4 +38,7 @@
     "neuropilot.access.ignoreFiles": [
         "./.neuroignore"
     ],
+    "neuropilot.actionPermissions": {
+        "find_text": "autopilot"
+    },
 }

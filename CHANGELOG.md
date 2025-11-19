@@ -8,9 +8,18 @@ Changes between each version before then will not be listed.
 
 ## 2.3.3 <!-- or whatever the next version is -->
 
+### New features
+
+- Added a sidebar view for displaying image assets. <!-- TODO: Needs a bit more information -->
+
 ### Changes
 
 - Improved the UI for the action permissions sidebar.
+
+### Removed features
+
+- Removed a test sidebar view that was left in by accident.
+  <!-- Maybe this is more of a fix? -->
 
 ## 2.3.2
 

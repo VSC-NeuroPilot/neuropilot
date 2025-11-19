@@ -1,6 +1,7 @@
 // @ts-check
 import { context } from 'esbuild';
 import { polyfillNode } from 'esbuild-plugin-polyfill-node';
+import { esbuildProblemMatcherPlugin } from './plugins.js';
 
 /**
  * @param {boolean} prodFlag
@@ -20,18 +21,20 @@ export async function web(prodFlag, watchFlag) {
         logLevel: 'warning',
         tsconfig: './tsconfig.web.json',
         plugins: [
-            polyfillNode({ polyfills: { // trying to make the build as small as possible
-                child_process: false,
-                module: false,
-                os: false,
-                path: false,
-                punycode: false,
-                stream: false,
-                sys: false,
-                v8: false,
-                vm: false,
-                zlib: false,
-            }}),
+            polyfillNode({
+                polyfills: { // trying to make the build as small as possible
+                    child_process: false,
+                    module: false,
+                    os: false,
+                    path: false,
+                    punycode: false,
+                    stream: false,
+                    sys: false,
+                    v8: false,
+                    vm: false,
+                    zlib: false,
+                },
+            }),
             /* add to the end of plugins array */
             esbuildProblemMatcherPlugin,
         ],
@@ -74,18 +77,20 @@ export async function webTest(_prodFlag, watchFlag) {
         },
         // Include the same browser polyfills as the web bundle
         plugins: [
-            polyfillNode({ polyfills: {
-                child_process: false,
-                module: false,
-                os: false,
-                path: false,
-                punycode: false,
-                stream: false,
-                sys: false,
-                v8: false,
-                vm: false,
-                zlib: false,
-            }}),
+            polyfillNode({
+                polyfills: {
+                    child_process: false,
+                    module: false,
+                    os: false,
+                    path: false,
+                    punycode: false,
+                    stream: false,
+                    sys: false,
+                    v8: false,
+                    vm: false,
+                    zlib: false,
+                },
+            }),
             esbuildProblemMatcherPlugin,
         ],
     });
@@ -125,18 +130,20 @@ export async function webTestBrowser(_prodFlag, watchFlag) {
             'process.env.NODE_ENV': '"test"',
         },
         plugins: [
-            polyfillNode({ polyfills: {
-                child_process: false,
-                module: false,
-                os: false,
-                path: false,
-                punycode: false,
-                stream: false,
-                sys: false,
-                v8: false,
-                vm: false,
-                zlib: false,
-            }}),
+            polyfillNode({
+                polyfills: {
+                    child_process: false,
+                    module: false,
+                    os: false,
+                    path: false,
+                    punycode: false,
+                    stream: false,
+                    sys: false,
+                    v8: false,
+                    vm: false,
+                    zlib: false,
+                },
+            }),
             esbuildProblemMatcherPlugin,
         ],
     });
@@ -148,24 +155,3 @@ export async function webTestBrowser(_prodFlag, watchFlag) {
         await ctx.dispose();
     }
 }
-
-/**
- * @type {import('esbuild').Plugin}
- */
-const esbuildProblemMatcherPlugin = {
-    name: 'esbuild-problem-matcher',
-
-    setup(build) {
-        build.onStart(() => {
-            console.log('[watch] build started');
-        });
-        build.onEnd(result => {
-            result.errors.forEach(({ text, location }) => {
-                console.error(`✘ [ERROR] ${text}`);
-                if (location == null) return;
-                console.error(`    ${location.file}:${location.line}:${location.column}:`);
-            });
-            console.log('[watch] build finished');
-        });
-    },
-};

@@ -1,6 +1,7 @@
 .*/**
 playground/**
 .gitignore
+.gitmodules
 eslint.config.mjs
 tsconfig.json
 **/tsconfig.*.json
@@ -8,6 +9,9 @@ src/
 node_modules/
 *.vsix
 **/*.tsbuildinfo
+
+# Source .ts files for webviews
+webview/**/*.ts
 
 # Project files
 project-files/
@@ -21,9 +25,6 @@ scripts/**
 # Krita
 *.kra
 *.*~
-
-# Inkscape
-*.svg
 
 # Tony
 .venv

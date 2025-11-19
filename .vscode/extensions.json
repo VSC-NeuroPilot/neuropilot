@@ -1,4 +1,8 @@
 {
-  "recommendations": ["connor4312.esbuild-problem-matchers", "ms-vscode.extension-test-runner"],
+  "recommendations": [
+    "connor4312.css-theme-completions",       // Intellisense for VS Code theme colors in webviews
+    "connor4312.esbuild-problem-matchers",    // Required for showing problems reported by esbuild
+    "ms-vscode.extension-test-runner"         // For running extension tests locally
+  ],
   "unwantedRecommendations": []
 }
