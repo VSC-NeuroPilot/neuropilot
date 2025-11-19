@@ -9,6 +9,7 @@ src/
 node_modules/
 *.vsix
 **/*.tsbuildinfo
+packages/
 
 # Source .ts files for webviews
 webview/**/*.ts
