@@ -8,9 +8,6 @@ importers:
 
   .:
     dependencies:
-      '@vsc-neuropilot/api-types':
-        specifier: workspace:*
-        version: link:packages/api-types
       '@vscode/codicons':
         specifier: ^0.0.41
         version: 0.0.41
@@ -60,6 +57,9 @@ importers:
       '@types/ws':
         specifier: ^8.18.0
         version: 8.18.1
+      '@vsc-neuropilot/api-types':
+        specifier: workspace:*
+        version: link:packages/api-types
       '@vscode/test-cli':
         specifier: ^0.0.12
         version: 0.0.12
