@@ -2,6 +2,9 @@
     "name": "@vsc-neuropilot/api-types",
     "scripts": {},
     "author": "VSC-NeuroPilot",
+    "repository": {
+        "url": "https://github.com/VSC-NeuroPilot/neuropilot.git"
+    },
     "maintainers": [
         "Pasu4",
         {
@@ -12,7 +15,7 @@
     ],
     "types": "./index.d.ts",
     "publishConfig": {
-        "access": "public",
+        "access": "restricted",
         "registry": "https://npm.pkg.github.com/"
     },
     "dependencies": {

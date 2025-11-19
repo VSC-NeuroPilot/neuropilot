@@ -2,7 +2,7 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 import { anything, capture, instance, mock, reset, verify } from 'ts-mockito';
 import { NEURO } from '@/constants';
-import { ActionData } from '@/neuro_client_helper';
+import { ActionData } from '@vsc-neuropilot/api-types';
 import {
     handlePlaceCursor,
     handleGetCursor,

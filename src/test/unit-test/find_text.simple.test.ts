@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 import { editingActions } from '@/editing';
-import { ActionData } from '@/neuro_client_helper';
+import { ActionData } from '@vsc-neuropilot/api-types';
 
 // Tests for the find_text action prompt generator using real logic
 suite('find_text Action', () => {

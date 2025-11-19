@@ -8,9 +8,6 @@ importers:
 
   .:
     dependencies:
-      '@vsc-neuropilot/api-types':
-        specifier: workspace:*
-        version: link:packages/api-types
       '@vscode/codicons':
         specifier: ^0.0.41
         version: 0.0.41
@@ -60,6 +57,9 @@ importers:
       '@types/ws':
         specifier: ^8.18.0
         version: 8.18.1
+      '@vsc-neuropilot/api-types':
+        specifier: workspace:*
+        version: link:packages/api-types
       '@vscode/test-cli':
         specifier: ^0.0.12
         version: 0.0.12
@@ -124,22 +124,6 @@ importers:
         specifier: ^8.46.4
         version: 8.46.4(eslint@9.39.1)(typescript@5.9.3)
 
-  packages/api-helper:
-    dependencies:
-      '@types/json-schema':
-        specifier: 7.0.15
-        version: 7.0.15
-      '@types/vscode':
-        specifier: 1.95.0
-        version: 1.95.0
-      '@vsc-neuropilot/api-types':
-        specifier: workspace:*
-        version: link:../api-types
-    devDependencies:
-      typescript:
-        specifier: ^5.8.2
-        version: 5.9.3
-
   packages/api-types:
     dependencies:
       '@types/json-schema':
@@ -155,8 +139,6 @@ importers:
       typescript:
         specifier: ^5.8.2
         version: 5.9.3
-
-  packages/cli: {}
 
 packages:
 

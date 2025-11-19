@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 import { editingActions } from '@/editing';
-import { ActionData } from '@/neuro_client_helper';
+import { ActionData } from '@vsc-neuropilot/api-types';
 
 // Tests for the delete_text action prompt generator using real logic
 suite('delete_text Action', () => {
