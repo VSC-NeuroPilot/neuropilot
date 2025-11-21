@@ -144,6 +144,15 @@ interface State {
         }
     });
 
+    searchBox.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            const q = searchBox.value.trim();
+            if (q) {
+                vscode.postMessage({ type: 'searchImage', name: q } satisfies ImagesViewMessage);
+            }
+        }
+    });
+
     setSelect.addEventListener('change', () => {
         const name = setSelect.value;
         if (name) {

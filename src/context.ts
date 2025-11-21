@@ -114,7 +114,7 @@ export function giveCookie(isRequested = false, defaultFlavor = 'Chocolate Chip'
                     `${CONNECTION.userName} accidentally dropped your cookie.`,
                     `${CONNECTION.userName} ate your cookie.`,
                     `${CONNECTION.userName} made the cookie of types null and void.`,
-                    `${CONNECTION.userName} mixed your cookie into banana rum.`,
+                    `${CONNECTION.userName} didn't bake the cookie correctly.`,
                     `${CONNECTION.userName} clicked the cookie circle to the beat.`,
                     `${CONNECTION.userName} used the cookie to buy a cursor.`,
                 ];

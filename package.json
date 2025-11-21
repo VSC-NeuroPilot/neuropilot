@@ -273,6 +273,7 @@
 					},
 					"neuropilot.terminals": {
 						"type": "array",
+						"tags": ["advanced"],
 						"items": {
 							"type": "object",
 							"properties": {
@@ -439,7 +440,7 @@
 							"L. {n}: "
 						]
 					},
-					"neuropilot.celebrations": {
+					"neuropilot.cosmetic.celebrations": {
 						"type": "boolean",
 						"default": true,
 						"description": "Whether or not to enable celebratory stuff. This is completely cosmetic and will not affect the main extension functionality."
@@ -630,6 +631,7 @@
 					},
 					"neuropilot.actionPermissions": {
 						"type": "object",
+						"tags": ["advanced"],
 						"markdownDescription": "The permissions that are currently active. If you want to edit this value, it is recommended to use the sidebar instead.",
 						"additionalProperties": {
 							"enum": [

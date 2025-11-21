@@ -8,18 +8,26 @@ Changes between each version before then will not be listed.
 
 ## 2.3.3 <!-- or whatever the next version is -->
 
+### New settings
+
+- `neuropilot.cosmetic.celebrations` - Toggles some easter eggs in the extension.
+
 ### New features
 
-- Added a sidebar view for displaying image assets. <!-- TODO: Needs a bit more information -->
+- Added a sidebar view for displaying image assets.
+  - These image assets are completely cosmetic, and come from the [`VSC-NeuroPilot/image-gallery`](https://github.com/VSC-NeuroPilot/image-gallery) repo.
+  - From time to time, there may be featured image sets that are set to be in rotation, such as subathon images. You can choose to toggle these on using the `neuropilot.cosmetic.celebrations` setting, which will also disable certain cosmetic, non-intrusive easter eggs in the extension.
+- Added a registration condition for terminals and tasks so they do not get registered in untrusted/virtual workspaces.
 
 ### Changes
 
-- Improved the UI for the action permissions sidebar.
+- Improved the UI for the action permissions sidebar. (external contribution, thanks [mlntcandy](https://github.com/mlntcandy)!)
+  - The circle dots corresponding to permission levels have been replaced with codicons.
+  - There is a sliding animation when switching between permission levels.
 
-### Removed features
+### Fixes
 
 - Removed a test sidebar view that was left in by accident.
-  <!-- Maybe this is more of a fix? -->
 
 ## 2.3.2
 
