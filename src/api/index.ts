@@ -1,7 +1,5 @@
-import { APIVersion, ConnectionStatus, ConnectionTypes, ExtensionAPI, CompanionExtension, ExtensionRegisterReturns, APIWrapper } from '@vsc-neuropilot/api-types/api';
+import { APIVersion, ExtensionAPI, CompanionExtension, NeuroPilotAPIWrapper } from '@vsc-neuropilot/api-types/api';
 import { getAPIv1 } from './versions/1';
-import * as vscode from 'vscode';
-import { CompanionExtensionV1 } from '@vsc-neuropilot/api-types/api/v1';
 
 export type CompanionToken = string;
 
@@ -31,7 +29,7 @@ function getAPI(token: CompanionToken, version: APIVersion): ExtensionAPI | null
     }
 }
 
-export class APIWrapperImpl implements APIWrapper {
+export class APIWrapperImpl implements NeuroPilotAPIWrapper {
     registerCompanion(extension: CompanionExtension): ExtensionAPI {
         // TODO: Handle null case
         const token = registerExtension(extension);

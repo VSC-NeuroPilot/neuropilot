@@ -1,7 +1,5 @@
 export * as v1 from './v1';
 
-import { Event } from 'vscode';
-
 export type APIVersion = 1 | 'latest' | 'oldest' | 'next';
 
 export const enum ConnectionTypes {
@@ -11,7 +9,7 @@ export const enum ConnectionTypes {
     Retrying,
 }
 
-export interface APIWrapper {
+export interface NeuroPilotAPIWrapper {
     // /** Whether or not NeuroPilot is connected to the Neuro API. */
     // readonly connected: Omit<ConnectionTypes, ConnectionTypes.Failed>;
     // /** Current connection info, assuming {@link APIWrapper.connected} returns {@link ConnectionTypes.Connected} */

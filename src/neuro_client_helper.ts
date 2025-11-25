@@ -7,8 +7,6 @@ import { ACTIONS } from '@/config';
 import { logOutput, turtleSafari } from '@/utils';
 import { JSONSchema7 } from 'json-schema';
 
-type TypedAction = Omit<Action, 'schema'> & { schema?: JSONSchema7 };
-
 /** ActionHandler to use with constants for records of actions and their corresponding handlers */
 
 /**

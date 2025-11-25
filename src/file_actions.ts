@@ -2,12 +2,12 @@ import * as vscode from 'vscode';
 
 import { NEURO } from '@/constants';
 import { formatContext, getFence, getPositionContext, getVirtualCursor, getWorkspacePath, getWorkspaceUri, isBinary, isPathNeuroSafe, logOutput, normalizePath, notifyOnCaughtException, stripTailSlashes } from '@/utils';
-import { contextNoAccess, RCEAction, actionValidationFailure, actionValidationAccept } from '@/neuro_client_helper';
+import { contextNoAccess, actionValidationFailure, actionValidationAccept } from '@/neuro_client_helper';
 import { CONFIG, getPermissionLevel } from '@/config';
 import { targetedFileCreatedEvent, targetedFileDeletedEvent } from '@events/files';
 import { RCECancelEvent } from '@events/utils';
 import { addActions } from '@/rce';
-import { ActionData, PermissionLevel, ActionValidationResult } from '@vsc-neuropilot/api-types';
+import { ActionData, PermissionLevel, ActionValidationResult, RCEAction } from '@vsc-neuropilot/api-types';
 
 const CATEGORY_FILE_ACTIONS = 'File Actions';
 

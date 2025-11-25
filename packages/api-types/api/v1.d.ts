@@ -1,7 +1,8 @@
-import { ExtensionAPI, RegistrationName, CompanionExtension, ExtensionRegisterReturns, ModifyMetadata, ConnectionStatus } from '.';
+import { ExtensionAPI, CompanionExtension, ModifyMetadata, ConnectionStatus } from '.';
 import * as vscode from 'vscode';
 import { RCEAction } from '../utils/client_helpers';
 import { NeuroMessage } from '../messages/incoming';
+import { RCECancelEvent, RCECancelEventInitializer } from '../utils';
 
 export interface APIv1 extends ExtensionAPI {
     version: 1;
@@ -24,6 +25,9 @@ export interface APIv1 extends ExtensionAPI {
     isPathNeuroSafe(...paths: string[]): boolean;
     getVirtualCursor(): vscode.Position | null | undefined;
     setVirtualCursor(location: vscode.Position | null): vscode.Position | null | undefined;
+
+    // Factory functions
+    createCancelEvent<T = unknown>(init: RCECancelEventInitializer<T>): RCECancelEvent<T>;
 
     // Context and messaging
     sendPassiveContext(context: string, silent?: boolean): void;

@@ -2,7 +2,7 @@ import { JSONSchema7 } from 'json-schema';
 import { Action } from 'neuro-game-sdk';
 import { PermissionLevel } from '../settings/permissions';
 // TODO: Figure this out
-import { RCECancelEvent } from '@events/utils';
+import { RCECancelEvent } from './actions';
 
 /**
  * A prompt parameter can either be a string or a function that converts ActionData into a prompt string.

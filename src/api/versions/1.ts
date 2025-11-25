@@ -10,7 +10,7 @@ import {
 } from '@vsc-neuropilot/api-types/api';
 import { NeuroMessage } from '@vsc-neuropilot/api-types/messages';
 import { APIv1 } from '~/packages/api-types/api/v1';
-import { RCEAction } from '@vsc-neuropilot/api-types';
+import { RCEAction, RCECancelEvent, RCECancelEventInitializer } from '@vsc-neuropilot/api-types';
 import { CompanionToken } from '..';
 
 // Internal storage for registered extensions
@@ -102,6 +102,9 @@ export class APIv1Impl implements APIv1 {
         throw new Error('Method not implemented.');
     }
     setVirtualCursor(location: vscode.Position | null): vscode.Position | null | undefined {
+        throw new Error('Method not implemented.');
+    }
+    createCancelEvent<T = unknown>(init: RCECancelEventInitializer<T>): RCECancelEvent<T> {
         throw new Error('Method not implemented.');
     }
     sendPassiveContext(context: string, silent?: boolean): void {

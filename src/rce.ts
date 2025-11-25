@@ -10,7 +10,7 @@ import { logOutput, notifyOnCaughtException } from '@/utils';
 import { ACTIONS as ACTIONS_CONFIG, CONFIG, CONNECTION, getAllPermissions, getPermissionLevel, stringToPermissionLevel } from '@/config';
 import { PermissionLevel, ActionData, RCEAction } from '@vsc-neuropilot/api-types';
 import { validate } from 'jsonschema';
-import type { RCECancelEvent } from '@events/utils';
+import type { RCECancelEvent } from '@vsc-neuropilot/api-types';
 import { CompanionToken } from '@/api';
 
 export const CATEGORY_MISC = 'Miscellaneous';

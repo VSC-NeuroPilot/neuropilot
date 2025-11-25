@@ -4,8 +4,7 @@ import { getFence, logOutput, simpleFileName } from '@/utils';
 import { NEURO } from '@/constants';
 import { CONNECTION, getPermissionLevel } from '@/config';
 import { addActions, CATEGORY_MISC } from '@/rce';
-import { RCEAction } from '@/neuro_client_helper';
-import { PermissionLevel, ActionData } from '@vsc-neuropilot/api-types';
+import { PermissionLevel, ActionData, RCEAction } from '@vsc-neuropilot/api-types';
 
 export function sendCurrentFile() {
     const editor = vscode.window.activeTextEditor;
