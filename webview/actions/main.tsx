@@ -1,7 +1,7 @@
 import { render } from 'preact';
 import { useState, useEffect, useMemo, useId } from 'preact/hooks';
 import type { ActionNode, ActionsViewMessage, ActionsViewProviderMessage, SettingsContext } from '@/views/actions';
-import { PermissionLevel } from '@/config';
+import { PermissionLevel } from '@vsc-neuropilot/api-types';
 
 interface State {
     actions: ActionNode[];
