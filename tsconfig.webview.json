@@ -2,7 +2,9 @@
     "extends": "./tsconfig.base.json",
     "compilerOptions": {
         "lib": ["ES2024", "DOM"],
-        "outDir": "./out/webview"
+        "outDir": "./out/webview",
+        "jsx": "react-jsx",
+        "jsxImportSource": "preact"
     },
     "include": ["webview/**/*", "src/**/*"]
 }

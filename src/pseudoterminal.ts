@@ -60,11 +60,7 @@ export const terminalAccessHandlers = {
         ],
         validators: [checkVirtualWorkspace, checkWorkspaceTrust],
         promptGenerator: (actionData: ActionData) => `run "${actionData.params?.command}" in the "${actionData.params?.shell}" shell.`,
-        registerCondition: () => {
-            if (!checkVirtualWorkspace().success) return false;
-            if (!checkWorkspaceTrust().success) return false;
-            return true;
-        },
+        registerCondition: () => checkVirtualWorkspace().success && checkWorkspaceTrust().success,
     },
     kill_terminal_process: {
         name: 'kill_terminal_process',
@@ -84,11 +80,7 @@ export const terminalAccessHandlers = {
         ],
         validators: [checkLiveTerminals, checkVirtualWorkspace, checkWorkspaceTrust],
         promptGenerator: (actionData: ActionData) => `kill the "${actionData.params?.shell}" shell.`,
-        registerCondition: () => {
-            if (!checkVirtualWorkspace().success) return false;
-            if (!checkWorkspaceTrust().success) return false;
-            return true;
-        },
+        registerCondition: () => checkVirtualWorkspace().success && checkWorkspaceTrust().success,
     },
     get_currently_running_shells: {
         name: 'get_currently_running_shells',
@@ -97,11 +89,7 @@ export const terminalAccessHandlers = {
         handler: handleGetCurrentlyRunningShells,
         validators: [checkVirtualWorkspace, checkWorkspaceTrust],
         promptGenerator: 'get the list of currently running shells.',
-        registerCondition: () => {
-            if (!checkVirtualWorkspace().success) return false;
-            if (!checkWorkspaceTrust().success) return false;
-            return true;
-        },
+        registerCondition: () => checkVirtualWorkspace().success && checkWorkspaceTrust().success,
     },
 } satisfies Record<string, RCEAction>;
 

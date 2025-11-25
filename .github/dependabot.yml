@@ -8,6 +8,7 @@ updates:
       timezone: "Etc/UTC"
     labels:
       - dependabot
+      - meta
     ignore:
       - dependency-name: "@types/vscode" # Manually bump with the VS Code engine version
       - dependency-name: "@types/json-schema"
@@ -24,4 +25,10 @@ updates:
         update-types:
           - minor
           - patch
+      security:
+        applies-to: security-updates
+        dependency-type: production
+      security-dev:
+        applies-to: security-updates
+        dependency-type: development
       

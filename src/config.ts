@@ -350,15 +350,19 @@ function getConfig<T>(key: string): T | undefined {
 }
 
 function getAccess<T>(key: string): T | undefined {
-    return vscode.workspace.getConfiguration('neuropilot').get<T>('access.' + key);
+    return vscode.workspace.getConfiguration('neuropilot.access').get<T>(key);
 }
 
 function getConnection<T>(key: string): T | undefined {
-    return vscode.workspace.getConfiguration('neuropilot').get<T>('connection.' + key);
+    return vscode.workspace.getConfiguration('neuropilot.connection').get<T>(key);
 }
 
 function getActions<T>(key: string): T | undefined {
-    return vscode.workspace.getConfiguration('neuropilot').get<T>('actions.' + key);
+    return vscode.workspace.getConfiguration('neuropilot.actions').get<T>(key);
+}
+
+function getCosmetic<T>(key: string): T | undefined {
+    return vscode.workspace.getConfiguration('neuropilot.cosmetic').get<T>(key);
 }
 
 //#endregion
@@ -489,3 +493,9 @@ class Actions {
 }
 
 export const ACTIONS = /* @__PURE__ */ new Actions();
+
+class Cosmetic {
+    get celebrations(): boolean { return getCosmetic('celebrations')!; }
+}
+
+export const COSMETIC = /* @__PURE__ */ new Cosmetic();

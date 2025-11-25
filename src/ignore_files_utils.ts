@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import ignore, { Ignore } from 'ignore';
 import { ACCESS } from './config';
+import { isWindows } from './utils';
 
 const ignoreCache = new Map<string, boolean>();
 
@@ -18,7 +19,7 @@ export function resetIgnoreState(globals?: string[]): void {
 }
 
 function cacheKeyFor(path: string): string {
-    return process.platform === 'win32' ? path.toLowerCase() : path;
+    return isWindows() ? path.toLowerCase() : path;
 }
 
 function toRelativePath(targetPath: string): string {

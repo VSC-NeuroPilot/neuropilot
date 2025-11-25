@@ -4,7 +4,7 @@
 	"private": true,
 	"description": "Allows Neuro-sama to either act as a companion/copilot or control Visual Studio Code by herself.",
 	"icon": "assets/heart-xaendril.png",
-	"version": "2.3.2",
+	"version": "2.3.3",
 	"publisher": "VSC-NeuroPilot",
 	"repository": "https://github.com/VSC-NeuroPilot/neuropilot",
 	"homepage": "https://vsc-neuropilot.github.io/neuropilot",
@@ -273,7 +273,9 @@
 					},
 					"neuropilot.terminals": {
 						"type": "array",
-						"tags": ["advanced"],
+						"tags": [
+							"advanced"
+						],
 						"items": {
 							"type": "object",
 							"properties": {
@@ -601,7 +603,13 @@
 						"type": "string",
 						"default": "Vedal",
 						"description": "The name to indicate who is controlling this VS Code instance alongside the API server. This replaces the default name `Vedal`.",
-						"examples": ["Vedal", "Alex", "Pasu4", "KTrain", "Frogneko"]
+						"examples": [
+							"Vedal",
+							"Alex",
+							"Pasu4",
+							"KTrain",
+							"Frogneko"
+						]
 					},
 					"neuropilot.connection.nameOfAPI": {
 						"type": "string",
@@ -631,7 +639,9 @@
 					},
 					"neuropilot.actionPermissions": {
 						"type": "object",
-						"tags": ["advanced"],
+						"tags": [
+							"advanced"
+						],
 						"markdownDescription": "The permissions that are currently active. If you want to edit this value, it is recommended to use the sidebar instead.",
 						"additionalProperties": {
 							"enum": [
@@ -695,7 +705,7 @@
 			]
 		},
 		"viewsContainers": {
-			"activitybar": [
+			"secondarySidebar": [
 				{
 					"id": "neuropilot",
 					"title": "NeuroPilot",
@@ -707,15 +717,15 @@
 			"neuropilot": [
 				{
 					"type": "webview",
-					"id": "neuropilot.imagesView",
-					"name": "Images",
+					"id": "neuropilot.actionsView",
+					"name": "Action Permissions",
 					"icon": "assets/neuropilot-font.svg",
 					"visibility": "visible"
 				},
 				{
 					"type": "webview",
-					"id": "neuropilot.actionsView",
-					"name": "Action Permissions",
+					"id": "neuropilot.imagesView",
+					"name": "Images",
 					"icon": "assets/neuropilot-font.svg"
 				}
 			]
@@ -789,7 +799,7 @@
 	},
 	"devDependencies": {
 		"@eslint/js": "^9.39.1",
-		"@stylistic/eslint-plugin": "^5.5.0",
+		"@stylistic/eslint-plugin": "^5.6.1",
 		"@types/glob-to-regexp": "^0.4.4",
 		"@types/json-schema": "^7.0.15",
 		"@types/mocha": "^10.0.10",
@@ -800,33 +810,34 @@
 		"@vsc-neuropilot/api-types": "workspace:*",
 		"@vscode/test-cli": "^0.0.12",
 		"@vscode/test-electron": "^2.5.2",
-		"@vscode/test-web": "^0.0.75",
-		"@vscode/vsce": "^3.7.0",
+		"@vscode/test-web": "^0.0.76",
+		"@vscode/vsce": "^3.7.1",
 		"chalk": "^5.6.2",
 		"cross-env": "^10.1.0",
 		"esbuild": "^0.27.0",
 		"esbuild-plugin-polyfill-node": "^0.3.0",
 		"eslint": "^9.39.1",
 		"eslint-plugin-unicorn": "^62.0.0",
-		"glob": "^11.0.3",
+		"glob": "^13.0.0",
 		"globals": "^16.5.0",
 		"husky": "^9.1.7",
 		"mocha": "^11.7.5",
 		"npm-run-all": "^4.1.5",
-		"ovsx": "^0.10.6",
+		"ovsx": "^0.10.7",
 		"playwright": "^1.56.1",
 		"ts-mockito": "^2.6.1",
 		"tsx": "^4.20.6",
 		"typescript": "^5.9.3",
-		"typescript-eslint": "^8.46.4"
+		"typescript-eslint": "^8.47.0"
 	},
 	"dependencies": {
-		"@vscode/codicons": "^0.0.41",
-		"file-type": "^21.1.0",
+		"@vscode/codicons": "^0.0.43",
+		"file-type": "^21.1.1",
 		"glob-to-regexp": "^0.4.1",
 		"ignore": "^7.0.5",
 		"jsonschema": "^1.5.0",
 		"neuro-game-sdk": "^1.0.5",
+		"preact": "^10.27.2",
 		"yaml": "^2.8.1"
 	}
 }

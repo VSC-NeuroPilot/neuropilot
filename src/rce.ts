@@ -541,7 +541,7 @@ export async function RCEActionHandler(actionData: ActionData) {
     } catch(erm: unknown) {
         const actionName = actionData.name;
         notifyOnCaughtException(actionName, erm);
-        NEURO.client?.sendActionResult(actionData.id, true, `An error occured while executing the action "${actionName}". You can retry if you like, but it may be better to ask Vedal to check what's up.`);
+        NEURO.client?.sendActionResult(actionData.id, true, `An error occurred while executing the action "${actionName}". You can retry if you like, but it may be better to ask Vedal to check what's up.`);
         return;
     }
 }

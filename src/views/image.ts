@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { NEURO } from '@/constants';
 import { BaseWebviewViewProvider } from './base';
 import { logOutput } from '../utils';
+import { COSMETIC } from '../config';
 
 export interface ImageData {
     name: string;
@@ -67,6 +68,7 @@ export class ImagesViewProvider extends BaseWebviewViewProvider<ImagesViewMessag
     private currentSet: string | null = null;
     private currentImageName: string | null = null;
     private disposables: vscode.Disposable[] = [];
+    private _configListener: vscode.Disposable | null = null;
 
     constructor() {
         super('images/index.html', 'images/main.js', ['images/style.css']);
@@ -81,20 +83,31 @@ export class ImagesViewProvider extends BaseWebviewViewProvider<ImagesViewMessag
 
     protected async onViewReady(): Promise<void> {
         if (this.config === null) {
-            await this.loadConfig();
+            try {
+                await this.loadConfig();
+            } catch (erm) {
+                console.error('Failed to load config:', erm);
+            }
 
-            // Subscribe to configuration changes
-            this.disposables.push(
-                vscode.workspace.onDidChangeConfiguration((e) => {
-                    if (e.affectsConfiguration('neuropilot.celebrations')) {
-                        void this.sendUpdateToView();
+            // Subscribe to configuration changes only once
+            if (!this._configListener) {
+                this._configListener = vscode.workspace.onDidChangeConfiguration((e) => {
+                    if (e.affectsConfiguration('neuropilot.cosmetic.celebrations')) {
+                        this.sendUpdateToView().catch(erm =>
+                            console.error('Failed to send update on config change:', erm),
+                        );
                     }
-                }),
-            );
+                });
+                this.disposables.push(this._configListener);
+            }
         }
 
         // Always send update when view becomes ready
-        void this.sendUpdateToView();
+        try {
+            await this.sendUpdateToView();
+        } catch (erm) {
+            console.error('Failed to send initial update:', erm);
+        }
     }
 
     /**
@@ -150,7 +163,7 @@ export class ImagesViewProvider extends BaseWebviewViewProvider<ImagesViewMessag
 
         if (!this.config) return;
 
-        const includeRotations = vscode.workspace.getConfiguration('neuropilot').get<boolean>('celebrations', true);
+        const includeRotations = COSMETIC.celebrations;
         const setsForMsg = this.getSetsForMessage(includeRotations);
 
         // Check whether current image still exists in filtered sets
@@ -243,7 +256,7 @@ export class ImagesViewProvider extends BaseWebviewViewProvider<ImagesViewMessag
     private findImage(name: string): { setName: string; image: GallerySet['images'][0]; } | null {
         if (!this.config) return null;
 
-        const includeRotations = vscode.workspace.getConfiguration('neuropilot').get<boolean>('celebrations', true);
+        const includeRotations = COSMETIC.celebrations;
         const setsForMsg = this.getSetsForMessage(includeRotations);
 
         // Search only in visible sets
@@ -277,7 +290,7 @@ export class ImagesViewProvider extends BaseWebviewViewProvider<ImagesViewMessag
         if (!image) return;
 
         // Check if this set is filtered out
-        const includeRotations = vscode.workspace.getConfiguration('neuropilot').get<boolean>('celebrations', true);
+        const includeRotations = COSMETIC.celebrations;
         const setsForMsg = this.getSetsForMessage(includeRotations);
 
         // If the set is filtered out, don't show the image
@@ -326,7 +339,7 @@ export class ImagesViewProvider extends BaseWebviewViewProvider<ImagesViewMessag
         const imageNameToFind = currentImageName || this.currentImageName;
         if (!imageNameToFind) return;
 
-        const includeRotations = vscode.workspace.getConfiguration('neuropilot').get<boolean>('celebrations', true);
+        const includeRotations = COSMETIC.celebrations;
         const setsForMsg = this.getSetsForMessage(includeRotations);
 
         // Check if current set is still available after filtering

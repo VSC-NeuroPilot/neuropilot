@@ -32,11 +32,7 @@ export const taskHandlers = {
             ? actionValidationAccept()
             : actionValidationFailure('No task to terminate.'),
         ],
-        registerCondition: () => {
-            if (!checkVirtualWorkspace().success) return false;
-            if (!checkWorkspaceTrust().success) return false;
-            return true;
-        },
+        registerCondition: () => checkVirtualWorkspace().success && checkWorkspaceTrust().success,
     },
 } satisfies Record<string, RCEAction>;
 
@@ -135,11 +131,7 @@ export function reloadTasks() {
             handler: handleRunTask,
             promptGenerator: `run the task: ${task.description}`,
             validators: [checkVirtualWorkspace, checkWorkspaceTrust],
-            registerCondition: () => {
-                if (!checkVirtualWorkspace().success) return false;
-                if (!checkWorkspaceTrust().success) return false;
-                return true;
-            },
+            registerCondition: () => checkVirtualWorkspace().success && checkWorkspaceTrust().success,
         })));
     });
 }

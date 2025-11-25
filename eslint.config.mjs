@@ -13,7 +13,7 @@ import globals from 'globals';
 
 export default tseslint.config(
     {
-        files: ['**/*.{js,mjs,cjs,ts,mts,cts}'],
+        files: ['**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
         ignores: [
             'out/**',
             'playground/**',
@@ -49,7 +49,7 @@ export default tseslint.config(
     ...tseslint.configs.stylistic,
     {
         files: [
-            '**/*.{ts,mts,cts}', // Only apply TypeScript rules to TypeScript files
+            '**/*.{ts,mts,cts,tsx}', // Only apply TypeScript rules to TypeScript files
             'webview/**/*.js', // and webview JS files
         ],
         plugins: {

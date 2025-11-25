@@ -2,7 +2,7 @@
     "references": [
         { "path": "./tsconfig.app.json" },
         { "path": "./tsconfig.web.json" },
-        { "path": "./tsconfig.base.json" },
+        { "path": "./tsconfig.webview.json" },
         { "path": "./test-tsconfigs/tsconfig.app.json" },
         { "path": "./test-tsconfigs/tsconfig.web.json" }
     ]

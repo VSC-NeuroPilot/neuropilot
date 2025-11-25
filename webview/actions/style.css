@@ -28,6 +28,14 @@ summary span {
     vertical-align: middle;
 }
 
+.permission-level-description {
+    height: 17px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 4px;
+}
+
 .disabled {
     color: var(--vscode-disabledForeground);
 }
@@ -66,7 +74,7 @@ summary span {
 .category-header {
     font-weight: bold;
     margin-top: 12px;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
     display: flex;
     flex-direction: row;
 }
@@ -80,6 +88,7 @@ summary span {
 
 .action-entry {
     margin-left: 10px;
+    margin-bottom: 4px;
     display: flex;
     flex-direction: row;
 }
@@ -103,10 +112,72 @@ summary span {
     color: var(--vscode-disabledForeground);
 }
 
-.permission-radio-container {
+.permission-level-radio {
     display: flex;
+    gap: 1px;
+    position: relative;
+
+    background-color: var(--vscode-editor-background);
+    border-radius: 4px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+.permission-level-radio label {
+    display: flex;
+    justify-content: center;
     align-items: center;
     width: 20px;
-    margin: 0;
-    padding: 0;
+    color: var(--vscode-disabledForeground);
+    transition: color 200ms ease;
+    cursor: pointer;
+    z-index: 2;
+}
+
+.permission-level-radio label[data-permission-level="2"] {
+    --selected-color: var(--vscode-notebookStatusSuccessIcon-foreground);
+}
+.permission-level-radio label[data-permission-level="1"] {
+    --selected-color: var(--vscode-textLink-foreground);
+}
+.permission-level-radio label[data-permission-level="0"] {
+    --selected-color: var(--vscode-notebookStatusErrorIcon-foreground);
+}
+.permission-level-radio label:has(input:checked),
+.permission-level-radio label[data-show-checked] {
+    color: var(--selected-color);
+    cursor: initial;
+}
+
+.permission-level-radio input {
+    display: none;
+}
+.permission-level-radio::before {
+    content: '';
+    background-color: var(--vscode-checkbox-background);
+    border: 1px solid var(--vscode-checkbox-border);
+    box-sizing: border-box;
+    display: block;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0px;
+    transition: left 150ms ease, width 150ms ease, opacity 150ms ease;
+    width: 62px;
+    opacity: 0;
+    border-radius: 4px;
+}
+
+.permission-level-radio:has(input:checked)::before,
+.permission-level-radio:has(label[data-show-checked])::before {
+    opacity: 1;
+    width: 20px;
+}
+.permission-level-radio:has(input[value="2"]:checked)::before {
+    left: 0px;
+}
+.permission-level-radio:has(input[value="1"]:checked)::before {
+    left: 21px;
+}
+.permission-level-radio:has(input[value="0"]:checked)::before {
+    left: 42px;
 }

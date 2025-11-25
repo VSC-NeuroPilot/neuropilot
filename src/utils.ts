@@ -1034,3 +1034,14 @@ export function toTitleCase(str: string): string {
         })
         .join(' ');
 }
+
+/**
+ * Checks if the running environment is Windows.
+ * Works in both extension host (Node.js) and web (browser) contexts.
+ * @returns true if the environment is Windows
+ * @todo Transform into generalised platform detector later
+ */
+export function isWindows(): boolean {
+    if (vscode.env.uiKind === vscode.UIKind.Web) return false;
+    else return process.platform === 'win32';
+}

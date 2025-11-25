@@ -9,6 +9,8 @@ export interface Message {
 export abstract class BaseWebviewViewProvider<TViewMessage extends Message, TProviderMessage extends Message> implements vscode.WebviewViewProvider {
     protected _view?: vscode.WebviewView;
 
+    protected onViewReady?(): void | Promise<void>;
+
     constructor(private _htmlFile: string, private _script: string, private _styles: string[]) { }
 
     async resolveWebviewView(webviewView: vscode.WebviewView, _context: vscode.WebviewViewResolveContext, _token: vscode.CancellationToken): Promise<void> {
@@ -26,9 +28,7 @@ export abstract class BaseWebviewViewProvider<TViewMessage extends Message, TPro
         });
 
         // Call onViewReady if it exists (for subclasses that implement it)
-        if ('onViewReady' in this && typeof (this as unknown as { onViewReady?: () => void | Promise<void> }).onViewReady === 'function') {
-            void (this as unknown as { onViewReady: () => void | Promise<void> }).onViewReady();
-        }
+        void this.onViewReady?.();
     }
 
     protected abstract handleMessage(message: TViewMessage): void;
