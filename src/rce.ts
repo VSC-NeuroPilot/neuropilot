@@ -4,15 +4,18 @@
  */
 
 import * as vscode from 'vscode';
-import { RCEAction, stripToAction } from '@/neuro_client_helper';
+import { stripToAction } from '@/neuro_client_helper';
 import { NEURO } from '@/constants';
 import { logOutput, notifyOnCaughtException } from '@/utils';
 import { ACTIONS as ACTIONS_CONFIG, CONFIG, CONNECTION, getAllPermissions, getPermissionLevel, stringToPermissionLevel } from '@/config';
-import { PermissionLevel, ActionData } from '@vsc-neuropilot/api-types';
+import { PermissionLevel, ActionData, RCEAction } from '@vsc-neuropilot/api-types';
 import { validate } from 'jsonschema';
 import type { RCECancelEvent } from '@events/utils';
+import { CompanionToken } from '@/api';
 
 export const CATEGORY_MISC = 'Miscellaneous';
+
+export type CompanionRCEAction = RCEAction & { registeredBy: CompanionToken };
 
 const ACTIONS: RCEAction[] = [];
 const REGISTERED_ACTIONS: Set<string> = /* @__PURE__ */ new Set<string>();

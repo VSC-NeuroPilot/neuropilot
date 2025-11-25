@@ -1,20 +1,22 @@
 import * as vscode from 'vscode';
-import { RCEAction } from '../../neuro_client_helper';
 import { logOutput, isPathNeuroSafe as _isPathNeuroSafe } from '../../utils';
 import {
     ExtensionAPI,
     ConnectionStatus,
-    ExtensionInfo,
+    CompanionExtension,
     RegistrationName,
     ExtensionRegisterReturns,
     ModifyMetadata,
 } from '@vsc-neuropilot/api-types/api';
 import { NeuroMessage } from '@vsc-neuropilot/api-types/messages';
+import { APIv1 } from '~/packages/api-types/api/v1';
+import { RCEAction } from '@vsc-neuropilot/api-types';
+import { CompanionToken } from '..';
 
 // Internal storage for registered extensions
 interface ExtensionRegistration {
     id: string;
-    info: ExtensionInfo;
+    info: CompanionExtension;
     actionPrefix: string;
     token: string;
     displayName: string;
@@ -64,15 +66,60 @@ function generateActionPrefix(nameOnActions: string): string {
     return finalPrefix;
 }
 
-export function getAPIv1() {
-    return {
-        version: 1,
+export class APIv1Impl implements APIv1 {
+    version = 1 as const;
+    constructor(private _token: CompanionToken) {
+        this._token = _token;
+    }
+    deactivatedExtension(message?: string): void {
+        throw new Error('Method not implemented.');
+    }
+    modifyExtensionMeta(data: ModifyMetadata): ModifyMetadata {
+        throw new Error('Method not implemented.');
+    }
+    addActions(actions: RCEAction[]): void {
+        throw new Error('Method not implemented.');
+    }
+    removeActions(...names: string[]): void {
+        throw new Error('Method not implemented.');
+    }
+    registerAction(actionName: string): void {
+        throw new Error('Method not implemented.');
+    }
+    unregisterAction(actionName: string): void {
+        throw new Error('Method not implemented.');
+    }
+    unregisterAllActions(): void {
+        throw new Error('Method not implemented.');
+    }
+    reregisterAllActions(): void {
+        throw new Error('Method not implemented.');
+    }
+    isPathNeuroSafe(...paths: string[]): boolean {
+        throw new Error('Method not implemented.');
+    }
+    getVirtualCursor(): vscode.Position | null | undefined {
+        throw new Error('Method not implemented.');
+    }
+    setVirtualCursor(location: vscode.Position | null): vscode.Position | null | undefined {
+        throw new Error('Method not implemented.');
+    }
+    sendPassiveContext(context: string, silent?: boolean): void {
+        throw new Error('Method not implemented.');
+    }
+    sendResult(message?: string, success?: boolean): void {
+        throw new Error('Method not implemented.');
+    }
+    forceNeuroAction(query: string, action_names: string[], state?: string, ephemeral_context?: boolean): void {
+        throw new Error('Method not implemented.');
+    }
+    getConnectionStatus(): ConnectionStatus {
+        throw new Error('Method not implemented.');
+    }
+}
 
-        // Helper functions
-        isPathNeuroSafe(...paths: string[]) {
-            return paths.every((p: string) => _isPathNeuroSafe(p));
-        },
-    };
+export function getAPIv1(token: CompanionToken): APIv1 {
+    return new APIv1Impl(token);
 }
 
 // Helper functions for internal use (these would be called by your main extension)

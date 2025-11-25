@@ -2,53 +2,14 @@
  * Helper functions and types for interacting with the Neuro Game SDK.
  */
 import { Action } from 'neuro-game-sdk';
-import { Permission, PermissionLevel, PromptGenerator, ActionData, ActionValidationResult } from '@vsc-neuropilot/api-types';
+import { ActionValidationResult, RCEAction } from '@vsc-neuropilot/api-types';
 import { ACTIONS } from '@/config';
 import { logOutput, turtleSafari } from '@/utils';
-import { RCECancelEvent } from '@events/utils';
 import { JSONSchema7 } from 'json-schema';
 
 type TypedAction = Omit<Action, 'schema'> & { schema?: JSONSchema7 };
 
 /** ActionHandler to use with constants for records of actions and their corresponding handlers */
-export interface RCEAction<T = unknown> extends TypedAction {
-    /** A human-friendly name for the action. If not provided, the action's name converted to Title Case will be used. */
-    displayName?: string;
-    /** The JSON schema for validating the action parameters if experimental schemas are disabled. */
-    schemaFallback?: JSONSchema7;
-    /** The function to validate the action data *after* checking the schema. */
-    validators?: ((actionData: ActionData) => ActionValidationResult | Promise<ActionValidationResult>)[];
-    /**
-     * Cancellation events attached to the action that will be automatically set up.
-     * Each cancellation event will be setup in parallel to each other.
-     * If one cancellation event fires, the request is cancelled and all listeners will be disposed as soon as possible.
-     * 
-     * Following VS Code's pattern, Disposables will not be awaited if async.
-     */
-    cancelEvents?: ((actionData: ActionData) => RCECancelEvent<T> | null)[];
-    /** The function to handle the action. */
-    handler: RCEHandler;
-    /** 
-     * The function to generate a prompt for the action request (Copilot Mode). 
-     * The prompt should fit the phrasing scheme "Neuro wants to [prompt]".
-     * It is this way due to a potential new addition in Neuro API "v2". (not officially proposed)
-     * More info (comment): https://github.com/VedalAI/neuro-game-sdk/discussions/58#discussioncomment-12938623
-     */
-    promptGenerator: PromptGenerator;
-    /** Default permission for actions when no permission is configured in user or workspace settings. Defaults to {@link PermissionLevel.OFF}. */
-    defaultPermission?: PermissionLevel;
-    /**
-     * The category of the request.
-     * You can use null if the action is never added to the registry.
-     */
-    category: string | null;
-    /** Whether to automatically register the action with Neuro upon addition. Defaults to true. */
-    autoRegister?: boolean;
-    /** A condition that must be true for the action to be registered. If not provided, the action is always registered. This function must never throw. */
-    registerCondition?: () => boolean;
-}
-
-type RCEHandler = (actionData: ActionData) => string | undefined | void;
 
 /**
  * Strips an action to the form expected by the API.
@@ -166,20 +127,6 @@ export function actionResultIncorrectType(parameterName: string, expectedType: s
     return {
         success: false,
         message: `Action failed: "${parameterName}" must be of type "${expectedType}", but got "${actualType}".`,
-    };
-}
-
-/**
- * Create an action result that tells Neuro that she doesn't have the required permission.
- * @param permission The permission Neuro doesn't have.
- * @returns A successful action result with a message pointing out the missing permission.
- * @deprecated Handled by the permissions checker component of RCE.
- */
-export function actionValidationNoPermission(permission: Permission): ActionValidationResult {
-    logOutput('WARNING', `Action failed: Neuro attempted to ${permission.infinitive}, but permission is disabled.`);
-    return {
-        success: true,
-        message: `Action failed: You do not have permission to ${permission.infinitive}.`,
     };
 }
 

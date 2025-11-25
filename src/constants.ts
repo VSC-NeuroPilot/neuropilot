@@ -5,6 +5,7 @@ import { RceRequest } from './rce';
 import type { GitExtension } from '@typing/git.d';
 import { ActionsViewProvider } from './views/actions';
 import { ImagesViewProvider } from './views/image';
+import { CompanionToken } from './api';
 
 export interface NeuroTask {
     id: string;
@@ -87,6 +88,7 @@ interface Neuro {
     tempDisabledActions: string[]
     /** The provider for the actions view. */
     viewProviders: NeuroViewProviders;
+    ownCompanionToken?: CompanionToken;
 }
 
 

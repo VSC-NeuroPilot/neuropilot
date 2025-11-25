@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 
 import { NEURO } from '@/constants';
 import { getFence, logOutput } from '@/utils';
-import { RCEAction } from '@/neuro_client_helper';
+import { RCEAction } from '@vsc-neuropilot/api-types';
 import { PermissionLevel, ActionData } from '@vsc-neuropilot/api-types';
 import { addActions } from './rce';
 

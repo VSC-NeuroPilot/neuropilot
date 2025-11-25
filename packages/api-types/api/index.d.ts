@@ -2,7 +2,7 @@ export * as v1 from './v1';
 
 import { Event } from 'vscode';
 
-export type APIVersions = 1 | 'latest' | 'oldest' | 'next';
+export type APIVersion = 1 | 'latest' | 'oldest' | 'next';
 
 export const enum ConnectionTypes {
     Connected,
@@ -11,29 +11,27 @@ export const enum ConnectionTypes {
     Retrying,
 }
 
-export interface NeuroPilotAPI {
-    /** Whether or not NeuroPilot is connected to the Neuro API. */
-    readonly connected: Omit<ConnectionTypes, ConnectionTypes.Failed>;
-    /** Current connection info, assuming {@link NeuroPilotAPI.connected} returns {@link ConnectionTypes.Connected} */
-    readonly connectionInfo: ConnectionStatus | null;
-    /** 
-     * Event that fires if the Neuro API connection status changes.
-     * Only fires on fail once all connection attempts have been exhausted.
-     * @fires ConnectionType - see {@link ConnectionTypes}
-     */
-    readonly onDidChangeConnectionStatus: Event<Omit<ConnectionStatus, ConnectionTypes.Retrying>>;
+export interface APIWrapper {
+    // /** Whether or not NeuroPilot is connected to the Neuro API. */
+    // readonly connected: Omit<ConnectionTypes, ConnectionTypes.Failed>;
+    // /** Current connection info, assuming {@link APIWrapper.connected} returns {@link ConnectionTypes.Connected} */
+    // readonly connectionInfo: ConnectionStatus | null;
+    // /** 
+    //  * Event that fires if the Neuro API connection status changes.
+    //  * Only fires on fail once all connection attempts have been exhausted.
+    //  * @fires ConnectionType - see {@link ConnectionTypes}
+    //  */
+    // readonly onDidChangeConnectionStatus: Event<Omit<ConnectionStatus, ConnectionTypes.Retrying>>;
 
-    /** @todo Stay in pre-API exports? */
-    registerExtension(details: ExtensionInfo): ExtensionRegisterReturns;
+    registerCompanion(extension: CompanionExtension): ExtensionAPI;
 
-    getAPI(version: APIVersions): ExtensionAPI;
-    /** Array of supported version numbers. */
-    readonly supportedVersions: Omit<APIVersions, 'latest' & 'oldest' & 'next'>[];
+    // getAPI(version: APIVersion): ExtensionAPI;
+    // /** Array of supported version numbers. */
+    // readonly supportedVersions: Omit<APIVersion, 'latest' & 'oldest' & 'next'>[];
 }
 
 export interface ExtensionAPI {
     version: number;
-    [key: string]: unknown;
 }
 
 export interface ConnectionStatus {
@@ -42,7 +40,10 @@ export interface ConnectionStatus {
     error?: string;
 }
 
-export interface ExtensionInfo {
+export interface CompanionExtension {
+    apiVersion: APIVersion;
+    extensionId: string;
+    name: string;
     author?: string;
     description?: string;
     runsIn?: string[];
