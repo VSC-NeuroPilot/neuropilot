@@ -1,0 +1,31 @@
+{
+    "$schema": "https://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+        "name": {
+            "type": "string",
+            "description": "A name to depict the compromise."
+        },
+        "description": {
+            "type": "string",
+            "description": "A short description of the compromise."
+        },
+        "date": {
+            "type": "string",
+            "description": "The date of the compromise, using the extended ISO 8601 standard format (ex 2021-09-20).",
+            "pattern": "^d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]d|3[01])$"
+        },
+        "packages": {
+            "type": "object",
+            "additionalProperties": false,
+            "patternProperties": {
+                "^(?:(?:@(?:[a-z0-9-*~][a-z0-9-*._~]*)?/[a-z0-9-._~])|[a-z0-9-~])[a-z0-9-._~]*$": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        }
+    }
+}
