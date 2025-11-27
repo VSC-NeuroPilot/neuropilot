@@ -1,10 +1,7 @@
 import * as vscode from 'vscode';
 import { logOutput, isPathNeuroSafe, getVirtualCursor, setVirtualCursor, getPositionContext, formatContext } from '../../utils';
-import {
-    ConnectionStatus,
-} from '@vsc-neuropilot/api-types/api';
-import { APIv1 } from '~/packages/api-types/api/v1';
-import { CursorPositionContextStyle, NeuroClient, NeuroPositionContext, NeuroPositionContextOptions, RCEAction, RCECancelEvent, RCECancelEventInitializer } from '@vsc-neuropilot/api-types';
+import { APIv1 } from '@vsc-neuropilot/api-types/api/v1';
+import { ConnectionStatus, CursorPositionContextStyle, NeuroClient, NeuroPositionContext, NeuroPositionContextOptions, RCEAction, RCECancelEvent, RCECancelEventInitializer } from '@vsc-neuropilot/api-types';
 import { COMPANIONS, CompanionToken } from '..';
 import { addActions, CompanionRCEAction, getAction, getActions, isActionRegistered, registerActions, removeActions, reregisterAllActions, unregisterActions } from '~/src/rce';
 import { RCECancelEvent as RCECancelEventImpl } from '~/src/events/utils';
