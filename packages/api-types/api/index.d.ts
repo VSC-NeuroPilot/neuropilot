@@ -2,7 +2,7 @@ export * as v1 from './v1';
 
 export type APIVersion = 1 | 'latest' | 'oldest' | 'next';
 
-export const enum ConnectionTypes {
+export const enum ConnectionStatus {
     Connected,
     Disconnected,
     Failed,
@@ -32,11 +32,11 @@ export interface ExtensionAPI {
     version: number;
 }
 
-export interface ConnectionStatus {
-    connected: boolean;
-    url: string | null;
-    error?: string;
-}
+// export interface ConnectionStatus {
+//     connected: boolean;
+//     url: string | null;
+//     error?: string;
+// }
 
 export interface CompanionExtension {
     apiVersion: APIVersion;
@@ -50,20 +50,20 @@ export interface CompanionExtension {
     };
 }
 
-export interface RegistrationName {
-    display: string;
-    id: string;
-    nameOnActions: string;
-}
+// export interface RegistrationName {
+//     display: string;
+//     id: string;
+//     nameOnActions: string;
+// }
 
-export interface ExtensionRegisterReturns {
-    id: string;
-    actionPrefix: string;
-    token: string;
-}
+// export interface ExtensionRegisterReturns {
+//     id: string;
+//     actionPrefix: string;
+//     token: string;
+// }
 
-export interface ModifyMetadata {
-    displayName?: string;
-    nameOnActions?: string;
-    docsURL?: string;
-}
+// export interface ModifyMetadata {
+//     displayName?: string;
+//     nameOnActions?: string;
+//     docsURL?: string;
+// }

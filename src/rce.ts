@@ -268,6 +268,8 @@ export function denyRceRequest(): void {
     clearRceRequest();
 }
 
+//#region Action Management
+
 /**
  * Adds multiple actions to the RCE system.
  * @param actions The actions to add.
@@ -421,6 +423,8 @@ export function getExtendedActionsInfo(): ExtendedActionInfo[] {
         } satisfies ExtendedActionInfo;
     });
 }
+
+//#endregion
 
 /**
  * RCE action handler code for unsupervised requests.

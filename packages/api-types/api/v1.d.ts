@@ -1,15 +1,16 @@
-import { ExtensionAPI, CompanionExtension, ModifyMetadata, ConnectionStatus } from '.';
+import { ExtensionAPI, CompanionExtension, ConnectionStatus } from '.';
 import * as vscode from 'vscode';
 import { RCEAction } from '../utils/client_helpers';
 import { NeuroMessage } from '../messages/incoming';
 import { RCECancelEvent, RCECancelEventInitializer } from '../utils';
+import { NeuroClient } from 'neuro-game-sdk';
 
 export interface APIv1 extends ExtensionAPI {
     version: 1;
 
     // Extension registration
-    deactivatedExtension(message?: string): void;
-    modifyExtensionMeta(data: ModifyMetadata): ModifyMetadata;
+    deactivateExtension(message?: string): void;
+    // modifyExtensionMeta(data: ModifyMetadata): ModifyMetadata;
 
     // Action management
     addActions(actions: RCEAction[]): void;
@@ -37,6 +38,9 @@ export interface APIv1 extends ExtensionAPI {
     // Connection status
     getConnectionStatus(): ConnectionStatus;
 
+    // Client
+    getNeuroClient(): NeuroClient;
+
     // Events (placeholder for future implementation)
     // TODO: Event system will be implemented here
 }
@@ -46,6 +50,6 @@ export interface APIv1 extends ExtensionAPI {
  */
 export interface CompanionExtensionV1 extends CompanionExtension {
     version: 1;
-    onConnectionChanged(status: ConnectionStatus): void;
-    onMessageReceived(message: NeuroMessage): void;
+    onConnectionChanged?(status: ConnectionStatus): void;
+    onMessageReceived?(message: NeuroMessage): void;
 }

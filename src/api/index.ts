@@ -4,7 +4,7 @@ import { getAPIv1 } from './versions/1';
 export type CompanionToken = string;
 
 // TODO: Placeholder implementation
-const COMPANIONS = /* @__PURE__ */ new Map<CompanionToken, CompanionExtension>();
+export const COMPANIONS = /* @__PURE__ */ new Map<CompanionToken, CompanionExtension>();
 
 function generateToken(info: CompanionExtension): CompanionToken {
     return `ext_${info.extensionId}_${Date.now()}_${Math.random().toString(36).substring(2)}`;
