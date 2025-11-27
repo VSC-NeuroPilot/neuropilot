@@ -9,7 +9,7 @@ import { ActionData, ActionValidationResult, RCEAction } from '@vsc-neuropilot/a
 import assert from 'node:assert';
 import { RCECancelEvent } from '@events/utils';
 import { JSONSchema7Definition } from 'json-schema';
-import { addActions, registerAction, reregisterAllActions, unregisterAction } from './rce';
+import { addActions, registerActions, reregisterAllActions, unregisterActions } from './rce';
 
 const CATEGORY_GIT = 'Git';
 
@@ -958,7 +958,7 @@ export function handleGitMerge(actionData: ActionData): string | undefined {
         NEURO.client?.sendContext(`Cleanly merged ${refToMerge} into the current branch.`);
     }, (erm: string) => {
         if (repo?.state.mergeChanges.some(() => true)) {
-            registerAction(gitActions.abort_merge.name);
+            registerActions([gitActions.abort_merge.name]);
         }
         NEURO.client?.sendContext(`Couldn't merge ${refToMerge}: ${erm}`);
         logOutput('ERROR', `Encountered an error when merging ${refToMerge}: ${erm}`);
@@ -971,7 +971,7 @@ export function handleAbortMerge(_actionData: ActionData): string | undefined {
     assert(repo);
 
     repo.mergeAbort().then(() => {
-        unregisterAction(gitActions.abort_merge.name);
+        unregisterActions([gitActions.abort_merge.name]);
         NEURO.client?.sendContext('Merge aborted.');
     }, (erm: string) => {
         NEURO.client?.sendContext("Couldn't abort merging!");

@@ -319,11 +319,11 @@ export function removeActions(actionNames: string[]): void {
  * Will only register the action if it is not already registered.
  * @param actionName The name of the action to register.
  */
-export function registerAction(actionName: string): void {
-    const action = ACTIONS.find(a => a.name === actionName);
-    if (action && NEURO.connected && !REGISTERED_ACTIONS.has(action.name)) {
-        NEURO.client!.registerActions([stripToAction(action)]);
-        REGISTERED_ACTIONS.add(action.name);
+export function registerActions(actionNames: string[]): void {
+    const actions = ACTIONS.filter(a => actionNames.includes(a.name) && !REGISTERED_ACTIONS.has(a.name));
+    if (NEURO.connected) {
+        NEURO.client!.registerActions(actions.map(stripToAction));
+        actions.forEach(a => REGISTERED_ACTIONS.add(a.name));
         NEURO.viewProviders.actions?.refreshActions();
     }
 }
@@ -332,9 +332,9 @@ export function registerAction(actionName: string): void {
  * Unregisters an action from Neuro.
  * @param actionName The name of the action to unregister.
  */
-export function unregisterAction(actionName: string): void {
-    NEURO.client?.unregisterActions([actionName]);
-    REGISTERED_ACTIONS.delete(actionName);
+export function unregisterActions(actionNames: string[]): void {
+    NEURO.client?.unregisterActions(actionNames);
+    actionNames.forEach(a => REGISTERED_ACTIONS.delete(a));
     NEURO.viewProviders.actions?.refreshActions();
 }
 
@@ -422,6 +422,10 @@ export function getExtendedActionsInfo(): ExtendedActionInfo[] {
             isConfigured: configuredWorkspacePermission !== undefined || configuredGlobalPermission !== undefined,
         } satisfies ExtendedActionInfo;
     });
+}
+
+export function isActionRegistered(actionName: string): boolean {
+    return REGISTERED_ACTIONS.has(actionName);
 }
 
 //#endregion

@@ -22,6 +22,7 @@ import { addUnsupervisedActions, registerUnsupervisedHandlers } from './unsuperv
 import { registerSendSelectionToNeuro } from '@/editing';
 import { loadIgnoreFiles } from '@/ignore_files_utils';
 import { reregisterAllActions } from '../rce';
+import { APIWrapperImpl } from '../api';
 
 export function activate(context: vscode.ExtensionContext) {
     loadIgnoreFiles(
@@ -77,6 +78,8 @@ export function activate(context: vscode.ExtensionContext) {
     if (vscode.window.activeTextEditor && isPathNeuroSafe(vscode.window.activeTextEditor.document.fileName)) {
         setVirtualCursor(vscode.window.activeTextEditor.selection.active);
     }
+
+    return new APIWrapperImpl();
 }
 
 export function deactivate() {

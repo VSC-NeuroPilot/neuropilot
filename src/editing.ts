@@ -1,14 +1,14 @@
 import * as vscode from 'vscode';
 
 import { NEURO } from '@/constants';
-import { DiffRangeType, escapeRegExp, getDiffRanges, getFence, getPositionContext, getProperty, getVirtualCursor, showDiffRanges, isPathNeuroSafe, logOutput, NeuroPositionContext, setVirtualCursor, simpleFileName, substituteMatch, clearDecorations, formatContext, filterFileContents, positionFromIndex, indexFromPosition } from '@/utils';
+import { DiffRangeType, escapeRegExp, getDiffRanges, getFence, getPositionContext, getProperty, getVirtualCursor, showDiffRanges, isPathNeuroSafe, logOutput, setVirtualCursor, simpleFileName, substituteMatch, clearDecorations, formatContext, filterFileContents, positionFromIndex, indexFromPosition } from '@/utils';
 import { actionValidationAccept, actionValidationFailure, contextFailure, actionValidationRetry, contextNoAccess } from '@/neuro_client_helper';
-import { ActionData, ActionValidationResult, RCEAction } from '@vsc-neuropilot/api-types';
+import { ActionData, ActionValidationResult, NeuroPositionContext, RCEAction } from '@vsc-neuropilot/api-types';
 import { CONFIG, CONNECTION } from '@/config';
 import { createCursorPositionChangedEvent } from '@events/cursor';
 import { RCECancelEvent } from '@events/utils';
 import type { JSONSchema7 } from 'json-schema';
-import { addActions, registerAction, unregisterAction } from '@/rce';
+import { addActions, registerActions, unregisterActions } from '@/rce';
 
 const CATEGORY_EDITING = 'Editing';
 
@@ -723,9 +723,9 @@ export function addEditingActions() {
 export function toggleSaveAction(): void {
     const autoSave = vscode.workspace.getConfiguration('files').get<string>('autoSave');
     if (autoSave === 'afterDelay') {
-        unregisterAction(editingActions.save.name);
+        unregisterActions([editingActions.save.name]);
     } else {
-        registerAction(editingActions.save.name);
+        registerActions([editingActions.save.name]);
     }
 }
 

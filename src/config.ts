@@ -2,13 +2,7 @@ import * as vscode from 'vscode';
 import { NEURO } from '@/constants';
 import { logOutput } from '@/utils';
 import { getAction } from '@/rce';
-import { PermissionLevel, DeprecatedSetting } from '@vsc-neuropilot/api-types';
-
-//#region Types
-
-export type CursorPositionContextStyle = 'off' | 'inline' | 'lineAndColumn' | 'both';
-
-//#endregion
+import { PermissionLevel, DeprecatedSetting, CursorPositionContextStyle } from '@vsc-neuropilot/api-types';
 
 /** Array of deprecated settings */
 const DEPRECATED_SETTINGS: DeprecatedSetting[] = [

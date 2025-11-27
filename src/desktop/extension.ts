@@ -26,6 +26,7 @@ import { addUnsupervisedActions, registerUnsupervisedHandlers } from './unsuperv
 import { registerSendSelectionToNeuro } from '@/editing';
 import { loadIgnoreFiles } from '@/ignore_files_utils';
 import { reregisterAllActions } from '../rce';
+import { APIWrapperImpl } from '../api';
 
 export function activate(context: vscode.ExtensionContext) {
     loadIgnoreFiles(
@@ -88,6 +89,8 @@ export function activate(context: vscode.ExtensionContext) {
     // To keep related logic together and allow easy registration in both desktop and web, it is encapsulated
     // in registerSendSelectionToNeuro instead of being registered inline like most single commands.
     registerSendSelectionToNeuro(context);
+
+    return new APIWrapperImpl();
 }
 
 export function deactivate() {
