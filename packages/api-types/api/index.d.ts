@@ -1,5 +1,3 @@
-export * as v1 from './v1';
-
 export type APIVersion = 1 | 'latest' | 'oldest' | 'next';
 
 export const enum ConnectionStatus {
