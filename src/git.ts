@@ -677,7 +677,7 @@ export function handleNewGitRepo(_actionData: ActionData): string | undefined {
 
     git!.init(vscode.Uri.file(folderPath)).then(() => {
         repo = git!.repositories[0]; // Update the repo reference to the new repository, just in case
-        reregisterAllActions(true);
+        reregisterAllActions(true, null);
         NEURO.client?.sendContext('Initialized a new Git repository in the workspace folder. You should now be able to use git commands.');
     }, (erm: string) => {
         NEURO.client?.sendContext('Failed to initialize Git repository');

@@ -61,7 +61,7 @@ export interface APIv1 extends ExtensionAPI {
     /**
      * Checks if the action with the given name is registered with the Neuro API.
      * @param actionName The action to check.
-     * @returns `true` if the action is registered, `false` if the action is not registered or does not exist.
+     * @returns `true` if the action is registered, `false` if the action is not registered, is registered by a different extension, or does not exist.
      */
     isActionRegistered(actionName: string): boolean;
     // onActionRegistration(callback: () => RCEAction[]): vscode.Disposable;

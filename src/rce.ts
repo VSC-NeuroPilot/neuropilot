@@ -348,17 +348,23 @@ export function unregisterAllActions(): void {
 /**
  * Reregisters all actions with the Neuro API.
  * @param conservative Only reregister as necessary.
+ * @param addedBy Optional filter to only reregister actions added by a specific companion extension.
+ * If `null`, only reregister actions not added by any companion extension.
+ * If omitted, reregister all actions.
  */
-export function reregisterAllActions(conservative: boolean): void {
+export function reregisterAllActions(conservative: boolean, addedBy?: CompanionToken | null): void {
     // Can't reregister if no client is connected
     if (!NEURO.connected) return;
 
     const permissions = getAllPermissions();
-    const actionsToUnregister = conservative
-        ? ACTIONS
-            .filter(a => REGISTERED_ACTIONS.has(a.name) && !shouldBeRegistered(a))
-            .map(a => a.name)
-        : ACTIONS.map(a => a.name);
+    const actionsToUnregister = ACTIONS
+        .filter(a =>
+            addedBy === undefined
+            || addedBy === null && (a as CompanionRCEAction).registeredBy === undefined
+            || (a as CompanionRCEAction).registeredBy === addedBy,
+        )
+        .filter(a => !conservative || REGISTERED_ACTIONS.has(a.name) && !shouldBeRegistered(a))
+        .map(a => a.name);
 
     // Unregister actions
     if (actionsToUnregister.length > 0)
