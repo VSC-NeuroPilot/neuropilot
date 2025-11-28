@@ -181,7 +181,6 @@ export class APIv1Impl implements APIv1 {
             return;
         }
 
-        // TODO: Should this only be allowed for the actions registered by this extension?
         reregisterAllActions(true, this._token);
     }
     getActions(): RCEAction[] {
