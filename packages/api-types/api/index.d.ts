@@ -19,6 +19,12 @@ export interface NeuroPilotAPIWrapper {
     //  */
     // readonly onDidChangeConnectionStatus: Event<Omit<ConnectionStatus, ConnectionTypes.Retrying>>;
 
+    /**
+     * Register the companion extension and get the requested API version.
+     * @param extension An object containing callbacks and extension information, as well as the API version to request.
+     * @return The requested extension API.
+     * @throws If the requested API version is not supported.
+     */
     registerCompanion(extension: CompanionExtension): ExtensionAPI;
 
     // getAPI(version: APIVersion): ExtensionAPI;

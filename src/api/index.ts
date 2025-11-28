@@ -19,13 +19,14 @@ function registerExtension(extension: CompanionExtension): CompanionToken {
 /**
  * Main entry point for the extension API.
  * Other extensions can access this through vscode.extensions.getExtension().exports
+ * @throws If the requested API version is not supported.
  */
-function getAPI(token: CompanionToken, version: APIVersion): ExtensionAPI | null {
+function getAPI(token: CompanionToken, version: APIVersion): ExtensionAPI {
     switch (version) {
         case 1:
             return getAPIv1(token);
         default:
-            return null;
+            throw new Error(`Unsupported API version: ${version}`);
     }
 }
 
@@ -33,6 +34,11 @@ export class APIWrapperImpl implements NeuroPilotAPIWrapper {
     registerCompanion(extension: CompanionExtension): ExtensionAPI {
         // TODO: Handle null case
         const token = registerExtension(extension);
-        return getAPI(token, extension.apiVersion)!;
+        try {
+            return getAPI(token, extension.apiVersion)!;
+        } catch (erm) {
+            COMPANIONS.delete(token);
+            throw erm;
+        }
     }
 }
