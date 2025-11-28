@@ -273,7 +273,7 @@ export function denyRceRequest(): void {
 /**
  * Adds multiple actions to the RCE system.
  * @param actions The actions to add.
- * @param register Whether to register the actions with Neuro immediately if the permissions allow.
+ * @param register Whether to register the actions with Neuro immediately if the permissions allow. Defaults to `true`.
  */
 export function addActions(actions: RCEAction[], register = true): void {
     const actionsToAdd = actions.filter(a => !ACTIONS.some(existing => existing.name === a.name));

@@ -122,14 +122,14 @@ export class APIv1Impl implements APIv1 {
     // modifyExtensionMeta(data: ModifyMetadata): ModifyMetadata {
     //     throw new Error('Method not implemented.');
     // }
-    addActions(actions: RCEAction[]): void {
+    addActions(actions: RCEAction[], register = true): void {
         if (!validate(this._token, [Permission.ManageActions])) {
             logOutput('ERROR', 'No permission to manage actions.');
             return;
         }
 
         // Attach token to each action for tracking
-        addActions(actions.map(action => ({...action, registeredBy: this._token} satisfies CompanionRCEAction)));
+        addActions(actions.map(action => ({...action, registeredBy: this._token} satisfies CompanionRCEAction)), register);
     }
     removeActions(actionNames: string[]): void {
         if (!validate(this._token, [Permission.ManageActions])) {

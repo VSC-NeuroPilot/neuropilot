@@ -25,9 +25,12 @@ export interface APIv1 extends ExtensionAPI {
 
     /**
      * Add actions to the action registry.
+     * In the case of a name conflict between actions added by NeuroPilot itself or any companion extension,
+     * actions already in the registry take precedence.
      * @param actions The actions to add to the registry.
+     * @param register Whether to register the actions with the Neuro API immediately if the permissions allow. Defaults to `true`.
      */
-    addActions(actions: RCEAction[]): void;
+    addActions(actions: RCEAction[], register?: boolean): void;
     /**
      * Remove actions from the action registry by their names.
      * Only actions added by this extension can be removed this way.
