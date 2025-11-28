@@ -8,7 +8,8 @@ import { NeuroClient } from 'neuro-game-sdk';
 export interface APIv1 extends ExtensionAPI {
     version: 1;
 
-    // Extension registration
+    //#region Extension registration
+
     /**
      * Deactivate the companion extension.
      * Removes and unregisters all actions registered by this extension.
@@ -18,7 +19,10 @@ export interface APIv1 extends ExtensionAPI {
     deactivateExtension(message?: string): void;
     // modifyExtensionMeta(data: ModifyMetadata): ModifyMetadata;
 
-    // Action management
+    //#endregion
+
+    //#region Action management
+
     /**
      * Add actions to the action registry.
      * @param actions The actions to add to the registry.
@@ -63,7 +67,10 @@ export interface APIv1 extends ExtensionAPI {
     // onActionRegistration(callback: () => RCEAction[]): vscode.Disposable;
     // onActionUnregistration(callback: () => string[]): vscode.Disposable;
 
-    // Utility functions
+    //#endregion
+
+    //#region Utility functions
+
     /**
      * Checks whether the given path is Neuro-safe.
      * @param path The path to check for Neuro-safety.
@@ -83,7 +90,10 @@ export interface APIv1 extends ExtensionAPI {
      */
     setVirtualCursor(position: vscode.Position): void;
 
-    // Factory functions
+    //#endregion
+
+    //#region Factory functions
+
     /**
      * Creates a cancellation event for use with RCE actions.
      * @param init The initializer for the {@link RCECancelEvent}.
@@ -117,17 +127,23 @@ export interface APIv1 extends ExtensionAPI {
      */
     formatContext(context: NeuroPositionContext, overrideCursorStyle?: CursorPositionContextStyle): string;
 
-    // Connection status
+    //#endregion
+
+    //#region Client
+
     /**
      * Gets the current connection status with the Neuro API.
      */
     getConnectionStatus(): ConnectionStatus;
 
-    // Client
     /**
      * Gets the Neuro client instance directly.
+     * Prefer using the higher-level API methods where possible.
+     * @returns The Neuro client instance, or `null` if not connected.
      */
-    getNeuroClient(): NeuroClient;
+    getNeuroClient(): NeuroClient | null;
+
+    //#endregion
 
     // Events (placeholder for future implementation)
     // TODO: Event system will be implemented here

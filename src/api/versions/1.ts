@@ -274,12 +274,12 @@ export class APIv1Impl implements APIv1 {
             return ConnectionStatus.Connected;
         return ConnectionStatus.Disconnected;
     }
-    getNeuroClient(): NeuroClient {
+    getNeuroClient(): NeuroClient | null {
         if (!validate(this._token, [Permission.DirectNeuroClientAccess])) {
             logOutput('ERROR', 'No permission to access Neuro client directly.');
             throw new Error('No permission to access Neuro client directly.');
         }
-        return NEURO.client!;
+        return NEURO.client;
     }
 }
 
