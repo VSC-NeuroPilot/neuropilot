@@ -1,7 +1,7 @@
 import { NEURO } from '@/constants';
 import { addFileActions } from '@/file_actions';
 import { addEditingActions } from '@/editing';
-import { ActionData } from '@/neuro_client_helper';
+import { ActionData } from '../utils/neuro_client';
 import { addLintActions } from '@/lint_problems';
 import { RCEActionHandler } from '@/rce';
 import { addChangelogActions } from '@/changelog';

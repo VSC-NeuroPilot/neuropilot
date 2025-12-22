@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as vscode from 'vscode';
-import { ActionData } from '../neuro_client_helper';
+import { ActionData } from '../utils/neuro_client';
 
 type ReasonGenerator<T = any> = string | ((actionData: ActionData, data: T) => string);
 

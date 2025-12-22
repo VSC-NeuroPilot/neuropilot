@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 import { lintActions } from '@/lint_problems';
-import { ActionData } from '@/neuro_client_helper';
+import { ActionData } from '../../utils/neuro_client';
 
 // Tests for lint action prompt generators using real logic with loose checks
 suite('lint Actions', () => {

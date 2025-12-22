@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 import { gitActions } from '@/git';
-import { ActionData } from '@/neuro_client_helper';
+import { ActionData } from '../../utils/neuro_client';
 
 // Tests for Git action prompt generators using real logic with loose checks
 suite('git Actions', () => {

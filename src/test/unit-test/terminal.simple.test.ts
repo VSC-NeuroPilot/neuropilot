@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 import { terminalAccessHandlers } from '@/pseudoterminal';
-import { ActionData } from '@/neuro_client_helper';
+import { ActionData } from '../../utils/neuro_client';
 
 // Tests for terminal-related prompt generators using real logic with loose checks
 suite('terminal Actions', () => {

@@ -2,8 +2,8 @@ import * as vscode from 'vscode';
 
 import { NEURO } from '@/constants';
 import { DiffRangeType, escapeRegExp, getDiffRanges, getFence, getPositionContext, getProperty, getVirtualCursor, showDiffRanges, isPathNeuroSafe, logOutput, NeuroPositionContext, setVirtualCursor, simpleFileName, substituteMatch, clearDecorations, formatContext, filterFileContents, positionFromIndex, indexFromPosition } from '@/utils';
-import { ActionData, actionValidationAccept, actionValidationFailure, ActionValidationResult, RCEAction, contextFailure, actionValidationRetry, contextNoAccess } from '@/neuro_client_helper';
-import { CONFIG, CONNECTION } from '@/config';
+import { ActionData, actionValidationAccept, actionValidationFailure, ActionValidationResult, RCEAction, contextFailure, actionValidationRetry, contextNoAccess } from './utils/neuro_client';
+import { CONFIG, CONNECTION } from './config/getters';
 import { createCursorPositionChangedEvent } from '@events/cursor';
 import { RCECancelEvent } from '@events/utils';
 import type { JSONSchema7 } from 'json-schema';

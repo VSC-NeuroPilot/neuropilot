@@ -9,8 +9,8 @@ import { spawn, ChildProcessWithoutNullStreams } from 'node:child_process';
 import { NEURO } from '@/constants';
 import { checkWorkspaceTrust, checkVirtualWorkspace } from '@/utils';
 import { logOutput, delayAsync, getFence } from '@/utils';
-import { ActionData, actionValidationAccept, actionValidationFailure, ActionValidationResult, RCEAction, contextFailure } from '@/neuro_client_helper';
-import { CONFIG } from '@/config';
+import { ActionData, actionValidationAccept, actionValidationFailure, ActionValidationResult, RCEAction, contextFailure } from './utils/neuro_client';
+import { CONFIG } from './config/getters';
 import { notifyOnTerminalClose } from '@events/shells';
 import { addActions } from './rce';
 

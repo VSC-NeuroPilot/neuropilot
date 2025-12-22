@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 
 import { NEURO } from '@/constants';
 import { filterFileContents, logOutput, simpleFileName } from '@/utils';
-import { CONFIG, CONNECTION } from '@/config';
+import { CONFIG, CONNECTION } from './config/getters';
 import assert from 'node:assert';
 
 interface Participant {

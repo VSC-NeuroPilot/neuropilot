@@ -3,7 +3,7 @@ import { addTaskActions } from '@/tasks';
 import { addFileActions } from '@/file_actions';
 import { addGitActions } from '@/git';
 import { addEditingActions } from '@/editing';
-import { ActionData } from '@/neuro_client_helper';
+import { ActionData } from '../utils/neuro_client';
 import { addTerminalActions } from '@/pseudoterminal';
 import { addLintActions } from '@/lint_problems';
 import { RCEActionHandler } from '@/rce';

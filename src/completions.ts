@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import { NEURO } from '@/constants';
 import { logOutput, simpleFileName, getPositionContext } from '@/utils';
 import assert from 'node:assert';
-import { CONFIG } from '@/config';
+import { CONFIG } from './config/getters';
 
 let lastSuggestions: string[] = [];
 

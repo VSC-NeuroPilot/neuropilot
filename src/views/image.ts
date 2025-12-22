@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { NEURO } from '@/constants';
 import { BaseWebviewViewProvider } from './base';
 import { logOutput } from '../utils';
-import { COSMETIC } from '../config';
+import { COSMETIC } from '../config/getters';
 
 export interface ImageData {
     name: string;

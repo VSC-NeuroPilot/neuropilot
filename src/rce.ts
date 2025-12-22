@@ -4,10 +4,10 @@
  */
 
 import * as vscode from 'vscode';
-import { ActionData, RCEAction, stripToAction, RCEHandler } from '@/neuro_client_helper';
+import { ActionData, RCEAction, stripToAction, RCEHandler } from './utils/neuro_client';
 import { NEURO } from '@/constants';
 import { logOutput, notifyOnCaughtException } from '@/utils';
-import { ACTIONS as ACTIONS_CONFIG, CONFIG, CONNECTION, getAllPermissions, getPermissionLevel, PermissionLevel, stringToPermissionLevel } from '@/config';
+import { ACTIONS as ACTIONS_CONFIG, CONFIG, CONNECTION, getAllPermissions, getPermissionLevel, PermissionLevel, stringToPermissionLevel } from './config/getters';
 import { validate } from 'jsonschema';
 import type { RCECancelEvent } from '@events/utils';
 
@@ -536,8 +536,8 @@ export async function RCEActionHandler(actionData: ActionData) {
                 const prompt = (NEURO.currentController
                     ? NEURO.currentController
                     : 'The Neuro API server') +
-                ' wants to ' +
-                (typeof action.promptGenerator === 'string' ? action.promptGenerator : action.promptGenerator(actionData)).trim();
+                    ' wants to ' +
+                    (typeof action.promptGenerator === 'string' ? action.promptGenerator : action.promptGenerator(actionData)).trim();
 
                 createRceRequest(
                     prompt,
@@ -560,7 +560,7 @@ export async function RCEActionHandler(actionData: ActionData) {
                 NEURO.client?.sendActionResult(actionData.id, true, 'Requested permission to run action.');
             }
         }
-    } catch(erm: unknown) {
+    } catch (erm: unknown) {
         const actionName = actionData.name;
         notifyOnCaughtException(actionName, erm);
         NEURO.client?.sendActionResult(actionData.id, true, `An error occurred while executing the action "${actionName}". You can retry if you like, but it may be better to ask Vedal to check what's up.`);

@@ -4,7 +4,7 @@ import { logOutput, createClient, onClientConnected, setVirtualCursor, showAPIMe
 import { completionsProvider, registerCompletionResultHandler } from '@/completions';
 import { giveCookie, sendCurrentFile } from '@/context';
 import { registerChatResponseHandler } from '@/chat';
-import { ACCESS, ACTIONS, checkDeprecatedSettings, CONFIG, CONNECTION, PermissionLevel, setPermissions } from '@/config';
+import { ACCESS, ACTIONS, checkDeprecatedSettings, CONFIG, CONNECTION, PermissionLevel, setPermissions } from '../config/getters';
 import { explainWithNeuro, fixWithNeuro, NeuroCodeActionsProvider, sendDiagnosticsDiff } from '@/lint_problems';
 import { editorChangeHandler, fileSaveListener, moveNeuroCursorHere, toggleSaveAction, workspaceEditHandler } from '@/editing';
 import { emergencyDenyRequests, acceptRceRequest, denyRceRequest, revealRceNotification, clearRceRequest, getActions, reregisterAllActions } from '@/rce';
@@ -13,7 +13,7 @@ import { getGitExtension } from '@/git';
 import { openDocsOnTarget, registerDocsCommands, registerDocsLink } from './docs';
 import { readChangelogAndSendToNeuro } from '@/changelog';
 import { moveCursorEmitterDiposable } from '@events/cursor';
-import { loadIgnoreFiles } from '@/ignore_files_utils';
+import { loadIgnoreFiles } from '../utils/ignore_files';
 import { getWorkspacePath, normalizePath } from '@/utils';
 import { ActionsViewProvider } from '@/views/actions';
 import { ImagesViewProvider } from '../views/image';

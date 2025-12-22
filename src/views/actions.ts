@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { PermissionLevel, setPermissions } from '@/config';
+import { PermissionLevel, setPermissions } from '../config/getters';
 import { BaseWebviewViewProvider } from './base';
 import { getExtendedActionsInfo } from '@/rce';
 import { toTitleCase } from '@/utils';

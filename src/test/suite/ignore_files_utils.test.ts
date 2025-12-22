@@ -8,11 +8,11 @@ import {
     getVisibleFiles,
     loadIgnoreFiles,
     resetIgnoreState,
-} from '../../ignore_files_utils';
+} from '../../utils/ignore_files';
 
 const TEST_IGNORE_FILENAME = '.neuropilotignore';
 
-suite('Ignore Files Utils Integration', function() {
+suite('Ignore Files Utils Integration', function () {
     const workspaceUri = vscode.workspace.workspaceFolders![0].uri;
     const baseDir = workspaceUri.fsPath;
 
@@ -41,7 +41,7 @@ suite('Ignore Files Utils Integration', function() {
         return ignoreUri;
     }
 
-    suiteSetup(async function() {
+    suiteSetup(async function () {
         const config = vscode.workspace.getConfiguration('neuropilot');
         originalInheritSetting = config.get<boolean>('access.inheritFromIgnoreFiles');
         originalIgnoreFilesSetting = config.get<string[]>('access.ignoreFiles');
@@ -50,7 +50,7 @@ suite('Ignore Files Utils Integration', function() {
         await config.update('access.ignoreFiles', [`test_files/${TEST_IGNORE_FILENAME}`], vscode.ConfigurationTarget.Workspace);
     });
 
-    suiteTeardown(async function() {
+    suiteTeardown(async function () {
         const config = vscode.workspace.getConfiguration('neuropilot');
         await config.update('access.inheritFromIgnoreFiles', originalInheritSetting, vscode.ConfigurationTarget.Workspace);
         await config.update('access.ignoreFiles', originalIgnoreFilesSetting, vscode.ConfigurationTarget.Workspace);
@@ -63,7 +63,7 @@ suite('Ignore Files Utils Integration', function() {
         resetIgnoreState();
     });
 
-    setup(async function() {
+    setup(async function () {
         resetIgnoreState([]);
         const testFilesDir = vscode.Uri.joinPath(workspaceUri, 'test_files');
         try {
@@ -74,7 +74,7 @@ suite('Ignore Files Utils Integration', function() {
         await vscode.workspace.fs.createDirectory(testFilesDir);
     });
 
-    test('fastIsItIgnored respects patterns loaded from ignore files', async function() {
+    test('fastIsItIgnored respects patterns loaded from ignore files', async function () {
         await writeIgnoreFile('test_files/ignored\ntest_files/ignored/**\n');
 
         const ignoredDir = await createTestDirectory(['ignored']);
@@ -88,7 +88,7 @@ suite('Ignore Files Utils Integration', function() {
         assert.strictEqual(fastIsItIgnored(visibleFile.fsPath), false, 'Visible file should not be ignored');
     });
 
-    test('fastIsFileIgnored and visibility helpers filter ignored entries', async function() {
+    test('fastIsFileIgnored and visibility helpers filter ignored entries', async function () {
         await writeIgnoreFile('test_files/ignored.txt\n');
 
         const ignoredFile = await createTestFile(['ignored.txt'], 'ignored');
@@ -106,7 +106,7 @@ suite('Ignore Files Utils Integration', function() {
         assert.deepStrictEqual(fastVisible, [visibleFile.fsPath], 'fastIsTheFilesVisible should return only visible paths');
     });
 
-    test('findIgnoredFile locates ignored entries recursively', async function() {
+    test('findIgnoredFile locates ignored entries recursively', async function () {
         await writeIgnoreFile('test_files/nested/ignored\n');
 
         const nestedDir = await createTestDirectory(['nested']);

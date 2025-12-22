@@ -2,8 +2,8 @@ import * as vscode from 'vscode';
 
 import { NEURO } from '@/constants';
 import { getFence, logOutput } from '@/utils';
-import { ActionData, RCEAction } from '@/neuro_client_helper';
-import { PermissionLevel } from '@/config';
+import { ActionData, RCEAction } from './utils/neuro_client';
+import { PermissionLevel } from './config/getters';
 import { addActions } from './rce';
 
 const MEMENTO_KEY = 'lastDeliveredChangelogVersion';

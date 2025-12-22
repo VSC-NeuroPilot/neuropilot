@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import ignore, { Ignore } from 'ignore';
-import { ACCESS } from './config';
-import { isWindows } from './utils';
+import { ACCESS } from '../config/getters';
+import { isWindows } from '../utils';
 
 const ignoreCache = new Map<string, boolean>();
 

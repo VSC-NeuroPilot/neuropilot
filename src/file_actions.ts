@@ -2,8 +2,8 @@ import * as vscode from 'vscode';
 
 import { NEURO } from '@/constants';
 import { formatContext, getFence, getPositionContext, getVirtualCursor, getWorkspacePath, getWorkspaceUri, isBinary, isPathNeuroSafe, logOutput, normalizePath, notifyOnCaughtException, stripTailSlashes } from '@/utils';
-import { ActionData, contextNoAccess, RCEAction, actionValidationFailure, actionValidationAccept, ActionValidationResult } from '@/neuro_client_helper';
-import { CONFIG, PermissionLevel, getPermissionLevel } from '@/config';
+import { ActionData, contextNoAccess, RCEAction, actionValidationFailure, actionValidationAccept, ActionValidationResult } from './utils/neuro_client';
+import { CONFIG, PermissionLevel, getPermissionLevel } from './config/getters';
 import { targetedFileCreatedEvent, targetedFileDeletedEvent } from '@events/files';
 import { RCECancelEvent } from '@events/utils';
 import { addActions } from './rce';

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { RCECancelEvent } from './utils';
-import { CONNECTION } from '../config';
+import { CONNECTION } from '../config/getters';
 
 const _onDidMoveCursor = new vscode.EventEmitter<vscode.Position | null | undefined>();
 const _onDidMoveCursorEvent = _onDidMoveCursor.event;

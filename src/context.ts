@@ -2,9 +2,9 @@ import * as vscode from 'vscode';
 
 import { getFence, logOutput, simpleFileName } from '@/utils';
 import { NEURO } from '@/constants';
-import { CONNECTION, PermissionLevel, getPermissionLevel } from '@/config';
+import { CONNECTION, PermissionLevel, getPermissionLevel } from './config/getters';
 import { addActions, CATEGORY_MISC } from './rce';
-import { ActionData, RCEAction } from './neuro_client_helper';
+import { ActionData, RCEAction } from './utils/neuro_client';
 
 export function sendCurrentFile() {
     const editor = vscode.window.activeTextEditor;

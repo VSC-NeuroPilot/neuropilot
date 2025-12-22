@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
 import { NEURO } from '@/constants';
 import { normalizePath, getWorkspacePath, logOutput, isPathNeuroSafe, getWorkspaceUri } from '@/utils';
-import { CONFIG } from '@/config';
-import { ActionData, actionValidationAccept, actionValidationFailure, ActionValidationResult, RCEAction, contextFailure } from '@/neuro_client_helper';
+import { CONFIG } from './config/getters';
+import { ActionData, actionValidationAccept, actionValidationFailure, ActionValidationResult, RCEAction, contextFailure } from './utils/neuro_client';
 import assert from 'node:assert';
 import { targetedFileLintingResolvedEvent, targetedFolderLintingResolvedEvent, workspaceLintingResolvedEvent } from '@events/linting';
 import { addActions } from './rce';
@@ -120,7 +120,7 @@ export const lintActions = {
                 const diagnostics = vscode.languages.getDiagnostics();
                 const folderDiagnostics = diagnostics.filter(async ([diagUri, diags]) => {
                     return normalizePath(diagUri.fsPath).startsWith(normalizedFolderPath) &&
-                isPathNeuroSafe(diagUri.fsPath) && diags.length > 0;
+                        isPathNeuroSafe(diagUri.fsPath) && diags.length > 0;
                 });
 
                 if (folderDiagnostics.length === 0) return actionValidationFailure(`No linting problems found for folder "${relativeFolder}".`);

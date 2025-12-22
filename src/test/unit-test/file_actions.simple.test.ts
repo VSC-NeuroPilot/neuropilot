@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 import { fileActions } from '@/file_actions';
-import { ActionData } from '@/neuro_client_helper';
+import { ActionData } from '../../utils/neuro_client';
 
 // Tests for file action prompt generators using real logic with loose checks
 suite('file Actions', () => {
