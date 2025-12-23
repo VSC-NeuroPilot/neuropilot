@@ -4,11 +4,13 @@ import globToRegExp from 'glob-to-regexp';
 import { fileTypeFromBuffer } from 'file-type';
 
 import { NEURO } from '@/constants';
-import { ACCESS, CONFIG, CONNECTION, CursorPositionContextStyle, PermissionLevel, setPermissionLevel } from './config/getters';
+import { ACCESS, CONFIG, CONNECTION, CursorPositionContextStyle, PermissionLevel, setPermissionLevel } from '../config/getters';
 
-import { ActionValidationResult, ActionData, actionValidationAccept, actionValidationFailure } from './utils/neuro_client';
+import { fastIsItIgnored } from './ignore_files';
+import { unregisterAllActions } from '../rce';
+import { ActionValidationResult, ActionData, actionValidationAccept, actionValidationFailure } from './neuro_client';
 import assert from 'node:assert';
-import { patienceDiff } from './utils/patience_diff';
+import { patienceDiff } from './patience_diff';
 import { fireCursorPositionChangedEvent } from '@events/cursor';
 
 export const REGEXP_ALWAYS = /^/;
@@ -310,9 +312,6 @@ export function combineGlobLinesToRegExp(lines: string[]): RegExp {
         .join('|');
     return new RegExp(result);
 }
-
-import { fastIsItIgnored } from './utils/ignore_files';
-import { unregisterAllActions } from './rce';
 
 /**
  * Check if an absolute path is safe for Neuro to access.
