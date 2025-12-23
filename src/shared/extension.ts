@@ -4,7 +4,8 @@ import { logOutput, createClient, onClientConnected, setVirtualCursor, showAPIMe
 import { completionsProvider, registerCompletionResultHandler } from '@/completions';
 import { giveCookie, sendCurrentFile } from '@/context';
 import { registerChatResponseHandler } from '@/chat';
-import { ACCESS, ACTIONS, checkDeprecatedSettings, CONFIG, CONNECTION, PermissionLevel, setPermissions } from '../config/getters';
+import { ACCESS, ACTIONS, CONFIG, CONNECTION, PermissionLevel, setPermissions } from '../config/getters';
+import { checkDeprecatedSettings } from '../config/deprecation';
 import { explainWithNeuro, fixWithNeuro, NeuroCodeActionsProvider, sendDiagnosticsDiff } from '@/lint_problems';
 import { editorChangeHandler, fileSaveListener, moveNeuroCursorHere, toggleSaveAction, workspaceEditHandler } from '@/editing';
 import { emergencyDenyRequests, acceptRceRequest, denyRceRequest, revealRceNotification, clearRceRequest, getActions, reregisterAllActions } from '@/rce';
