@@ -839,7 +839,7 @@
 		"esbuild": "^0.27.2",
 		"esbuild-plugin-polyfill-node": "^0.3.0",
 		"eslint": "^9.39.2",
-		"eslint-plugin-unicorn": "^62.0.0",
+		"eslint-plugin-unicorn": "^63.0.0",
 		"glob": "^13.0.0",
 		"globals": "^17.2.0",
 		"husky": "^9.1.7",
