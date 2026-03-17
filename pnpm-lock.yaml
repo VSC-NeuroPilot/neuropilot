@@ -27,8 +27,8 @@ importers:
         specifier: ^1.0.9
         version: 1.0.9(ws@8.18.3)
       preact:
-        specifier: ^10.28.3
-        version: 10.28.3
+        specifier: ^10.29.0
+        version: 10.29.0
     devDependencies:
       '@eslint/js':
         specifier: ^9.39.2
@@ -2507,8 +2507,8 @@ packages:
     resolution: {integrity: sha512-/+5VFTchJDoVj3bhoqi6UeymcD00DAwb1nJwamzPvHEszJ4FpF6SNNbUbOS8yI56qHzdV8eK0qEfOSiodkTdxg==}
     engines: {node: '>= 0.4'}
 
-  preact@10.28.3:
-    resolution: {integrity: sha512-tCmoRkPQLpBeWzpmbhryairGnhW9tKV6c6gr/w+RhoRoKEJwsjzipwp//1oCpGPOchvSLaAPlpcJi9MwMmoPyA==}
+  preact@10.29.0:
+    resolution: {integrity: sha512-wSAGyk2bYR1c7t3SZ3jHcM6xy0lcBcDel6lODcs9ME6Th++Dx2KU+6D3HD8wMMKGA8Wpw7OMd3/4RGzYRpzwRg==}
 
   prebuild-install@7.1.3:
     resolution: {integrity: sha512-8Mf2cbV7x1cXPUILADGI3wuhfqWvtiLA1iclTDbFRZkgRQS0NqsPZphna9V+HyTEadheuPmjaJMsbzKQFOzLug==}
@@ -5835,7 +5835,7 @@ snapshots:
 
   possible-typed-array-names@1.1.0: {}
 
-  preact@10.28.3: {}
+  preact@10.29.0: {}
 
   prebuild-install@7.1.3:
     dependencies:
