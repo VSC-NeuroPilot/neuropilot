@@ -820,7 +820,7 @@
 		"test:desktop:vscode": "vscode-test --coverage --label desktopUnitTest --coverage-output ./coverage-desktop"
 	},
 	"devDependencies": {
-		"@eslint/js": "^9.39.2",
+		"@eslint/js": "^9.39.4",
 		"@stylistic/eslint-plugin": "^5.7.1",
 		"@types/glob-to-regexp": "^0.4.4",
 		"@types/json-schema": "^7.0.15",
