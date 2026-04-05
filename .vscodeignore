@@ -6,6 +6,7 @@ eslint.config.mjs
 tsconfig.json
 **/tsconfig.*.json
 src/
+packages/
 node_modules/
 *.vsix
 **/*.tsbuildinfo
