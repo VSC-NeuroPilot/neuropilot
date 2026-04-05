@@ -4,7 +4,7 @@ import type { RCEContext } from '@/context/rce';
 
 // Tests for the find_text action prompt generator using real logic
 suite('find_text Action', () => {
-    test('generates a prompt and includes escaped find when useRegex is true', () => {
+    test('generates a prompt and includes raw find when useRegex is true', () => {
         // === Arrange & Act ===
         const prompt = editingActions.find_text.promptGenerator({
             data: { params: { find: 'foo(bar)', useRegex: true } },
@@ -12,7 +12,7 @@ suite('find_text Action', () => {
 
         // === Assert ===
         assert.ok(typeof prompt === 'string' && prompt.length > 0);
-        assert.ok(prompt.includes('foo\\(bar\\)'));
+        assert.ok(prompt.includes('foo(bar)'));
     });
 
     test('generates a prompt and includes raw find when useRegex is false', () => {

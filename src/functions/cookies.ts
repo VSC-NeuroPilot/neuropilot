@@ -5,7 +5,7 @@ import { NEURO } from '@/constants';
 import { CONNECTION, PermissionLevel, getPermissionLevel } from '@/config';
 import { addActions, CATEGORY_MISC } from '@/rce';
 import { actionHandlerFailure, actionHandlerSuccess, RCEAction } from '@/utils/neuro_client';
-import { RCEContext, SimplifiedStatusUpdateHandler } from '@context/rce';
+import { RCEContext, SimplifiedStatusUpdateHandler } from '@ctx/rce';
 
 export const REQUEST_COOKIE_ACTION: RCEAction = {
     name: 'request_cookie',

@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { ActionData } from 'neuro-game-sdk';
 
 import { NEURO } from '@/constants';
 import { DiffRangeType, escapeRegExp, getDiffRanges, getFence, getPositionContext, getProperty, getVirtualCursor, showDiffRanges, isPathNeuroSafe, logOutput, setVirtualCursor, simpleFileName, substituteMatch, clearDecorations, formatContext, filterFileContents, positionFromIndex, indexFromPosition, NeuroPositionContext } from '@/utils/misc';
@@ -7,6 +8,7 @@ import { CONFIG, CONNECTION } from '@/config';
 import { createCursorPositionChangedEvent } from '@events/cursor';
 import { RCECancelEvent } from '@events/utils';
 import { addActions, registerAction, unregisterAction } from '@/rce';
+import { createPreviewCursor, createPreviewHighlight } from '@previews/edits';
 import { RCEContext } from '@/context/rce';
 
 export const CATEGORY_EDITING = 'Editing';
@@ -180,6 +182,41 @@ function createLineRangeValidator(path = '') {
     };
 }
 
+/**
+ * Creates a regex validator for the specified key and useKey.
+ * @param key The key in the action parameters that contains the regex pattern to validate.
+ * @param useKey The key in the action parameters that indicates whether the pattern is a regex or not. If the value at this key is false, the validator will skip validating the regex pattern and accept it as valid.
+ * @returns A function that validates the regex pattern in the action data.
+ */
+function validateRegex(key: string, useKey?: string) {
+    return ({ data: actionData }: RCEContext): ActionValidationResult => {
+        const find = getProperty(actionData.params, key) as string | undefined;
+        const useRegex = useKey
+            ? getProperty(actionData.params, useKey) ?? false
+            : true;
+
+        if (find === undefined) {
+            // If it is undefined it is not required
+            return actionValidationAccept();
+        }
+        if (typeof find !== 'string') {
+            // The schema should already catch this, if it doesn't then it's a bug
+            throw new Error(`Expected a string at params.${key}`);
+        }
+        if (!useRegex) return actionValidationAccept();
+        try {
+            // Try to construct a RegExp, if it doesn't throw an error then the regex is valid
+            new RegExp(find);
+            return actionValidationAccept();
+        } catch (erm) {
+            return actionValidationRetry(
+                `The provided regex pattern in "${key}" is invalid: ${erm instanceof Error ? erm.message : String(erm)}`,
+                'Invalid regex pattern provided.',
+            );
+        }
+    };
+}
+
 const cancelOnDidChangeTextDocument = () => new RCECancelEvent({
     reason: 'the active document was changed.',
     events: [
@@ -203,6 +240,66 @@ const commonCancelEventsWithCursor: ((context: RCEContext) => RCECancelEvent)[] 
     createCursorPositionChangedEvent,
 ];
 
+/**
+ * Common function used to show previews for finding-related actions.
+ */
+export function previewFindFunctions(actionData: ActionData, type: 'find' | 'delete' | 'replace'): { dispose: () => unknown } {
+    const lineRange = actionData.params?.lineRange;
+    const highlights: { dispose: () => unknown }[] = [];
+    if (lineRange) {
+        highlights.push(previewLineHighlights(lineRange, `${type} some text in this area. This does not mean all text here will be replaced.`));
+    }
+
+    // TODO: Implement highlighting on text matches? Not sure if this feasible at all.
+    return vscode.Disposable.from(...highlights);
+}
+
+/**
+ * Common function used to create highlighted lines for previews
+ */
+export function previewLineHighlights(lineRange: { startLine: number, endLine: number }, prompt: string) {
+    const editor = vscode.window.activeTextEditor!;
+    const lineRangeHighlight = createPreviewHighlight();
+
+    const startLineIndex = lineRange.startLine - 1;
+    const endLineIndex = lineRange.endLine - 1;
+
+    const startPosition = new vscode.Position(startLineIndex, 0);
+    const endPosition = new vscode.Position(endLineIndex, editor.document.lineAt(endLineIndex).text.length);
+    editor.setDecorations(lineRangeHighlight, [
+        {
+            range: new vscode.Range(startPosition, endPosition),
+            hoverMessage: `(Preview) ${NEURO.currentController} wants to ${prompt}`,
+        },
+    ]);
+
+    return lineRangeHighlight;
+}
+
+/**
+ * Common function used to show previews for cursor movement actions
+ */
+export function previewCursorMovement(positionParam: { line: number, column: number, type: 'absolute' | 'relative' }, prompt: string) {
+    let line = positionParam.line;
+    let column = positionParam.column;
+    if (positionParam.type === 'relative') {
+        const cursor = getVirtualCursor()!;
+        line += cursor.line;
+        column += cursor.character;
+    }
+    else {
+        line -= 1;
+        column -= 1;
+    }
+    const disposable = createPreviewCursor();
+    const position = new vscode.Position(line, column);
+    vscode.window.activeTextEditor!.setDecorations(disposable, [{
+        range: new vscode.Range(position, position),
+        hoverMessage: `(Preview) ${NEURO.currentController} wants to ${prompt}`,
+    }] as const);
+    return disposable;
+}
+
 export const editingActions = {
     move_cursor_position: {
         name: 'move_cursor_position',
@@ -213,6 +310,7 @@ export const editingActions = {
             description: undefined,
         },
         handler: handlePlaceCursor,
+        preview: (context) => previewCursorMovement(context.data.params, 'move her cursor to this position.'),
         validators: {
             sync: [checkCurrentFile, createPositionValidator()],
         },
@@ -252,6 +350,11 @@ export const editingActions = {
             additionalProperties: false,
         },
         handler: handleInsertText,
+        preview: (context) => {
+            const positionParam = context.data.params.position;
+            if (!positionParam) return { dispose: () => { } };
+            else return previewCursorMovement(positionParam, 'insert text at this position.');
+        },
         cancelEvents: [
             ...commonCancelEvents,
             (context: RCEContext) => {
@@ -305,6 +408,32 @@ export const editingActions = {
             required: ['text'],
         },
         handler: handleInsertLines,
+        preview: (context) => {
+            const length = (context.data.params.text as string).split('\n').length;
+            let line: number | undefined = context.data.params.insertUnder;
+            if (!line) {
+                line = getVirtualCursor()!.line;
+            } else {
+                line -= 1;
+            };
+            const editor = vscode.window.activeTextEditor!;
+            const disposable = createPreviewHighlight();
+
+            if (line >= editor.document.lineCount)
+                line = editor.document.lineCount - 1;
+
+            const startPosition = new vscode.Position(line, 0);
+            const endPosition = new vscode.Position(line, editor.document.lineAt(line).text.length);
+
+            editor.setDecorations(disposable, [
+                {
+                    range: new vscode.Range(startPosition, endPosition),
+                    hoverMessage: `(Preview) ${NEURO.currentController} wants to insert ${length} line${length === 1 ? '' : 's'} of text UNDER this line.`,
+                },
+            ] as const);
+
+            return disposable;
+        },
         cancelEvents: [
             ...commonCancelEvents,
             (context: RCEContext) => {
@@ -340,14 +469,15 @@ export const editingActions = {
             required: ['find', 'replaceWith', 'match'],
         },
         handler: handleReplaceText,
+        preview: (context) => previewFindFunctions(context.data, 'replace'),
         cancelEvents: [cancelOnDidChangeActiveTextEditor],
         validators: {
-            sync: [checkCurrentFile, createStringValidator(['find', 'replaceWith']), createLineRangeValidator('lineRange')],
+            sync: [checkCurrentFile, createStringValidator(['find', 'replaceWith']), createLineRangeValidator('lineRange'), validateRegex('find', 'useRegex')],
         },
         promptGenerator: (context: RCEContext) => {
             const actionData = context.data;
             let text = 'replace ';
-            const target = actionData.params.useRegex ? escapeRegExp(actionData.params.find) : actionData.params.find;
+            const target = actionData.params.find;
             switch (actionData.params.match as MatchOptions) {
                 case 'allInFile':
                     text += 'all matches ';
@@ -398,14 +528,15 @@ export const editingActions = {
             additionalProperties: false,
         },
         handler: handleDeleteText,
+        preview: (context) => previewFindFunctions(context.data, 'delete'),
         cancelEvents: [cancelOnDidChangeActiveTextEditor],
         validators: {
-            sync: [checkCurrentFile, createStringValidator(['find']), createLineRangeValidator('lineRange')],
+            sync: [checkCurrentFile, createStringValidator(['find']), createLineRangeValidator('lineRange'), validateRegex('find', 'useRegex')],
         },
         promptGenerator: (context: RCEContext) => {
             const actionData = context.data;
             let text = 'delete ';
-            const target = actionData.params.useRegex ? escapeRegExp(actionData.params.find) : actionData.params.find;
+            const target = actionData.params.find;
             switch (actionData.params.match as MatchOptions) {
                 case 'allInFile':
                     text += 'all matches ';
@@ -462,14 +593,15 @@ export const editingActions = {
             additionalProperties: false,
         },
         handler: handleFindText,
+        preview: (context) => previewFindFunctions(context.data, 'find'),
         cancelEvents: [cancelOnDidChangeActiveTextEditor],
         validators: {
-            sync: [checkCurrentFile, createStringValidator(['find']), createLineRangeValidator('lineRange')],
+            sync: [checkCurrentFile, createStringValidator(['find']), createLineRangeValidator('lineRange'), validateRegex('find', 'useRegex')],
         },
         promptGenerator: (context: RCEContext) => {
             const actionData = context.data;
             let text = 'find ';
-            const target = actionData.params.useRegex ? escapeRegExp(actionData.params.find) : actionData.params.find;
+            const target = actionData.params.find;
             if (actionData.params.highlight) text += 'and highlight ';
             switch (actionData.params.match as MatchOptions) {
                 case 'allInFile':
@@ -553,6 +685,21 @@ export const editingActions = {
             additionalProperties: false,
         },
         handler: handleRewriteAll,
+        preview: () => {
+            const editor = vscode.window.activeTextEditor!;
+            const fullRange = new vscode.Range(
+                new vscode.Position(0, 0),
+                editor.document.lineAt(editor.document.lineCount - 1).range.end,
+            );
+            const highlight = createPreviewHighlight();
+            editor.setDecorations(highlight, [
+                {
+                    range: fullRange,
+                    hoverMessage: `(Preview) ${NEURO.currentController} wants to rewrite this entire file. Good luck!`,
+                },
+            ]);
+            return highlight;
+        },
         cancelEvents: [cancelOnDidChangeActiveTextEditor],
         validators: {
             sync: [checkCurrentFile, createStringValidator(['content'])],
@@ -579,6 +726,7 @@ export const editingActions = {
             additionalProperties: false,
         },
         handler: handleRewriteLines,
+        preview: (context) => previewLineHighlights(context.data.params, 'rewrite these lines.'),
         cancelEvents: commonCancelEvents,
         validators: {
             sync: [checkCurrentFile, createLineRangeValidator(), createStringValidator(['content'])],
@@ -597,6 +745,7 @@ export const editingActions = {
         category: CATEGORY_EDITING,
         schema: LINE_RANGE_SCHEMA,
         handler: handleDeleteLines,
+        preview: (context) => previewLineHighlights(context.data.params, 'delete these lines.'),
         cancelEvents: commonCancelEvents,
         validators: {
             sync: [checkCurrentFile, createLineRangeValidator()],
@@ -626,6 +775,7 @@ export const editingActions = {
             + ' This will not move your own cursor.',
         category: CATEGORY_EDITING,
         handler: handleGetUserSelection,
+        // No preview effect needed, intended preview effect is the user cursor
         validators: {
             sync: [checkCurrentFile],
         },
@@ -647,6 +797,7 @@ export const editingActions = {
             required: ['content', 'requireSelectionUnchanged'],
         },
         handler: handleReplaceUserSelection,
+        // No preview effect needed, intended preview effect is the highlighted text
         cancelEvents: [
             ...commonCancelEvents,
             (context: RCEContext) => {
@@ -707,6 +858,7 @@ export const editingActions = {
             additionalProperties: false,
         },
         handler: handleDiffPatch,
+        // TODO: I'm not sure if or how this action would have a preview effect, like would it work if a big highlight range was added to the targted text?
         validators: {
             sync: [checkCurrentFile, (context: RCEContext) => {
                 const patch = parseDiffPatch(context.data.params.diff);
@@ -824,9 +976,6 @@ export function handleGetCursor(): RCEHandlerReturns {
     const relativePath = vscode.workspace.asRelativePath(document.uri);
     logOutput('INFO', `Sending cursor position to ${NEURO.currentController}`);
 
-    let cursorStyle = CONFIG.cursorPositionContextStyle;
-    if (cursorStyle === 'off')
-        cursorStyle = 'lineAndColumn';
     return actionHandlerSuccess(`In file ${relativePath}.\n\n${formatContext(cursorContext)}`, `Retrieved cursor at line ${cursorPosition.line + 1}, column ${cursorPosition.character + 1}`);
 }
 
@@ -952,7 +1101,7 @@ export function handleReplaceText(context: RCEContext): RCEHandlerReturns {
     }
 
     const originalText = filterFileContents(document.getText());
-    const regex = new RegExp(useRegex ? find : escapeRegExp(find), 'g');
+    const regex = new RegExp(useRegex ? find : escapeRegExp(find), 'gm');
     const cursorOffset = indexFromPosition(originalText, getVirtualCursor()!);
 
     const matches = findAndFilter(regex, originalText, cursorOffset, match, lineRange);
@@ -1016,7 +1165,7 @@ export function handleDeleteText(context: RCEContext): RCEHandlerReturns {
 
     const originalText = filterFileContents(document.getText());
 
-    const regex = new RegExp(useRegex ? find : escapeRegExp(find), 'g');
+    const regex = new RegExp(useRegex ? find : escapeRegExp(find), 'gm');
     const cursorOffset = indexFromPosition(originalText, getVirtualCursor()!);
 
     const matches = findAndFilter(regex, originalText, cursorOffset, match, lineRange);
@@ -1065,7 +1214,7 @@ export function handleFindText(context: RCEContext): RCEHandlerReturns {
     const match: MatchOptions = actionData.params.match;
     const useRegex: boolean = actionData.params.useRegex ?? false;
     const lineRange: LineRange | undefined = actionData.params.lineRange;
-    const moveCursor: 'before' | 'after' = actionData.params.moveCursor ?? 'after';
+    const moveCursor: 'start' | 'end' = actionData.params.moveCursor ?? 'start';
     const highlight: boolean = actionData.params.highlight ?? false;
 
     const document = vscode.window.activeTextEditor?.document;
@@ -1078,7 +1227,7 @@ export function handleFindText(context: RCEContext): RCEHandlerReturns {
 
     const documentText = filterFileContents(document.getText());
 
-    const regex = new RegExp(useRegex ? find : escapeRegExp(find), 'g');
+    const regex = new RegExp(useRegex ? find : escapeRegExp(find), 'gm');
     const cursorOffset = indexFromPosition(documentText, getVirtualCursor()!);
 
     const matches = findAndFilter(regex, documentText, cursorOffset, match, lineRange);
@@ -1090,7 +1239,7 @@ export function handleFindText(context: RCEContext): RCEHandlerReturns {
         // Single match
         const startPosition = positionFromIndex(documentText, matches[0].index);
         const endPosition = positionFromIndex(documentText, matches[0].index + matches[0][0].length);
-        setVirtualCursor(moveCursor === 'before' ? startPosition : endPosition);
+        if (actionData.params?.moveCursor) setVirtualCursor(moveCursor === 'start' ? startPosition : endPosition);
         if (highlight) {
             const range = new vscode.Range(startPosition, endPosition);
             vscode.window.activeTextEditor!.setDecorations(NEURO.highlightDecorationType!, [{
@@ -1101,7 +1250,7 @@ export function handleFindText(context: RCEContext): RCEHandlerReturns {
         }
         const cursorContext = getPositionContext(document, startPosition);
         logOutput('INFO', `Placed cursor at (${endPosition.line + 1}:${endPosition.character + 1})`);
-        return actionHandlerSuccess(`Found match and placed your cursor at (${endPosition.line + 1}:${endPosition.character + 1})\n\n${formatContext(cursorContext)}`, 'Found 1 match');
+        return actionHandlerSuccess(`Found match ${actionData.params?.moveCursor ? 'and placed your cursor ' : ''}at (${endPosition.line + 1}:${endPosition.character + 1})\n\n${formatContext(cursorContext)}`, 'Found 1 match');
     }
     else {
         // Multiple matches
@@ -1137,7 +1286,7 @@ export function handleUndo(): RCEHandlerReturns {
 
     return vscode.commands.executeCommand('undo').then(
         () => {
-            logOutput('INFO', 'Undoing last action in document');
+            logOutput('INFO', 'Undoing last edit in document');
             // We don't keep track of the virtual cursor position in the undo stack, so we reset it to the real cursor position
             const cursorContext = getPositionContext(document, vscode.window.activeTextEditor!.selection.active);
             setVirtualCursor(vscode.window.activeTextEditor!.selection.active);
@@ -1829,7 +1978,7 @@ function countLineDifferences(search: string, replace: string): {
     const linesAdded = replaceLines.length;
 
     // Generate description
-    let description;
+    let description: string;
 
     if (linesAdded === 0 && linesRemoved === 0) {
         description = 'no changes';

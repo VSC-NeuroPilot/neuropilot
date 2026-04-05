@@ -2,6 +2,7 @@
 out
 node_modules
 media/codicons
+package-lock.json
 
 # VS Code
 .vscode-test/

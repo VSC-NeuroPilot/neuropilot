@@ -1080,3 +1080,79 @@ export function isWindows(): boolean {
 export function isThenable<T = unknown>(obj: T | Thenable<T>): boolean {
     return typeof obj === 'object' && obj !== null && 'then' in obj && typeof obj.then === 'function';
 }
+
+/**
+ * Hex to RGBA converter
+ * @param hex A hex string that represents the colour
+ * @returns An object with the RGBA value derived from the hex.
+ */
+export function hexToRgba(hex: string): { r: number; g: number; b: number; a: number } {
+    let h = hex.replace('#', '').trim();
+
+    if (![3, 4, 6, 8].includes(h.length)) {
+        throw new Error(`Invalid hex color: ${hex}`);
+    }
+
+    // Validate that all characters are valid hexadecimal digits
+    if (!/^[0-9a-fA-F]+$/.test(h)) {
+        throw new Error(`Invalid hex color: ${hex}`);
+    }
+
+    // Expand shorthand forms (#RGB, #RGBA)
+    if (h.length === 3 || h.length === 4) {
+        h = h.split('').map(c => c + c).join('');
+    }
+
+    const r = parseInt(h.slice(0, 2), 16);
+    const g = parseInt(h.slice(2, 4), 16);
+    const b = parseInt(h.slice(4, 6), 16);
+    const a = h.length === 8 ? parseInt(h.slice(6, 8), 16) / 255 : 1;
+
+    // Safety check for NaN values (shouldn't happen after validation)
+    if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b) || Number.isNaN(a)) {
+        throw new Error(`Invalid hex color: ${hex}`);
+    }
+
+    return { r, g, b, a };
+}
+
+/**
+ * RGB(A) to hex converter
+ * @param r Red value
+ * @param g Green value
+ * @param b Blue value
+ * @param a Alpha value, 1 if omitted.
+ * @returns A hex string representation of the provided RGBA inputs.
+ */
+export function rgbaToHex(r: number, g: number, b: number, a?: number): string {
+    const clampInt = (v: number) => {
+        if (!isFinite(v) || Number.isNaN(v)) v = 0;
+        v = Math.round(v);
+        return Math.max(0, Math.min(255, v));
+    };
+
+    const normalizeAlpha = (v: number | undefined): number => {
+        if (v === undefined || v === null) return 1; // default opaque for normalization
+        if (!isFinite(v) || Number.isNaN(v)) return 1;
+        let alpha = Number(v);
+        if (alpha > 1) alpha = alpha / 255; // interpret as 0..255
+        alpha = Math.max(0, Math.min(1, alpha));
+        return alpha;
+    };
+
+    const rr = clampInt(r);
+    const gg = clampInt(g);
+    const bb = clampInt(b);
+
+    const toHex2 = (n: number) => n.toString(16).padStart(2, '0');
+
+    const base = `#${toHex2(rr)}${toHex2(gg)}${toHex2(bb)}`;
+
+    // If alpha was not provided at all, omit alpha byte.
+    if (arguments.length < 4) return base;
+
+    // alpha was provided (even if 1) — include alpha byte.
+    const alpha = normalizeAlpha(a);
+    const aByte = Math.round(alpha * 255);
+    return `${base}${toHex2(aByte)}`;
+}

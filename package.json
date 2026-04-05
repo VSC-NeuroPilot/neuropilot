@@ -4,7 +4,7 @@
 	"private": true,
 	"description": "Allows Neuro-sama to either act as a companion/copilot or control Visual Studio Code by herself.",
 	"icon": "assets/heart-xaendril.png",
-	"version": "2.4.1",
+	"version": "2.4.4",
 	"publisher": "VSC-NeuroPilot",
 	"repository": "https://github.com/VSC-NeuroPilot/neuropilot",
 	"homepage": "https://vsc-neuropilot.github.io/neuropilot",
@@ -677,6 +677,11 @@
 						"default": true,
 						"markdownDescription": "Whether to enable cancellation events for RCE. See [this docs page](https://vsc-neuropilot.github.io/docs/references/rce#cancellation-events)."
 					},
+					"neuropilot.actions.disablePreviewEffects": {
+						"type": "boolean",
+						"default": false,
+						"markdownDescription": "Whether to disable preview effects for RCE. Preview effects allow certain actions to display a visual of the action's potential effect."
+					},
 					"neuropilot.actions.experimentalSchemas": {
 						"type": "boolean",
 						"default": true,
@@ -711,7 +716,7 @@
 			]
 		},
 		"viewsContainers": {
-			"secondarySidebar": [
+			"activitybar": [
 				{
 					"id": "neuropilot",
 					"title": "NeuroPilot",
@@ -750,7 +755,17 @@
 					"visibility": "collapsed"
 				}
 			]
-		}
+		},
+		"colors": [
+			{
+				"id": "neuropilot.filePreviewEffectsColour",
+				"description": "Colour theme for filesystem-based preview effects (e.g. file actions, lint actions, etc)",
+				"defaults": {
+					"light": "#0066ff",
+					"dark": "#00e1ff"
+				}
+			}
+		]
 	},
 	"capabilities": {
 		"virtualWorkspaces": {
@@ -826,7 +841,7 @@
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
 		"@rolldown/plugin-node-polyfills": "^1.0.3",
-		"@stylistic/eslint-plugin": "^5.9.0",
+		"@stylistic/eslint-plugin": "^5.10.0",
 		"@types/glob-to-regexp": "^0.4.4",
 		"@types/json-schema": "^7.0.15",
 		"@types/mocha": "^10.0.10",
@@ -836,17 +851,17 @@
 		"@types/ws": "^8.18.0",
 		"@vscode/test-cli": "^0.0.12",
 		"@vscode/test-electron": "^2.5.2",
-		"@vscode/test-web": "^0.0.79",
+		"@vscode/test-web": "^0.0.80",
 		"@vscode/vsce": "^3.7.1",
 		"ansis": "^4.2.0",
 		"baseline-browser-mapping": "^2.10.0",
 		"cross-env": "^10.1.0",
-		"esbuild": "^0.27.3",
+		"esbuild": "^0.27.4",
 		"esbuild-plugin-polyfill-node": "^0.3.0",
-		"eslint": "^10.0.1",
-		"eslint-plugin-jsdoc": "^62.5.5",
+		"eslint": "^10.1.0",
+		"eslint-plugin-jsdoc": "^62.8.0",
 		"eslint-plugin-unicorn": "^63.0.0",
-		"globals": "^17.3.0",
+		"globals": "^17.4.0",
 		"husky": "^9.1.7",
 		"mocha": "^11.7.5",
 		"npm-run-all2": "^8.0.4",
@@ -859,16 +874,16 @@
 		"ts-mockito": "^2.6.1",
 		"tsx": "^4.21.0",
 		"typescript": "^5.9.3",
-		"typescript-eslint": "^8.56.0",
+		"typescript-eslint": "^8.57.1",
 		"yaml": "^2.8.2"
 	},
 	"dependencies": {
-		"@vscode/codicons": "^0.0.44",
-		"file-type": "^21.3.0",
+		"@vscode/codicons": "^0.0.45",
+		"file-type": "^21.3.3",
 		"glob-to-regexp": "^0.4.1",
 		"ignore": "^7.0.5",
 		"jsonschema": "^1.5.0",
 		"neuro-game-sdk": "^1.0.10",
-		"preact": "^10.28.4"
+		"preact": "^10.29.0"
 	}
 }

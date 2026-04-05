@@ -35,8 +35,8 @@ export interface RCERequestState {
  * 3. Cancel events setup
  * 4. Prompt Generator
  * 5. Preview effects
- * ?? Some arbitrary time in between here, event listeners for cancel events may also be fired, and the predicate will receive the context object as well.
- * 6. Handler
+ * 6. Some arbitrary time in between here, event listeners for cancel events may also be fired, and the predicate will receive the context object as well.
+ * 7. Handler
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class RCEContext<T extends JSONSchema7Object | undefined = any, K = any> extends Disposable {
@@ -45,7 +45,7 @@ export class RCEContext<T extends JSONSchema7Object | undefined = any, K = any> 
     createdAt: string = new Date().toLocaleTimeString();
 
     data: ActionData<T>;
-    action: RCEAction<K>;
+    action: RCEAction<T, K>;
     readonly forced: boolean;
 
     /** Lifecycle-specific data */

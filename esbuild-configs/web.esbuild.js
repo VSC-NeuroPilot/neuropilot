@@ -9,7 +9,7 @@ import { esbuildProblemMatcherPlugin } from './plugins.js';
  */
 export async function web(prodFlag, watchFlag) {
     const ctx = await context({
-        entryPoints: ['src/in/web/extension.ts'],
+        entryPoints: ['src/in/extension.web.ts'],
         bundle: true,
         format: 'cjs',
         minify: prodFlag,

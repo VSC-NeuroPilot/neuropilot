@@ -17,6 +17,8 @@ import { getWorkspacePath, normalizePath } from '@/utils/misc';
 import { ActionsViewProvider } from '@/views/actions';
 import { ImagesViewProvider } from '@/views/image';
 import { ExecuteViewProvider, addCustomExecutionHistoryItem } from '@/views/execute';
+import { actionsEventEmitterDisposable } from '@events/actions';
+import { filePreviewProvider } from '@previews/files';
 
 // Shared commands
 export function registerCommonCommands() {
@@ -118,7 +120,12 @@ export function initializeCommonState(context: vscode.ExtensionContext) {
     NEURO.currentActionForce = null;
     NEURO.outputChannel = vscode.window.createOutputChannel('NeuroPilot');
     NEURO.currentController = CONNECTION.nameOfAPI;
-    NEURO.context.subscriptions.push(NEURO.outputChannel);
+    NEURO.context.subscriptions.push(
+        NEURO.outputChannel,
+        actionsEventEmitterDisposable,
+        vscode.window.registerFileDecorationProvider(filePreviewProvider),
+        filePreviewProvider,
+    );
     checkDeprecatedSettings(context.extension.packageJSON.version as string);
 }
 

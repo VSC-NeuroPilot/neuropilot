@@ -7,7 +7,7 @@ export const docsOptions: Record<string, string> = {
     'NeuroPilot': CONFIG.docsURL,
     'NeuroPilot (Local Dev Default)': 'http://127.0.0.1:4321/docs',
 };
-export let docsItems: string[] = Object.keys(docsOptions);
+let docsItems: string[] = Object.keys(docsOptions);
 
 export function registerDocsLink(name: string, link: string) {
     docsOptions[name] = link;

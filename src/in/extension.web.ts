@@ -1,6 +1,4 @@
 import * as vscode from 'vscode';
-import { handleTerminateTask, reloadTasks, taskEndedHandler } from '@/tasks';
-import { emergencyTerminalShutdown } from '@/pseudoterminal';
 import { isPathNeuroSafe, setVirtualCursor, normalizePath, getWorkspacePath } from '@/utils/misc';
 import { NEURO } from '@/constants';
 import {
@@ -12,21 +10,18 @@ import {
     createStatusBarItem,
     deactivate as commonDeactivate,
     getCursorDecorationRenderOptions,
-    getDiffAddedDecorationRenderOptions,
     getDiffRemovedDecorationRenderOptions,
     getDiffModifiedDecorationRenderOptions,
-    obtainExtensionState,
+    getDiffAddedDecorationRenderOptions,
     reloadPermissions,
     getHighlightDecorationRenderOptions,
     showUpdateReminder,
     startupCreateClient,
-} from '../shared/extension';
-import { registerChatParticipant } from '@/chat';
-import { addUnsupervisedActions } from './unsupervised';
-import { registerUnsupervisedHandlers } from '@entry/shared/unsupervised';
+} from './shared/extension';
+import { addCommonUnsupervisedActions, registerUnsupervisedHandlers } from '@entry/shared/unsupervised';
 import { registerSendSelectionToNeuro } from '@/editing';
 import { loadIgnoreFiles } from '@/utils/ignore_files';
-import { reregisterAllActions } from '../../rce';
+import { reregisterAllActions } from '../rce';
 
 export function activate(context: vscode.ExtensionContext) {
     loadIgnoreFiles(
@@ -35,13 +30,13 @@ export function activate(context: vscode.ExtensionContext) {
         ) || '',
     );
 
-    // Initialize common state
-    initializeCommonState(context);
-
     // Show update reminder if version changed
     showUpdateReminder(context);
 
-    vscode.commands.registerCommand('neuropilot.reloadPermissions', reloadDesktopPermissions);
+    // Initialize common state
+    initializeCommonState(context);
+
+    vscode.commands.registerCommand('neuropilot.reloadPermissions', reloadWebPermissions);
 
     // Add actions to the registry
     addUnsupervisedActions();
@@ -55,25 +50,23 @@ export function activate(context: vscode.ExtensionContext) {
     // Setup event handlers
     NEURO.context!.subscriptions.push(...setupCommonEventHandlers());
 
-    // Desktop-specific handlers
-    NEURO.context!.subscriptions.push(vscode.tasks.onDidEndTask(taskEndedHandler));
-
-    // Chat participant (desktop-specific setup)
-    registerChatParticipant();
-
     // Setup client connected handlers
-    setupClientConnectedHandlers(reloadTasks, () => reregisterAllActions(false), registerUnsupervisedHandlers); // reloadTasks added to set it up at the same time
+    setupClientConnectedHandlers(() => reregisterAllActions(false), registerUnsupervisedHandlers);
 
     // Create status bar item
     createStatusBarItem();
 
-    // Extension state (delaying this by 5000ms so that the git extension has some time to activate)
-    setTimeout(obtainExtensionState, 5000);
+    // The "Send selection to Neuro" feature requires both a command and a code action provider.
+    // To keep related logic together and allow easy registration in both desktop and web, it is encapsulated
+    // in registerSendSelectionToNeuro instead of being registered inline like most single commands.
+    registerSendSelectionToNeuro(context);
+
+    // We don't obtain extension state here automatically
 
     // Create client
     startupCreateClient();
 
-    // Create cursor decoration (desktop-specific)
+    // Create cursor decoration (web-specific)
     NEURO.cursorDecorationType = vscode.window.createTextEditorDecorationType(getCursorDecorationRenderOptions());
     NEURO.diffAddedDecorationType = vscode.window.createTextEditorDecorationType(getDiffAddedDecorationRenderOptions());
     NEURO.diffRemovedDecorationType = vscode.window.createTextEditorDecorationType(getDiffRemovedDecorationRenderOptions());
@@ -84,19 +77,16 @@ export function activate(context: vscode.ExtensionContext) {
     if (vscode.window.activeTextEditor && isPathNeuroSafe(vscode.window.activeTextEditor.document.fileName)) {
         setVirtualCursor(vscode.window.activeTextEditor.selection.active);
     }
-
-    // The "Send selection to Neuro" feature requires both a command and a code action provider.
-    // To keep related logic together and allow easy registration in both desktop and web, it is encapsulated
-    // in registerSendSelectionToNeuro instead of being registered inline like most single commands.
-    registerSendSelectionToNeuro(context);
 }
 
 export function deactivate() {
-    emergencyTerminalShutdown();
-    handleTerminateTask();
     commonDeactivate();
 }
 
-function reloadDesktopPermissions() {
-    reloadPermissions(reloadTasks, () => reregisterAllActions(false));
+function reloadWebPermissions() {
+    reloadPermissions(() => reregisterAllActions(false));
+}
+
+function addUnsupervisedActions() {
+    addCommonUnsupervisedActions();
 }

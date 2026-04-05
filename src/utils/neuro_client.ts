@@ -7,16 +7,17 @@ import { ACTIONS, Permission, PermissionLevel } from '@/config';
 import { logOutput, OutputTag, turtleSafari } from '@/utils/misc';
 import { PromptGenerator } from '@/rce';
 import { RCECancelEvent } from '@events/utils';
-import type { RCEContext } from '@context/rce';
+import type { RCEContext } from '@ctx/rce';
 
 import type { NeuroClient } from 'neuro-game-sdk';
 import type { reregisterAllActions } from '@/rce';
+import type { JSONSchema7Object } from 'json-schema';
 
 //#region Action force utils
 
 /**
  * The parameters for forcing actions.
- * @see {@link NeuroClient.forceActions} for field documentation.
+ * @see {@link NeuroClient['forceActions']} for most field documentation.
  */
 export interface ActionForceParams {
     state?: string;
@@ -45,7 +46,7 @@ export interface ActionForceParams {
  * You may optionally type the interface if you are sure the action will take a specific form.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export interface RCEAction<T = any> extends Action {
+export interface RCEAction<T extends JSONSchema7Object | undefined = any, E = any> extends Action {
     /** 
      * A human-friendly name for the action. If not provided, the action's name converted to Title Case will be used. 
      * @example Edit File
@@ -67,16 +68,16 @@ export interface RCEAction<T = any> extends Action {
          * Synchronous validators that will block execution of the rest of the thread.
          * As this delays the action result to Neuro, any promises must resolve quickly so as to be effectively synchronous speed-wise. 
          * 
-         * If you supply validators that ensure certain items are not nullable, you may be able to assert that they are a non-nullable value for {@link RCEAction.promptGenerator generating the Copilot-mode prompt} and/or {@link RCEAction.preview preview effects}.
+         * Tip: If you supply validators that ensure certain items are not nullable, you may be able to assert that they are a non-nullable value for {@link RCEAction.promptGenerator generating the Copilot-mode prompt}, {@link RCEAction.preview preview effects} and/or {@link RCEAction.handler handling the action}.
          */
-        sync?: ((context: RCEContext) => ActionValidationResult | Promise<ActionValidationResult>)[],
+        sync?: ((context: RCEContext<T, E>) => ActionValidationResult | Promise<ActionValidationResult>)[],
         /**
          * Asynchronous validators that will be ran in parallel to each other.
          * These will be executed after an action result, so it's perfect for long-running validators.
          * 
          * Async validators will time out (and consequently fail) after 1 second (1000ms). It is planned that this value will be adjustable in the future.
          */
-        async?: ((context: RCEContext) => Promise<ActionValidationResult>)[];
+        async?: ((context: RCEContext<T, E>) => Promise<ActionValidationResult>)[];
     }
     /**
      * Cancellation events attached to the action that will be automatically set up.
@@ -86,7 +87,7 @@ export interface RCEAction<T = any> extends Action {
      * Following VS Code's pattern, Disposables will not be awaited if async.
      * Returns from calling the `dispose()` function will not be used anywhere.
      */
-    cancelEvents?: ((context: RCEContext) => RCECancelEvent<T> | null)[];
+    cancelEvents?: ((context: RCEContext<T, E>) => RCECancelEvent<E> | null)[];
     /**
      * A function that is used to preview the action's effects.
      * This function will be called while awaiting user approval, if the action is set to Copilot permission.
@@ -95,16 +96,15 @@ export interface RCEAction<T = any> extends Action {
      * If your preview function does not require a dispose function to be called, return a no-op Disposable-like.
      * @example return { dispose: () => undefined } // for no-ops
      */
-    // The type must be `any`, using `never` causes it to return type errors. 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    preview?: (context: RCEContext) => { dispose: () => any };
+    preview?: (context: RCEContext<T, E>) => { dispose: () => unknown };
     /** 
      * The function to handle the action.
      * This function must be synchronous.
      * 
-     * You may return `undefined` or void returning in the event your handler requires an asynchronous action. If this happens, you MUST send Neuro the action's results as context when it comes in.
+     * An action result can be sent as either a synchronous result or asynchronous result, it will automatically be handled by RCE.
+     * (see {@link RCEHandlerReturns})
      */
-    handler: RCEHandler;
+    handler: RCEHandler<T, E>;
     /** 
      * The function to generate a prompt for the action request (Copilot Mode). 
      * The prompt should fit the phrasing scheme "Neuro wants to [prompt]".
@@ -114,7 +114,7 @@ export interface RCEAction<T = any> extends Action {
      * It is this way due to a potential new addition in Neuro API "v2". (not officially proposed)
      * More info (comment): https://github.com/VedalAI/neuro-game-sdk/discussions/58#discussioncomment-12938623
      */
-    promptGenerator: PromptGenerator | null;
+    promptGenerator: PromptGenerator<T, E> | null;
     /** Default permission for actions when no permission is configured in user or workspace settings. Defaults to {@link PermissionLevel.OFF}. */
     defaultPermission?: PermissionLevel;
     /**
@@ -131,7 +131,7 @@ export interface RCEAction<T = any> extends Action {
     autoRegister?: boolean;
     /**
      * Whether the action should be hidden in the action permissions view.
-     * For actions that are exclusively used in action forces.
+     * Usually meant for actions that are exclusively used in action forces.
      */
     hidden?: boolean;
     /** A condition that must be true for the action to be registered. If not provided, the action is always registered. **This function must never throw.** */
@@ -142,10 +142,14 @@ export interface RCEAction<T = any> extends Action {
      * 
      * These functions will be parallelised, so the same key should not be accessed from multiple functions.
      */
-    contextSetupHook?: ((context: RCEContext) => Thenable<void>)[];
+    contextSetupHook?: ((context: RCEContext<T, E>) => Thenable<void>)[];
 }
 
-type RCEHandler = (context: RCEContext) => RCEHandlerReturns;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type RCEHandler<T extends JSONSchema7Object | undefined, E = any> = (context: RCEContext<T, E>) => RCEHandlerReturns;
+/**
+ * The possible values that an RCE handler can return.
+ */
 export type RCEHandlerReturns = ActionHandlerResult | Thenable<ActionHandlerResult>;
 
 /**
@@ -236,22 +240,6 @@ export function actionValidationFailure(message: string, historyNote?: string): 
 }
 
 /**
- * Create a context message that tells Neuro that the action failed and logs this.
- * Also logs the message to the console.
- * Note that this does not send the context message.
- * @param message The message to format.
- * @param tag The tag to use for the log output.
- * This should explain, if possible, why the action failed.
- * If omitted, will just return "Action failed.".
- * @returns A context message with the specified message.
- */
-export function contextFailure(message?: string, tag: OutputTag = 'WARNING'): string {
-    const result = message !== undefined ? `Action failed: ${message}` : 'Action failed.';
-    logOutput(tag, result);
-    return result;
-}
-
-/**
  * Create an action result that tells Neuro to retry the forced action.
  * @param message The message to send to Neuro.
  * This should contain the information required to fix the mistake.
@@ -325,7 +313,7 @@ export function actionHandlerRetry(message: string, historyNote?: string): Actio
 
 //#endregion
 
-//#region Old validation result functions
+//#region Old validation/handler result helpers
 
 /**
  * Create an action result that tells Neuro that a required parameter is missing.
@@ -371,6 +359,7 @@ export function actionValidationNoPermission(permission: Permission): ActionVali
  * Note that this does not send the context message.
  * @param path The path that was attempted to be accessed.
  * @returns A context message pointing out the missing permission.
+ * @deprecated Should now be handled by validators.
  */
 export function contextNoAccess(path: string): string {
     logOutput('WARNING', `Action failed: Neuro attempted to access "${path}", but permission is disabled.`);
@@ -386,6 +375,23 @@ export function actionResultEnumFailure<T>(parameterName: string, validValues: T
         success: false,
         message: `Action failed: "${parameterName}" must be one of ${JSON.stringify(validValues)}, but got ${JSON.stringify(value)}.`,
     };
+}
+
+/**
+ * Create a context message that tells Neuro that the action failed and logs this.
+ * Also logs the message to the console.
+ * Note that this does not send the context message.
+ * @param message The message to format.
+ * @param tag The tag to use for the log output.
+ * This should explain, if possible, why the action failed.
+ * If omitted, will just return "Action failed.".
+ * @returns A context message with the specified message.
+ * @deprecated Action handlers can now be async, and RCE will handle  it properly.
+ */
+export function contextFailure(message?: string, tag: OutputTag = 'WARNING'): string {
+    const result = message !== undefined ? `Action failed: ${message}` : 'Action failed.';
+    logOutput(tag, result);
+    return result;
 }
 
 //#endregion

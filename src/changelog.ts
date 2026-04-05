@@ -5,7 +5,7 @@ import { getFence, logOutput } from '@/utils/misc';
 import { actionHandlerFailure, ActionHandlerResult, actionHandlerSuccess, RCEAction } from '@/utils/neuro_client';
 import { CONNECTION, PermissionLevel } from '@/config';
 import { addActions, CATEGORY_MISC } from './rce';
-import { RCEContext } from '@context/rce';
+import { RCEContext } from '@ctx/rce';
 
 const MEMENTO_KEY = 'lastDeliveredChangelogVersion';
 

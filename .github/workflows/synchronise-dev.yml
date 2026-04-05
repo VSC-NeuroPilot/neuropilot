@@ -1,0 +1,29 @@
+name: Synchronise dev branch
+on:
+    push:
+        branches:
+            - master
+    workflow_dispatch:
+
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    sync:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repo
+              uses: actions/checkout@v6
+              with:
+                  ref: 'master'
+                  fetch-depth: 0
+            
+            - name: Merge
+              run: |
+                git config set user.name "GitHub Actions"
+                git config set user.email actions@github.com
+                git fetch
+                git switch dev
+                git merge master -m 'Synchronise changes with `master` from ${{ github.repositoryUrl }} with `dev`'
+                git push

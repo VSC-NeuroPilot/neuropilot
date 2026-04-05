@@ -1,0 +1,9 @@
+{
+    "$schema": "./cmp.schema.json",
+    "name": "axios maintainer compromise",
+    "date": "2026-03-30",
+    "packages": {
+        "axios": ["1.14.1", "0.30.4"],
+        "plain-crypto-js": ["4.2.1", "4.2.0"]
+    }
+}

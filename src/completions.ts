@@ -4,7 +4,7 @@ import { logOutput, simpleFileName, getPositionContext, formatContext, NeuroPosi
 import { CONFIG, CONNECTION, PermissionLevel } from '@/config';
 import { JSONSchema7 } from 'json-schema';
 import { actionHandlerFailure, actionHandlerSuccess, actionValidationAccept, actionValidationFailure, actionValidationRetry, RCEAction, RCEHandlerReturns } from '@/utils/neuro_client';
-import { RCEContext } from '@context/rce';
+import { RCEContext } from '@ctx/rce';
 import { abortActionForce, addActions, canForceActions, tryForceActions } from '@/rce';
 import { ActionForcePriorityEnum } from 'neuro-game-sdk';
 

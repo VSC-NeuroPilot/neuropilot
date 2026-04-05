@@ -2,11 +2,12 @@ import * as vscode from 'vscode';
 import { EXCEPTION_THROWN_STRING, NEURO } from '@/constants';
 import { normalizePath, getWorkspacePath, logOutput, isPathNeuroSafe, getWorkspaceUri } from '@/utils/misc';
 import { CONFIG } from '@/config';
+import { filePreviewProvider } from '@/previews/files';
 import { actionValidationAccept, actionValidationFailure, ActionValidationResult, RCEAction, actionValidationRetry, ActionHandlerResult, actionHandlerSuccess, actionHandlerFailure } from '@/utils/neuro_client';
 import assert from 'node:assert';
 import { targetedFileLintingResolvedEvent, targetedFolderLintingResolvedEvent, workspaceLintingResolvedEvent } from '@events/linting';
 import { addActions } from '@/rce';
-import { RCEContext } from '@context/rce';
+import { RCEContext } from '@ctx/rce';
 
 export const CATEGORY_LINTING = 'Linting';
 
@@ -86,16 +87,36 @@ export const lintActions = {
             (context: RCEContext) => targetedFileLintingResolvedEvent(context.data.params?.file),
         ],
         validators: {
-            sync: [validateDirectoryAccess, (context: RCEContext) => {
+            sync: [validateDirectoryAccess, async (context: RCEContext) => {
                 const relativePath = context.data.params.file;
                 const workspaceUri = getWorkspaceUri()!;
                 const normalizedPath = normalizePath(workspaceUri.fsPath + '/' + relativePath);
-                const rawDiagnostics = vscode.languages.getDiagnostics(workspaceUri.with({ path: normalizedPath }));
+                const uri = workspaceUri.with({ path: normalizedPath });
+
+                // Check if the path is a directory
+                try {
+                    const stat = await vscode.workspace.fs.stat(uri);
+                    if (stat.type === vscode.FileType.Directory) {
+                        return actionValidationFailure(`Path "${relativePath}" is a folder, not a file.`, 'Targeted a folder, not a file.');
+                    }
+                } catch {
+                    // If we can't stat it, the existing logic will handle the error
+                }
+
+                const rawDiagnostics = vscode.languages.getDiagnostics(uri);
                 if (rawDiagnostics.length === 0) return actionValidationFailure(`No linting problems found for file ${relativePath}.`);
                 else return actionValidationAccept();
             }],
         },
         promptGenerator: (context: RCEContext) => `get linting diagnostics for "${context.data.params.file}".`,
+        preview: (context: RCEContext) => {
+            const workspaceUri = getWorkspaceUri();
+            if (!workspaceUri || !context.data.params?.file) {
+                return { dispose: () => { } };
+            }
+            const fileUri = vscode.Uri.joinPath(workspaceUri, context.data.params.file);
+            return filePreviewProvider.mark([fileUri], 'get linting problems for this file');
+        },
     },
     get_folder_lint_problems: {
         name: 'get_folder_lint_problems',
@@ -114,13 +135,25 @@ export const lintActions = {
             (context: RCEContext) => targetedFolderLintingResolvedEvent(context.data.params?.folder),
         ],
         validators: {
-            sync: [validateDirectoryAccess, (context: RCEContext) => {
+            sync: [validateDirectoryAccess, async (context: RCEContext) => {
                 const relativeFolder = context.data?.params.folder;
                 const workspacePath = getWorkspacePath();
                 assert(workspacePath);
                 const normalizedFolderPath = normalizePath(workspacePath + '/' + relativeFolder);
+                const uri = vscode.Uri.file(normalizedFolderPath);
+
+                // Check if the path is a file (not a directory)
+                try {
+                    const stat = await vscode.workspace.fs.stat(uri);
+                    if (stat.type === vscode.FileType.File) {
+                        return actionValidationFailure(`Path "${relativeFolder}" is a file, not a folder.`, 'Targeted a folder, not a file.');
+                    }
+                } catch {
+                    // If we can't stat it, the existing logic will handle the error
+                }
+
                 const diagnostics = vscode.languages.getDiagnostics();
-                const folderDiagnostics = diagnostics.filter(async ([diagUri, diags]) => {
+                const folderDiagnostics = diagnostics.filter(([diagUri, diags]) => {
                     return normalizePath(diagUri.fsPath).startsWith(normalizedFolderPath) &&
                         isPathNeuroSafe(diagUri.fsPath) && diags.length > 0;
                 });
@@ -130,6 +163,14 @@ export const lintActions = {
             }],
         },
         promptGenerator: (context: RCEContext) => `get linting diagnostics for "${context.data.params.folder}".`,
+        preview: (context: RCEContext) => {
+            const workspaceUri = getWorkspaceUri();
+            if (!workspaceUri || !context.data.params?.folder) {
+                return { dispose: () => { } };
+            }
+            const folderUri = vscode.Uri.joinPath(workspaceUri, context.data.params.folder);
+            return filePreviewProvider.mark([folderUri], 'get linting problems in this folder', false, false);
+        },
     },
     get_workspace_lint_problems: {
         name: 'get_workspace_lint_problems',
@@ -140,12 +181,12 @@ export const lintActions = {
             workspaceLintingResolvedEvent,
         ],
         validators: {
-            sync: [async () => {
+            sync: [() => {
                 const workspace = getWorkspacePath();
                 if (!workspace) {
                     return actionValidationFailure('Unable to get current workspace.');
                 }
-                return await validatePath(workspace, 'workspace');
+                return actionValidationAccept();
             }, () => {
                 const diagnostics = vscode.languages.getDiagnostics();
                 // Filter for diagnostics on safe files with errors.
@@ -158,6 +199,13 @@ export const lintActions = {
             }],
         },
         promptGenerator: () => 'get linting diagnostics for the current workspace.',
+        preview: () => {
+            const workspaceUri = getWorkspaceUri();
+            if (!workspaceUri) {
+                return { dispose: () => { } };
+            }
+            return filePreviewProvider.mark([workspaceUri], 'get linting problems in workspace', false, false);
+        },
     },
 } satisfies Record<string, RCEAction>;
 
@@ -228,7 +276,7 @@ export function handleGetFileLintProblems(context: RCEContext): ActionHandlerRes
 
         const rawDiagnostics = vscode.languages.getDiagnostics(workspaceUri.with({ path: normalizedPath }));
         if (rawDiagnostics.length === 0) {
-            return actionHandlerSuccess(`No linting problems found for file ${relativePath}.`,'No linting issues found');
+            return actionHandlerSuccess(`No linting problems found for file ${relativePath}.`, 'No linting issues found');
         }
 
         const formattedDiagnostics = getFormattedDiagnosticsForFile(relativePath, rawDiagnostics);

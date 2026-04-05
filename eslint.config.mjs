@@ -165,7 +165,6 @@ export default tseslint.config(
         languageOptions: {
             globals: {
                 ...globals.node,
-                ...globals.browser,
             },
             parserOptions: {
                 tsconfigRootDir: import.meta.dirname,

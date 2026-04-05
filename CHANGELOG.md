@@ -8,9 +8,57 @@ Changes between each version before then will not be listed.
 
 ## 2.5.0
 
+### New settings
+
+- `neuropilot.actions.disablePreviewEffects` - Allows disabling preview effects. See below.
+
+### Additions
+
+- Certain actions can now emit preview effects if Neuro is using an action with its permission set to Copilot.
+  - These preview effects will be emitted primarily for editing actions (cursor and highlight effects), as well as file, linting and some git actions (file list effects).
+  - Any preview effects with built-in actions are done with blue colours, to differentiate with the other visual effects that this & other extensions have.
+  - Filesystem-based previews can be adjusted using the `workspace.colorCustomizations.neuropilot.filePreviewEffectsColour` setting.
+    - Support for changing other colours used in the extension (e.x. colours for diff added, diff removed, diff modified, highlight) *may* be added later.
+      - *may* means possibly, not guaranteed.
+  - At any time, you may disable preview effects using `neuropilot.actions.disablePreviewEffects`.
+
 ### Fixes
 
 - A small amount of action handlers (like `terminate_task`) weren't updating their execution status correctly. Alongside a refactoring of the way handlers can update status, these handlers have also been fixed to actually update the execution status.
+- `uniqueItems` was placed in the wrong subschema for `make_git_commit`. It's been fixed now.
+
+## 2.4.4
+
+Have fun drawing, Neuro!
+
+### Changes
+
+- Moved the view container (permissions, etc.) to the activity bar (left sidebar).
+- Search actions now use the multiline flag for regular expressions.
+
+### Fixes
+
+- RCE request is now properly cleared on thrown exceptions.
+- Fix `read_file` failing now too.
+- The `moveCursor` parameter in `find_text` was not respected by the action handler.
+- Getting a list of terminal shells that are currently active now has an extra newline that was missing before, causing the first entry to be on the same line as the text indicating the list.
+- `get_file_lint_problems` and `get_folder_lint_problems` now fail when the incorrect file type is being targeted.
+- Fixed invalid regular expressions in editing actions causing an exceptions.
+- Fixed unnecessary escaping of regular expressions in prompts.
+- Fixed being able to specify illegal path characters when creating a file or folder.
+- Fixed being able to specify a file as the parent folder when creating a file or folder.
+
+## 2.4.3
+
+### Patches
+
+- Fix `get_workspace_lint_problems` not working at all due to broken validator.
+
+## 2.4.2
+
+### Patches
+
+- Fix `switch_files` not working at all due to incorrect validator settings.
 
 ## 2.4.1
 

@@ -13,7 +13,6 @@ updates:
       - dependency-name: "@types/vscode" # Manually bump with the VS Code engine version
       - dependency-name: "@types/json-schema"
       - dependency-name: "@types/node" # Manually bump with the VS Code engine version
-    target-branch: dev
     open-pull-requests-limit: 3
     groups:
       dev-dependencies:
@@ -31,4 +30,3 @@ updates:
       security-dev:
         applies-to: security-updates
         dependency-type: development
-      

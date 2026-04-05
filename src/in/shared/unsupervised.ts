@@ -1,13 +1,10 @@
 import { NEURO } from '@/constants';
 import { addFileActions } from '@/file_actions';
 import { addEditingActions } from '@/editing';
-import { ActionData } from 'neuro-game-sdk';
 import { addLintActions } from '@/lint_problems';
-import { RCEActionHandler } from '@/rce';
+import { addActions, cancelRequestAction, RCEActionHandler } from '@/rce';
 import { addChangelogActions } from '@/changelog';
 import { addRequestCookieAction } from '../../functions/cookies';
-import { addChatAction } from '@/chat';
-import { addCompleteCodeAction } from '@/completions';
 
 export function addCommonUnsupervisedActions() {
     addFileActions();
@@ -15,8 +12,7 @@ export function addCommonUnsupervisedActions() {
     addLintActions();
     addChangelogActions();
     addRequestCookieAction();
-    addChatAction();
-    addCompleteCodeAction();
+    addActions([cancelRequestAction]);
 }
 
 /**
@@ -24,5 +20,5 @@ export function addCommonUnsupervisedActions() {
  * The handlers will only handle actions that the user has given permission to use.
  */
 export function registerUnsupervisedHandlers() {
-    NEURO.client?.onAction(async (actionData: ActionData) => await RCEActionHandler(actionData));
+    NEURO.client?.onAction(RCEActionHandler);
 }

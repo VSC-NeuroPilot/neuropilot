@@ -40,7 +40,7 @@ export async function createTestDirectory(name: string): Promise<vscode.Uri> {
 }
 
 /**
- * Wait for the given given function to return true, or reject after a timeout.
+ * Wait for the given function to return true, or reject after a timeout.
  * @param check The function to check.
  * @param timeoutMs The maximum time to wait for the function to return true.
  * @param interval The interval to check the function.

@@ -600,6 +600,7 @@ class Actions {
     get hideCopilotRequests(): boolean { return getActions<boolean>('hideCopilotRequests')!; }
     get allowRunningAllTasks(): boolean { return getActions<boolean>('allowRunningAllTasks')!; }
     get enableCancelEvents(): boolean { return getActions<boolean>('enableCancelEvents')!; }
+    get disablePreviewEffects(): boolean { return getActions<boolean>('disablePreviewEffects')!; }
     get experimentalSchemas(): boolean { return getActions<boolean>('experimentalSchemas')!; }
 }
 

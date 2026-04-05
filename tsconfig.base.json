@@ -1,15 +1,17 @@
 {
 	"compilerOptions": {
 		"composite": true,
-		"module": "commonjs",
-		"moduleResolution": "Node",
+		"module": "preserve",
+		"moduleResolution": "bundler",
 		"esModuleInterop": true,
 		"target": "es2020",
 		"outDir": "out",
 		"sourceMap": true,
 		"strict": true,
+		"skipLibCheck": true,
+		"skipDefaultLibCheck": true,
 		"paths": {
-			"@context/*": [
+			"@ctx/*": [
 				"./src/context/*"
 			],
 			"@entry/*": [
@@ -18,14 +20,14 @@
 			"@events/*": [
 				"./src/events/*"
 			],
-			"@shared/*": [
-				"./src/shared/*"
-			],
 			"@typing/*": [
 				"./src/types/*"
 			],
 			"@test/*": [
 				"./src/test/*"
+			],
+			"@previews/*": [
+				"./src/previews/*"
 			],
 			"@views/*": [
 				"./src/views/*"
