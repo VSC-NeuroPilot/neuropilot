@@ -3,15 +3,16 @@ import assert from 'node:assert';
 import { NeuroClient } from 'neuro-game-sdk';
 import globToRegExp from 'glob-to-regexp';
 import { fileTypeFromBuffer } from 'file-type';
+import { ActionValidationResult, PermissionLevel } from '@vsc-neuropilot/api-types';
 
 import { NEURO } from '@/constants';
-import { ACCESS, CONFIG, CONNECTION, CursorPositionContextStyle, getPermissionLevel, PermissionLevel, setPermissionLevel } from '@/config';
+import { ACCESS, CONFIG, CONNECTION, CursorPositionContextStyle, getPermissionLevel, setPermissionLevel } from '@/config';
 
 import { fastIsItIgnored } from './ignore_files';
 import { unregisterAllActions } from '@/rce';
 import { changelogActions } from '../changelog';
 
-import { ActionValidationResult, actionValidationAccept, actionValidationFailure } from './neuro_client';
+import { actionValidationAccept, actionValidationFailure } from './neuro_client';
 import { patienceDiff } from '@/patience_diff';
 import { fireCursorPositionChangedEvent } from '@events/cursor';
 
