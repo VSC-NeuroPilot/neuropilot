@@ -1,0 +1,32 @@
+{
+  "name": "@vsc-neuropilot/api-types",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "types": "./dist/index.d.mts",
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "types": "tsgo --noEmit"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@arethetypeswrong/core": "^0.18.2",
+    "@types/vscode": "1.95.0",
+    "@typescript/native-preview": "7.0.0-dev.20260404.1",
+    "tsdown": "^0.21.7"
+  },
+  "peerDependencies": {
+    "@types/vscode": "1.95.0"
+  },
+  "dependencies": {
+    "@types/json-schema": "^7.0.15",
+    "neuro-game-sdk": "^1.0.10"
+  },
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./package.json": "./package.json"
+  }
+}

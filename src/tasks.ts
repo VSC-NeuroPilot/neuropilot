@@ -6,14 +6,15 @@
 
 import * as vscode from 'vscode';
 
+import { RCEAction, RCEContext, RCEHandlerReturns, ActionHandlerResult } from '@vsc-neuropilot/api-types';
+
 import { NEURO } from '@/constants';
 import { logOutput, formatActionID, getFence, checkWorkspaceTrust, checkVirtualWorkspace } from '@/utils/misc';
-import { ActionHandlerResult, RCEAction, RCEHandlerReturns, actionHandlerFailure, actionHandlerSuccess, actionValidationAccept, actionValidationFailure } from '@/utils/neuro_client';
+import { actionHandlerFailure, actionHandlerSuccess, actionValidationAccept, actionValidationFailure } from '@/utils/neuro_client';
 import { ACTIONS } from '@/config';
 import { notifyOnTaskFinish } from '@events/shells';
 import { addActions, getActions, removeActions } from './rce';
 import { updateActionStatus } from '@events/actions';
-import { RCEContext } from '@ctx/rce';
 
 export const CATEGORY_TASKS = 'Tasks';
 const CATEGORY_REGISTERED_TASKS = 'Registered Tasks';

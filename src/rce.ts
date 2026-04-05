@@ -4,13 +4,14 @@
  */
 
 import * as vscode from 'vscode';
-import { ActionData } from 'neuro-game-sdk';
-import { ActionForceParams, actionHandlerFailure, ActionHandlerResult, actionHandlerSuccess, RCEAction, stripToAction } from '@/utils/neuro_client';
+import { ActionData, ActionForcePriorityEnum } from 'neuro-game-sdk';
+import { RCEAction, type RCECancelEvent, ActionHandlerResult, PermissionLevel, ActionForceParams } from '@vsc-neuropilot/api-types';
+
+import { actionHandlerFailure, actionHandlerSuccess, stripToAction } from '@/utils/neuro_client';
 import { NEURO } from '@/constants';
 import { isThenable, logOutput, notifyOnCaughtException } from '@/utils/misc';
-import { ACTIONS, CONFIG, CONNECTION, getAllPermissions, getPermissionLevel, PermissionLevel, stringToPermissionLevel } from '@/config';
+import { ACTIONS, CONFIG, CONNECTION, getAllPermissions, getPermissionLevel, stringToPermissionLevel } from '@/config';
 import { validate } from 'jsonschema';
-import type { RCECancelEvent } from '@events/utils';
 import { fireOnActionStart, updateActionStatus } from '@events/actions';
 import { RCEContext } from '@/context/rce';
 
@@ -512,7 +513,7 @@ export function tryForceActions(params: ActionForceParams, strict = false): bool
         reregisterAllActions(true);
     }
 
-    NEURO.client?.forceActions(paramsCopy.query, paramsCopy.actionNames, paramsCopy.state, paramsCopy.ephemeral_context, paramsCopy.priority);
+    NEURO.client?.forceActions(paramsCopy.query, paramsCopy.actionNames, paramsCopy.state, paramsCopy.ephemeral_context, paramsCopy.priority as ActionForcePriorityEnum | undefined);
 
     return true;
 }

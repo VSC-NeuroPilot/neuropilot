@@ -1,12 +1,12 @@
 import * as vscode from 'vscode';
-import { NeuroClient } from 'neuro-game-sdk';
+import { NeuroClient, type ActionData } from 'neuro-game-sdk';
+import { ActionForceParams } from '@vsc-neuropilot/api-types';
+
 import { TerminalSession } from './pseudoterminal';
 import type { GitExtension } from '@typing/git.d';
 import { ActionsViewProvider } from '@views/actions';
 import { ImagesViewProvider } from '@views/image';
 import type { ExecuteViewProvider } from '@views/execute';
-import type { ActionData } from 'neuro-game-sdk';
-import type { ActionForceParams } from './utils/neuro_client';
 
 export interface NeuroTask {
     id: string;

@@ -1,15 +1,15 @@
 import * as vscode from 'vscode';
+import { RCEAction, RCEContext, ActionValidationResult, RCEHandlerReturns, PermissionLevel } from '@vsc-neuropilot/api-types';
+import assert from 'node:assert';
 
 import { EXCEPTION_THROWN_STRING, NEURO, PROMISE_REJECTION_STRING } from '@/constants';
 import { filterFileContents, formatContext, getFence, getPositionContext, getProperty, getVirtualCursor, getWorkspacePath, getWorkspaceUri, isBinary, isPathNeuroSafe, logOutput, NeuroPositionContext, normalizePath, notifyOnCaughtException, simpleFileName, stripTailSlashes } from '@/utils/misc';
-import { RCEAction, actionValidationFailure, actionValidationAccept, ActionValidationResult, actionValidationRetry, RCEHandlerReturns, actionHandlerSuccess, actionHandlerFailure } from '@/utils/neuro_client';
-import { CONFIG, PermissionLevel, getPermissionLevel } from '@/config';
+import { actionValidationFailure, actionValidationAccept, actionValidationRetry, actionHandlerSuccess, actionHandlerFailure } from '@/utils/neuro_client';
+import { CONFIG, getPermissionLevel } from '@/config';
 import { targetedFileCreatedEvent, targetedFileDeletedEvent } from '@events/files';
 import { RCECancelEvent } from '@events/utils';
 import { addActions } from './rce';
-import { RCEContext } from '@ctx/rce';
 import { filePreviewProvider } from '@/previews/files';
-import assert from 'node:assert';
 
 export const CATEGORY_FILE_ACTIONS = 'File Actions';
 const ACTION_FAIL_NOTES = {

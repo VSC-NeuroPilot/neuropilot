@@ -1,4 +1,6 @@
 import * as vscode from 'vscode';
+import { PermissionLevel } from '@vsc-neuropilot/api-types';
+
 import { NEURO } from '@/constants';
 import { logOutput } from '@/utils/misc';
 import { getAction } from '@/rce';
@@ -407,13 +409,6 @@ export async function checkDeprecatedSettings(version: string) {
             }
         }
     }
-}
-
-/** Permission level enums */
-export const enum PermissionLevel {
-    OFF = 0,
-    COPILOT = 1,
-    AUTOPILOT = 2,
 }
 
 export function permissionLevelToString(level: PermissionLevel): string {

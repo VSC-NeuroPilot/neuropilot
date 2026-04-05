@@ -3,3 +3,8 @@ onlyBuiltDependencies:
   - '@vscode/vsce-sign'
   - esbuild
   - keytar
+packages:
+- .
+- packages/*
+
+ignoreWorkspaceRootCheck: true

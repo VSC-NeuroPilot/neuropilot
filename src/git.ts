@@ -1,15 +1,16 @@
 import * as vscode from 'vscode';
+import assert from 'node:assert';
+import { RCEAction, RCEContext, ActionValidationResult, RCEHandlerReturns } from '@vsc-neuropilot/api-types';
+
 import { EXTENSIONS, NEURO, PROMISE_REJECTION_STRING } from '@/constants';
 import type { Change, CommitOptions, Commit, Repository, API, GitExtension } from '@typing/git.d';
 import { ForcePushMode } from '@typing/git.d';
 import { StatusStrings, RefTypeStrings } from '@typing/git_status';
 import { logOutput, simpleFileName, isPathNeuroSafe, normalizePath, getWorkspacePath, getWorkspaceUri } from '@/utils/misc';
-import { ActionValidationResult, actionValidationAccept, actionValidationFailure, RCEAction, actionValidationRetry, RCEHandlerReturns, actionHandlerSuccess, actionHandlerFailure, actionHandlerRetry } from '@/utils/neuro_client';
-import assert from 'node:assert';
+import { actionValidationAccept, actionValidationFailure, actionValidationRetry, actionHandlerSuccess, actionHandlerFailure, actionHandlerRetry } from '@/utils/neuro_client';
 import { RCECancelEvent } from '@events/utils';
 import { JSONSchema7Definition } from 'json-schema';
 import { addActions, registerAction, reregisterAllActions, unregisterAction } from './rce';
-import { RCEContext } from '@ctx/rce';
 import { filePreviewProvider } from '@previews/files';
 
 export const CATEGORY_GIT = 'Git';

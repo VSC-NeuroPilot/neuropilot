@@ -1,12 +1,12 @@
 import * as vscode from 'vscode';
+import assert from 'node:assert';
+import { JSONSchema7 } from 'json-schema';
+import { RCEAction, RCEContext, RCEHandlerReturns, PermissionLevel } from '@vsc-neuropilot/api-types';
 
 import { NEURO } from '@/constants';
 import { filterFileContents, logOutput, simpleFileName } from '@/utils/misc';
-import { CONFIG, CONNECTION, PermissionLevel } from '@/config';
-import assert from 'node:assert';
-import { JSONSchema7 } from 'json-schema';
-import { actionHandlerFailure, actionHandlerSuccess, actionValidationAccept, actionValidationFailure, RCEAction, RCEHandlerReturns } from './utils/neuro_client';
-import { RCEContext } from './context/rce';
+import { CONFIG, CONNECTION } from '@/config';
+import { actionHandlerFailure, actionHandlerSuccess, actionValidationAccept, actionValidationFailure } from './utils/neuro_client';
 import { abortActionForce, addActions, registerAction, tryForceActions } from '@/rce';
 
 let requestCancelled = false;

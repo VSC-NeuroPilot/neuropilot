@@ -1,7 +1,8 @@
 import type { JSONSchema7Object } from 'json-schema';
-import type { ActionValidationResult, RCEAction } from '@/utils/neuro_client';
 import type { ActionData } from 'neuro-game-sdk';
 import { Disposable, Progress } from 'vscode';
+import { RCEContext as _RCEContext, ActionValidationResult, RCEAction } from '@vsc-neuropilot/api-types';
+
 import { ActionStatus, updateActionStatus } from '@events/actions';
 import { getAction } from '@/rce';
 
@@ -39,7 +40,7 @@ export interface RCERequestState {
  * 7. Handler
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export class RCEContext<T extends JSONSchema7Object | undefined = any, K = any> extends Disposable {
+export class RCEContext<T extends JSONSchema7Object | undefined = any, K = any> extends Disposable implements _RCEContext {
     name: string;
     private success: boolean | null;
     createdAt: string = new Date().toLocaleTimeString();

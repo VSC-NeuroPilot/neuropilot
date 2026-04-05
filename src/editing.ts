@@ -1,15 +1,15 @@
 import * as vscode from 'vscode';
 import { ActionData } from 'neuro-game-sdk';
+import { RCEAction, RCEHandlerReturns, ActionValidationResult, RCEContext } from '@vsc-neuropilot/api-types';
 
 import { NEURO } from '@/constants';
 import { DiffRangeType, escapeRegExp, getDiffRanges, getFence, getPositionContext, getProperty, getVirtualCursor, showDiffRanges, isPathNeuroSafe, logOutput, setVirtualCursor, simpleFileName, substituteMatch, clearDecorations, formatContext, filterFileContents, positionFromIndex, indexFromPosition, NeuroPositionContext } from '@/utils/misc';
-import { actionValidationAccept, actionValidationFailure, ActionValidationResult, RCEAction, actionValidationRetry, RCEHandlerReturns, actionHandlerSuccess, actionHandlerFailure } from '@/utils/neuro_client';
+import { actionValidationAccept, actionValidationFailure, actionValidationRetry, actionHandlerSuccess, actionHandlerFailure } from '@/utils/neuro_client';
 import { CONFIG, CONNECTION } from '@/config';
 import { createCursorPositionChangedEvent } from '@events/cursor';
 import { RCECancelEvent } from '@events/utils';
 import { addActions, registerAction, unregisterAction } from '@/rce';
 import { createPreviewCursor, createPreviewHighlight } from '@previews/edits';
-import { RCEContext } from '@/context/rce';
 
 export const CATEGORY_EDITING = 'Editing';
 

@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
+import { RCEAction, RCEContext, ActionHandlerResult, PermissionLevel } from '@vsc-neuropilot/api-types';
 
 import { EXCEPTION_THROWN_STRING, NEURO } from '@/constants';
 import { getFence, logOutput } from '@/utils/misc';
-import { actionHandlerFailure, ActionHandlerResult, actionHandlerSuccess, RCEAction } from '@/utils/neuro_client';
-import { CONNECTION, PermissionLevel } from '@/config';
+import { actionHandlerFailure, actionHandlerSuccess } from '@/utils/neuro_client';
+import { CONNECTION } from '@/config';
 import { addActions, CATEGORY_MISC } from './rce';
-import { RCEContext } from '@ctx/rce';
 
 const MEMENTO_KEY = 'lastDeliveredChangelogVersion';
 
