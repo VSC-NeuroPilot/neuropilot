@@ -1,11 +1,12 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
+import { type ActionData, NeuroClient } from 'neuro-game-sdk';
+import { PermissionLevel } from '@vsc-neuropilot/api-types';
+
 import * as fileActions from '@/file_actions';
 import { assertProperties, checkNoErrorWithTimeout, createTestDirectory, createTestFile, returnMockFunction } from '@test/test_utils';
-import { ActionData } from 'neuro-game-sdk';
 import type { RCEContext } from '@/context/rce';
-import { getPermissionLevel, PermissionLevel } from '@/config';
-import { NeuroClient } from 'neuro-game-sdk';
+import { getPermissionLevel } from '@/config';
 import { NEURO } from '@/constants';
 import { anything, capture, instance, mock, verify } from 'ts-mockito';
 

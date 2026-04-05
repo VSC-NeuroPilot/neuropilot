@@ -4,7 +4,7 @@ import { instance, mock, reset } from 'ts-mockito';
 import { NEURO } from '@/constants';
 import { ActionData } from 'neuro-game-sdk';
 import type { RCEContext } from '@/context/rce';
-import type { ActionHandlerResult } from '@/utils/neuro_client';
+import type { ActionHandlerResult } from '@vsc-neuropilot/api-types';
 import {
     handlePlaceCursor,
     handleGetCursor,
