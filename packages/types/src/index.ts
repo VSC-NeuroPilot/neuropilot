@@ -1,17 +1,18 @@
 import type { RCECancelEventInitializer, RCECancelEvent } from './actions/classes';
 import type { ActionHandlerResult, ActionValidationResult } from './actions/types';
-import { CompanionAPI } from './companions/register';
+import type { CompanionAPI } from './companions/register';
 
 /**
  * Public constructor shape for cancel events exposed through the API.
  */
 export type CancelEventConstructor = new <T = unknown>(init?: RCECancelEventInitializer<T>) => RCECancelEvent<T>;
+export type CompanionConstructor = new (name: string) => CompanionAPI;
 
 export interface NeuroPilotAPI {
     /**
      * @example new Companion()
      */
-    Companion: typeof CompanionAPI;
+    Companion: CompanionConstructor;
     utils: {
         actionValidation: {
             success(message?: string, historyNote?: string): ActionValidationResult;
@@ -31,5 +32,5 @@ export interface NeuroPilotAPI {
 }
 
 export * from './actions';
-export * from './companions/register.d';
+export type * from './companions/register.d';
 export { ActionForcePriorityEnum } from 'neuro-game-sdk';

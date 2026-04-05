@@ -1,3 +1,3 @@
-export * from './classes.d';
+export type * from './classes.d';
 export * from './enums';
-export * from './types.d';
+export type * from './types.d';
