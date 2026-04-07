@@ -113,8 +113,15 @@ export interface RCEAction<T extends JSONSchema7Object | undefined = any, E = an
     /**
      * Whether to automatically register the action with Neuro if all conditions are met.
      * Defaults to true.
-     * Note that this will not watch the conditions, so if the conditions change, the action will not be immediately registered or unregistered.
-     * You must call {@link CompanionAPI.reregisterAllActions} to update the registration.
+     * 
+     * If `false`, the RCE system will never automatically register the action, and only automatically unregister if the user disables permission.
+     * You need to call {@link CompanionAPI.registerAction} or {@link CompanionAPI.unregisterAction} manually.
+     * 
+     * If `true`, the action will be automatically registered and unregistered based on the {@link RCEAction.registerCondition registerCondition} and current permission settings.
+     * However, the conditions are not watched, so if the conditions change, the action may not be immediately registered or unregistered.
+     * Call {@link CompanionAPI.reregisterAllActions} to update the registration.
+     * 
+     * Note that certain events also call {@link CompanionAPI.reregisterAllActions}.
      */
     autoRegister?: boolean;
     /**
@@ -122,7 +129,12 @@ export interface RCEAction<T extends JSONSchema7Object | undefined = any, E = an
      * Usually meant for actions that are exclusively used in action forces.
      */
     hidden?: boolean;
-    /** A condition that must be true for the action to be registered. If not provided, the action is always registered. **This function must never throw.** */
+    /**
+     * A condition that must be true for the action to be registered.
+     * If not provided, the action is always registered.
+     * Should not be used if {@link RCEAction.autoRegister autoRegister} is `false`.
+     * **This function must never throw.**
+     */
     registerCondition?: () => boolean;
     /** 
      * Setup handlers that will be invoked to help setup the {@link RCEContext.storage} object.
