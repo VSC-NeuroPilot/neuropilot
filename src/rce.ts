@@ -20,7 +20,7 @@ import type { JSONSchema7Object } from 'json-schema';
 
 export const CATEGORY_MISC = 'Miscellaneous';
 
-const ACTIONS_ARRAY: RCEAction[] = [];
+const ACTIONS_ARRAY: RCEActionPlus[] = [];
 const REGISTERED_ACTIONS: Set<string> = /* @__PURE__ */ new Set<string>();
 
 /**
@@ -46,6 +46,24 @@ export interface ExtendedActionInfo {
     isConfigured: boolean;
     configuredWorkspacePermission?: PermissionLevel;
     configuredGlobalPermission?: PermissionLevel;
+}
+
+export interface RCEActionPlus extends RCEAction {
+    /**
+     * The source companion's token.
+     * If omitted, can be safely assumed to come from NeuroPilot Base.
+     */
+    sourceToken?: string;
+    /**
+     * A list of companion names that have injected into this action.
+     * The array is in chronological order of who injected into the action.
+     */
+    injectedBy?: InjectionData[]
+}
+
+export interface InjectionData {
+    companion: string;
+    injects: Omit<RCEAction, 'name'>;
 }
 
 export const cancelRequestAction: RCEAction = {
@@ -300,14 +318,15 @@ export function denyRceRequest(): void {
  * Adds multiple actions to the RCE system.
  * @param actions The actions to add.
  * @param register Whether to register the actions with Neuro immediately if the permissions allow.
+ * @param source The action's source companion. For backwards compatibility reasons, defaults to NeuroPilot.
  */
-export function addActions(actions: RCEAction[], register = true): void {
+export function addActions(actions: RCEAction[], register = true, sourceToken?: string): void {
     const actionsToAdd = actions.filter(a => !ACTIONS_ARRAY.some(existing => existing.name === a.name));
     const actionsNotToAdd = actions.filter(a => !actionsToAdd.includes(a));
     if (actionsNotToAdd.length > 0) {
         logOutput('WARNING', `Tried to add actions that are already registered: ${actionsNotToAdd.map(a => a.name).join(', ')}`);
     }
-    ACTIONS_ARRAY.push(...actionsToAdd);
+    ACTIONS_ARRAY.push(...actionsToAdd.map(a => ({ ...a, sourceToken })));
     if (register && NEURO.connected) {
         const actionNames = actionsToAdd.map(a => a.name);
         const actionsToRegister = actionNames
@@ -324,10 +343,11 @@ export function addActions(actions: RCEAction[], register = true): void {
 /**
  * Removes multiple actions from the registry.
  * @param actionNames The names of the actions to remove.
+ * @param token The token to use when checking actions.
  */
-export function removeActions(actionNames: string[]): void {
+export function removeActions(actionNames: string[], token?: string): void {
     for (const actionName of actionNames) {
-        const actionIndex = ACTIONS_ARRAY.findIndex(a => a.name === actionName);
+        const actionIndex = ACTIONS_ARRAY.findIndex(a => a.name === actionName && a.sourceToken === token);
         if (actionIndex !== -1) {
             ACTIONS_ARRAY.splice(actionIndex, 1);
         }
@@ -375,7 +395,7 @@ export function unregisterAllActions(): void {
  * Reregisters all actions with the Neuro API.
  * @param conservative Only reregister as necessary.
  */
-export function reregisterAllActions(conservative: boolean): void {
+export function reregisterAllActions(conservative = true): void {
     // Can't reregister if no client is connected
     if (!NEURO.connected) return;
 
@@ -510,7 +530,7 @@ export function tryForceActions(params: ActionForceParams, strict = false): bool
 
     // Register actions with overridden permissions if specified
     if (params.overridePermissions) {
-        reregisterAllActions(true);
+        reregisterAllActions();
     }
 
     NEURO.client?.forceActions(paramsCopy.query, paramsCopy.actionNames, paramsCopy.state, paramsCopy.ephemeral_context, paramsCopy.priority as ActionForcePriorityEnum | undefined);
@@ -522,7 +542,7 @@ export function tryForceActions(params: ActionForceParams, strict = false): bool
 function clearActionForce(): void {
     if (!NEURO.currentActionForce) return;
     NEURO.currentActionForce = null;
-    reregisterAllActions(true);
+    reregisterAllActions();
 }
 
 /**
@@ -536,19 +556,21 @@ export async function abortActionForce(): Promise<void> {
     NEURO.client?.unregisterActions(NEURO.currentActionForce?.actionNames ?? []);
     NEURO.currentActionForce = null; // Not using clearActionForce here since we want to delay re-registration.
     await new Promise(resolve => setTimeout(resolve, 250)); // Wait for 250ms
-    reregisterAllActions(true);
+    reregisterAllActions();
 }
 
 /**
  * Gets the list of registered actions.
  * Do not modify the actions in the returned array directly.
+ * @param names Optional array of names that can be used to filter out actions that don't match that name.
  * @returns The list of registered actions.
  */
-export function getActions(): readonly RCEAction[] {
-    return ACTIONS_ARRAY;
+export function getActions(names?: string[]): readonly RCEActionPlus[] {
+    if (!names) return ACTIONS_ARRAY;
+    return ACTIONS_ARRAY.filter(v => names.includes(v.name));
 }
 
-export function getAction(actionName: string): RCEAction | undefined {
+export function getAction(actionName: string): RCEActionPlus | undefined {
     return ACTIONS_ARRAY.find(a => a.name === actionName);
 }
 

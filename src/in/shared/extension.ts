@@ -95,7 +95,7 @@ export function setupCommonEventHandlers() {
                 setVirtualCursor();
             }
             if (event.affectsConfiguration('neuropilot.actionPermissions')) {
-                reregisterAllActions(true);
+                reregisterAllActions();
                 NEURO.viewProviders.actions?.refreshActions();
             }
 

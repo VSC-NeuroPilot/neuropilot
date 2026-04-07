@@ -777,7 +777,7 @@ export function handleNewGitRepo(): RCEHandlerReturns {
 
     return git!.init(vscode.Uri.file(folderPath)).then(() => {
         repo = git!.repositories[0]; // Update the repo reference to the new repository, just in case
-        reregisterAllActions(true);
+        reregisterAllActions();
         return actionHandlerSuccess('Initialized a new Git repository in the workspace folder. You should now be able to use git commands.', 'Repo initialized');
     }, (erm: string) => {
         logOutput('ERROR', `Failed to initialize Git repository: ${erm}`);

@@ -6,7 +6,7 @@ import type { CompanionAPI } from '../companions/register';
 
 /**
  * The parameters for forcing actions.
- * @see {@link NeuroClient['forceActions']} for most field documentation.
+ * @see {@link NeuroClient.forceActions} for most field documentation.
  */
 export interface ActionForceParams {
     state?: string;
@@ -165,3 +165,5 @@ export interface ActionHandlerResult {
 }
 
 type ActionHandlerSuccess = 'success' | 'failure' | 'retry';
+
+export type InjectionBaseData = Omit<RCEAction, 'name'>;
