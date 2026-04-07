@@ -24,6 +24,7 @@ export async function web(prodFlag, watchFlag) {
             polyfillNode({
                 polyfills: { // trying to make the build as small as possible
                     child_process: false,
+                    crypto: true,
                     module: false,
                     os: false,
                     path: false,
@@ -33,6 +34,14 @@ export async function web(prodFlag, watchFlag) {
                     v8: false,
                     vm: false,
                     zlib: false,
+                },
+                globals: {
+                    __dirname: false,
+                    __filename: false,
+                    buffer: false,
+                    global: false,
+                    navigator: false,
+                    process: false,
                 },
             }),
             /* add to the end of plugins array */
@@ -83,8 +92,9 @@ export async function webTest(_prodFlag, watchFlag) {
         // Include the same browser polyfills as the web bundle
         plugins: [
             polyfillNode({
-                polyfills: {
+                polyfills: { // trying to make the build as small as possible
                     child_process: false,
+                    crypto: true,
                     module: false,
                     os: false,
                     path: false,
@@ -94,6 +104,14 @@ export async function webTest(_prodFlag, watchFlag) {
                     v8: false,
                     vm: false,
                     zlib: false,
+                },
+                globals: {
+                    __dirname: false,
+                    __filename: false,
+                    buffer: false,
+                    global: false,
+                    navigator: false,
+                    process: false,
                 },
             }),
             esbuildProblemMatcherPlugin,
@@ -139,8 +157,9 @@ export async function webTestBrowser(_prodFlag, watchFlag) {
         },
         plugins: [
             polyfillNode({
-                polyfills: {
+                polyfills: { // trying to make the build as small as possible
                     child_process: false,
+                    crypto: true,
                     module: false,
                     os: false,
                     path: false,
@@ -150,6 +169,14 @@ export async function webTestBrowser(_prodFlag, watchFlag) {
                     v8: false,
                     vm: false,
                     zlib: false,
+                },
+                globals: {
+                    __dirname: false,
+                    __filename: false,
+                    buffer: false,
+                    global: false,
+                    navigator: false,
+                    process: false,
                 },
             }),
             esbuildProblemMatcherPlugin,
