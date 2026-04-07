@@ -3,7 +3,7 @@ import crypto from 'node:crypto';
 import { Disposable, Position } from 'vscode';
 
 import { addActions, getAction, getActions, registerAction, removeActions, reregisterAllActions, tryForceActions, unregisterAction } from '@/rce';
-import { addToRegistry, findByName } from '@/plugins';
+import { addToRegistry, findByName, removeFromRegistry } from '@/plugins';
 import { getVirtualCursor, setVirtualCursor } from '@/utils/misc';
 
 export class Companion extends Disposable implements CompanionAPI {
@@ -84,7 +84,10 @@ export class Companion extends Disposable implements CompanionAPI {
 
     constructor(meta: CompanionMeta) {
         super(() => {
-            console.log('Companion dispose logic not implemented yet');
+            removeFromRegistry(this.token);
+            const actionsToRemove = getActions().map((a) => a.name); // TODO: this is a really bad way to do it but the alternative requires a bit of refactoring so leave this for now
+            removeActions(actionsToRemove, this.token);
+            // TODO: hook into the RCE system to cancel all those things if necessary
         });
         keepTryingRegistration(meta.name);
         this.data = meta;

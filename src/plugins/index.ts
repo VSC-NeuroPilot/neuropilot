@@ -1,6 +1,6 @@
 import { RegistryError } from '@vsc-neuropilot/api-types';
 
-export const registry: Record<string, string> = {};
+export const registry: Record<string, string | undefined> = {};
 
 const BANNED_NAMES = ['NeuroPilot', 'NeuroPilot Base', 'NeuroPilot (Base)'];
 
@@ -13,6 +13,10 @@ export function addToRegistry(name: string, token: string) {
     }
     registry[token] = name;
 };
+
+export function removeFromRegistry(token: string) {
+    registry[token] = undefined;
+}
 
 export function findByName(name?: string) {
     if (name === undefined) return 'NeuroPilot (Base)';
