@@ -1,4 +1,4 @@
-import { Disposable } from 'vscode';
+import { Disposable, Position } from 'vscode';
 import { ActionForceParams, InjectionBaseData, RCEAction } from '../actions/types';
 
 export class CompanionAPI extends Disposable {
@@ -51,6 +51,19 @@ export class CompanionAPI extends Disposable {
      * @param force Allows changing the action's description and schema. **Don't set this to true if you don't need it!**
      */
     injectIntoAction(name: string, injectorCallback: (action: InjectionBaseData & { source: string }) => InjectionBaseData, force?: boolean);
+
+    /* Neuro Cursor */
+    /**
+     * Get Neuro's current cursor location in the current file.
+     * @returns Either a {@link Position} object showing where her cursor is right now, `null` if she can't access the current file, or `undefined` if there is no cursor in the file for whatever reason (such as a read-only editor). 
+     */
+    getCursor(): Position | null | undefined;
+
+    /**
+     * Move Neuro's cursor location.
+     * @param location The location to move her cursor to. `null` removes the cursor entirely and `undefined` moves it to the last known location (failing that, an error is logged and no cursor is placed).
+     */
+    setCursor(location?: Position | null): void;
 }
 
 export interface CompanionMeta {
@@ -67,5 +80,7 @@ export type CompanionContributions =
     | 'actions:process' // Process actions after RCE
     | 'actions:force' // Force actions from Neuro
     | 'context' // Send context to Neuro
+    | 'cursor:get' // View Neuro's cursor
+    | 'cursor:set' // Move Neuro's cursor
     | 'images' // Add to images carousel (here usually for API sanity testing)
     ;
