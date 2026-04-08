@@ -27,6 +27,7 @@ import { registerSendSelectionToNeuro } from '@/editing';
 import { loadIgnoreFiles } from '@/utils/ignore_files';
 import { reregisterAllActions } from '@/rce';
 import { addCompleteCodeAction } from '@/completions';
+import { api } from '@/api';
 
 export function activate(context: vscode.ExtensionContext) {
     loadIgnoreFiles(
@@ -89,6 +90,8 @@ export function activate(context: vscode.ExtensionContext) {
     // To keep related logic together and allow easy registration in both desktop and web, it is encapsulated
     // in registerSendSelectionToNeuro instead of being registered inline like most single commands.
     registerSendSelectionToNeuro(context);
+
+    return api;
 }
 
 export function deactivate() {
