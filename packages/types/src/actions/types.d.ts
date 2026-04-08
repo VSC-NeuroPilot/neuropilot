@@ -1,6 +1,6 @@
 import { JSONSchema7Object } from 'json-schema';
 import { ActionForcePriorityEnum, Action, type NeuroClient } from 'neuro-game-sdk';
-import { PermissionLevel } from './enums';
+import type { PermissionLevel } from './enums';
 import type { RCECancelEvent, RCEContext } from './classes';
 import type { CompanionAPI } from '../companions/register';
 

@@ -5,7 +5,7 @@
 
 import * as vscode from 'vscode';
 import { ActionData, ActionForcePriorityEnum } from 'neuro-game-sdk';
-import { RCEAction, type RCECancelEvent, ActionHandlerResult, PermissionLevel, ActionForceParams } from '@vsc-neuropilot/api-types';
+import { RCEAction, type RCECancelEvent, ActionHandlerResult, PermissionLevel, ActionForceParams, InjectionBaseData } from '@vsc-neuropilot/api-types';
 
 import { actionHandlerFailure, actionHandlerSuccess, stripToAction } from '@/utils/neuro_client';
 import { NEURO } from '@/constants';
@@ -63,7 +63,7 @@ export interface RCEActionPlus extends RCEAction {
 
 export interface InjectionData {
     companion: string;
-    injects: Omit<RCEAction, 'name'>;
+    injects: Partial<InjectionBaseData>;
 }
 
 export const cancelRequestAction: RCEAction = {
@@ -345,9 +345,9 @@ export function addActions(actions: RCEAction[], register = true, sourceToken?: 
  * @param actionNames The names of the actions to remove.
  * @param token The token to use when checking actions.
  */
-export function removeActions(actionNames: string[], token?: string): void {
+export function removeActions(actionNames: string[]): void {
     for (const actionName of actionNames) {
-        const actionIndex = ACTIONS_ARRAY.findIndex(a => a.name === actionName && a.sourceToken === token);
+        const actionIndex = ACTIONS_ARRAY.findIndex(a => a.name === actionName);
         if (actionIndex !== -1) {
             ACTIONS_ARRAY.splice(actionIndex, 1);
         }
@@ -734,7 +734,7 @@ export async function RCEActionHandler(actionData: ActionData) {
                     if (typeof reason === 'string') {
                         createdReason = reason.trim();
                     } else if (typeof reason === 'function') {
-                        createdReason = reason(actionData, eventData).trim();
+                        createdReason = reason(context!, eventData).trim();
                     } else {
                         createdReason = 'a cancellation event was fired.';
                     };
@@ -742,7 +742,7 @@ export async function RCEActionHandler(actionData: ActionData) {
                     if (typeof logReason === 'string') {
                         createdLogReason = logReason.trim();
                     } else if (typeof logReason === 'function') {
-                        createdLogReason = logReason(actionData, eventData).trim();
+                        createdLogReason = logReason(context!, eventData).trim();
                     } else {
                         createdLogReason = createdReason;
                     }

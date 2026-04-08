@@ -44,5 +44,6 @@
     "skipLibCheck": true,
     "preserveConstEnums": true,
   },
-  "exclude": ["*.config.ts"]
+  "include": ["src/**/*.ts", "src/**/*.d.ts"],
+  "exclude": ["dist", "node_modules", "*.config.ts"]
 }

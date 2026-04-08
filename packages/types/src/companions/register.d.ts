@@ -50,7 +50,7 @@ export class CompanionAPI extends Disposable {
      * @param injectorCallback The callback for injection data
      * @param force Allows changing the action's description and schema. **Don't set this to true if you don't need it!**
      */
-    injectIntoAction(name: string, injectorCallback: (action: InjectionBaseData & { source: string }) => InjectionBaseData, force?: boolean);
+    injectIntoAction(name: string, injectorCallback: Partial<InjectionBaseData>, force?: boolean): void;
 
     /* Neuro Cursor */
     /**

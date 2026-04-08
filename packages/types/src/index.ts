@@ -1,5 +1,5 @@
 import type { RCECancelEvent } from './actions/classes';
-import type { ActionHandlerResult, ActionValidationResult } from './actions/types';
+import type { ActionHandlerResult, ActionValidationResult, RCEAction } from './actions/types';
 import type { CompanionAPI } from './companions/register';
 
 export interface NeuroPilotAPI {
@@ -18,12 +18,17 @@ export interface NeuroPilotAPI {
             failure(message: string, historyNote?: string): ActionHandlerResult;
             retry(message: string, historyNote?: string): ActionHandlerResult;
         };
+        actionsListing: {
+            getActions(action?: string | string[]): ItselfOrArray<RCEAction & { source?: string; }> | undefined
+        }
         /**
          * @example new CancelEvent()
          */
         CancelEvent: typeof RCECancelEvent;
     };
 }
+
+type ItselfOrArray<T> = T | T[];
 
 export * from './actions';
 export type * from './companions';

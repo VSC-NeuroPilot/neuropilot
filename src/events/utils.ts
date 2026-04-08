@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as vscode from 'vscode';
-import { ActionData } from 'neuro-game-sdk';
 
-type ReasonGenerator<T = any> = string | ((actionData: ActionData, data: T) => string);
+import type { ReasonGenerator, RCECancelEvent as _RCECancelEvent } from '@vsc-neuropilot/api-types';
 
 export interface RCECancelEventInitializer<T = any> {
     /** The reason that will be used to send to Neuro-sama. */
@@ -13,7 +12,7 @@ export interface RCECancelEventInitializer<T = any> {
     events?: [vscode.Event<T>, ((data: T) => boolean | Promise<boolean>) | null][];
 }
 
-export class RCECancelEvent<T = any> {
+export class RCECancelEvent<T = any> implements _RCECancelEvent<T> {
     /**
      * Private emitter constructed by the class constructor.
      */

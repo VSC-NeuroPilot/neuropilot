@@ -87,7 +87,7 @@ export interface RCEContext<T extends JSONSchema7Object | undefined = any, K = a
 
 //#region RCE cancel events
 
-type ReasonGenerator<T = any> = string | ((actionData: ActionData, data: T) => string);
+export type ReasonGenerator<T = any> = string | ((context: RCEContext, data: T) => string);
 
 export interface RCECancelEventInitializer<T = any> {
     /** The reason that will be used to send to Neuro-sama. */

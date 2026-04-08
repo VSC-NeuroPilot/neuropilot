@@ -5,6 +5,7 @@ import { Disposable, Position } from 'vscode';
 import { addActions, getAction, getActions, registerAction, removeActions, reregisterAllActions, tryForceActions, unregisterAction } from '@/rce';
 import { addToRegistry, findByName, removeFromRegistry } from '@/plugins';
 import { getVirtualCursor, setVirtualCursor } from '@/utils/misc';
+import { fireCompanionChangeEvent } from '@events/companions';
 
 export class Companion extends Disposable implements CompanionAPI {
     private readonly data: CompanionMeta;
@@ -22,7 +23,7 @@ export class Companion extends Disposable implements CompanionAPI {
             .filter((a) => actionNames.includes(a.name) && a.sourceToken === this.token)
             .map((a) => a.name);
         if (actionList.length === 0) throw new BaseCompanionError('removeActions', 'Couldn\'t find any actions that matched inputs and token.');
-        removeActions(actionList, this.token);
+        removeActions(actionList);
     };
 
     registerAction(action: string) {
@@ -57,17 +58,25 @@ export class Companion extends Disposable implements CompanionAPI {
         return tryForceActions(p, s);
     };
 
-    injectIntoAction(name: string, injectorCallback: (a: InjectionBaseData & { source: string }) => InjectionBaseData, force = false) {
+    injectIntoAction(name: string, injects: Partial<InjectionBaseData>, force = false) {
         if (!this.data.contributes.includes('actions:inject')) {
             throw new PermissionError('injectAction', ['actions:inject'], `Attempted to inject into action "${name}"`, this.data.name);
         }
         const action = getAction(name)!; // TODO: add handling for undefined action
 
+        const injectKeys = Object.keys(injects);
+
+        if (!force && (injectKeys.includes('description') || injectKeys.includes('schema'))) throw new BaseCompanionError('injectIntoAction', 'Cannot inject into description or schema!', 'Attempted to inject into description or schema without force flag.', this.data.name);
+
         const baseObject: InjectionBaseData & { source: string; } = Object.assign(action, { name: undefined, source: findByName(action.sourceToken) });
 
-        const injectionOverrides = injectorCallback(baseObject);
-        const finalObject = Object.assign(baseObject, injectionOverrides, { name: undefined });
-        // TODO: rest of injection logic
+        const finalInjects = Object.assign(baseObject, injects, { name: undefined }); // does setting name: undefined even work or does it have to be null
+        // TODO: upgrade injection logic to be smarter when removing and readding and all that
+        if (!action.injectedBy) action.injectedBy = [];
+        action.injectedBy.push({ companion: this.data.name, injects });
+        removeActions([action.name]);
+        const finalObject = Object.assign(action, finalInjects);
+        addActions([finalObject]);
     }
 
 
@@ -85,9 +94,10 @@ export class Companion extends Disposable implements CompanionAPI {
     constructor(meta: CompanionMeta) {
         super(() => {
             removeFromRegistry(this.token);
-            const actionsToRemove = getActions().map((a) => a.name); // TODO: this is a really bad way to do it but the alternative requires a bit of refactoring so leave this for now
-            removeActions(actionsToRemove, this.token);
+            const actionsToRemove = getActions().filter((a) => a.sourceToken === this.token).map((a) => a.name); // TODO: this is a really bad way to do it but the alternative requires a bit of refactoring so leave this for now
+            removeActions(actionsToRemove);
             // TODO: hook into the RCE system to cancel all those things if necessary
+            fireCompanionChangeEvent(this.data.name);
         });
         keepTryingRegistration(meta.name);
         this.data = meta;

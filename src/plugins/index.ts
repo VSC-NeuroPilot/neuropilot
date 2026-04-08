@@ -22,3 +22,8 @@ export function findByName(name?: string) {
     if (name === undefined) return 'NeuroPilot (Base)';
     return Object.keys(registry).find(k => registry[k] === name);
 }
+
+export function findByToken(token?: string) {
+    if (!token) return;
+    return registry[token];
+}

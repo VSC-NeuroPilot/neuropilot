@@ -47,5 +47,6 @@
 		"docs",
 		"project-files",
 		"media",
+		"**/*.config.ts"
 	]
 }
