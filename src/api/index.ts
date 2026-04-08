@@ -36,6 +36,9 @@ export const api: NeuroPilotAPI = {
                 };
             },
         },
+        diffs: {
+            calculateDiffs() {}, // TODO: implement function
+        },
         CancelEvent: RCECancelEvent,
     },
 };

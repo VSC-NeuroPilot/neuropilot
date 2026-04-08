@@ -20,7 +20,10 @@ export interface NeuroPilotAPI {
         };
         actionsListing: {
             getActions(action?: string | string[]): ItselfOrArray<RCEAction & { source?: string; }> | undefined
-        }
+        };
+        diffs: {
+            calculateDiffs(): void; // TODO: implement types
+        };
         /**
          * @example new CancelEvent()
          */
