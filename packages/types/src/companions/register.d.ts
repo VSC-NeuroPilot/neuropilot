@@ -79,6 +79,7 @@ export type CompanionContributions =
     | 'actions:inject' // Inject into NeuroPilot's built-in actions (maybe also allow injecting to non-vanilla actions as well?)
     | 'actions:process' // Process actions after RCE
     | 'actions:force' // Force actions from Neuro
+    | 'changelog' // Allows Neuro to view the companion's changelog via `get_changelog`
     | 'context' // Send context to Neuro
     | 'cursor:get' // View Neuro's cursor
     | 'cursor:set' // Move Neuro's cursor
