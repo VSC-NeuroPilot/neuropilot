@@ -23,6 +23,7 @@ export interface NeuroPilotAPI {
         };
         diffs: {
             calculateDiffs(): void; // TODO: implement types
+            applyDiffHighlighting(): void; // TODO: implement types
         };
         /**
          * 

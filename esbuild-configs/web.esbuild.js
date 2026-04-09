@@ -108,7 +108,7 @@ export async function webTest(_prodFlag, watchFlag) {
                 globals: {
                     __dirname: false,
                     __filename: false,
-                    buffer: false,
+                    buffer: true,
                     global: false,
                     navigator: false,
                     process: false,
@@ -173,7 +173,7 @@ export async function webTestBrowser(_prodFlag, watchFlag) {
                 globals: {
                     __dirname: false,
                     __filename: false,
-                    buffer: false,
+                    buffer: true,
                     global: false,
                     navigator: false,
                     process: false,

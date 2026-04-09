@@ -40,6 +40,7 @@ export const api: NeuroPilotAPI = {
         },
         diffs: {
             calculateDiffs() { }, // TODO: implement function
+            applyDiffHighlighting() { }, // TODO: implement function
         },
         isPathNeuroSafe,
         CancelEvent: RCECancelEvent,
