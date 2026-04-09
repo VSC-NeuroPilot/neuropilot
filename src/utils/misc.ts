@@ -350,35 +350,31 @@ export function combineGlobLinesToRegExp(lines: string[]): RegExp {
  * @param checkPatterns Whether to check against include and exclude patterns.
  * @returns True if Neuro may safely access the path.
  */
-export function isPathNeuroSafe(path: string, checkPatterns = true): boolean {
+export function isPathNeuroSafe(path: string): boolean {
     const workspacePath = getWorkspacePath();
     const rootFolder = workspacePath ? normalizePath(workspacePath) : undefined;
     const normalizedPath = normalizePath(path);
     const includePattern = ACCESS.includePattern || ['**/*'];
     const excludePattern = ACCESS.excludePattern;
 
-    // Use cached regexes when pattern checking is enabled
-    let includeRegExp: RegExp = REGEXP_ALWAYS;
-    let excludeRegExp: RegExp = REGEXP_NEVER;
-    if (checkPatterns) {
-        const includeKey = includePattern.join('\n');
-        const excludeKey = (excludePattern ?? []).join('\n');
+    // Use cached regexes
+    const includeKey = includePattern.join('\n');
+    const excludeKey = (excludePattern ?? []).join('\n');
 
-        if (includeKey !== cachedIncludeKey) {
-            cachedIncludeRegExp = combineGlobLinesToRegExp(includePattern);
-            cachedIncludeKey = includeKey;
-        }
-        if (!excludePattern || excludeKey === '') {
-            cachedExcludeRegExp = REGEXP_NEVER;
-            cachedExcludeKey = '';
-        } else if (excludeKey !== cachedExcludeKey) {
-            cachedExcludeRegExp = combineGlobLinesToRegExp(excludePattern);
-            cachedExcludeKey = excludeKey;
-        }
-
-        includeRegExp = cachedIncludeRegExp;
-        excludeRegExp = cachedExcludeRegExp;
+    if (includeKey !== cachedIncludeKey) {
+        cachedIncludeRegExp = combineGlobLinesToRegExp(includePattern);
+        cachedIncludeKey = includeKey;
     }
+    if (!excludePattern || excludeKey === '') {
+        cachedExcludeRegExp = REGEXP_NEVER;
+        cachedExcludeKey = '';
+    } else if (excludeKey !== cachedExcludeKey) {
+        cachedExcludeRegExp = combineGlobLinesToRegExp(excludePattern);
+        cachedExcludeKey = excludeKey;
+    }
+
+    const includeRegExp = cachedIncludeRegExp;
+    const excludeRegExp = cachedExcludeRegExp;
 
     const ignored = rootFolder ? fastIsItIgnored(normalizedPath) : false;
 

@@ -21,6 +21,8 @@ import { ImagesViewProvider } from '@/views/image';
 import { ExecuteViewProvider, addCustomExecutionHistoryItem } from '@/views/execute';
 import { actionsEventEmitterDisposable } from '@events/actions';
 import { filePreviewProvider } from '@previews/files';
+import { companionChangeEmitterDisposable } from '@events/companions';
+import { CompanionsViewProvider } from '@views/companions';
 
 // Shared commands
 export function registerCommonCommands() {
@@ -125,6 +127,7 @@ export function initializeCommonState(context: vscode.ExtensionContext) {
     NEURO.context.subscriptions.push(
         NEURO.outputChannel,
         actionsEventEmitterDisposable,
+        companionChangeEmitterDisposable,
         vscode.window.registerFileDecorationProvider(filePreviewProvider),
         filePreviewProvider,
     );
@@ -134,7 +137,8 @@ export function initializeCommonState(context: vscode.ExtensionContext) {
 export function setupCommonProviders() {
     NEURO.viewProviders.actions = new ActionsViewProvider();
     NEURO.viewProviders.images = new ImagesViewProvider();
-    NEURO.viewProviders.execute = new ExecuteViewProvider(NEURO.context!);
+    NEURO.viewProviders.execute = new ExecuteViewProvider();
+    NEURO.viewProviders.companions = new CompanionsViewProvider();
     const providers = [
         vscode.languages.registerInlineCompletionItemProvider({ pattern: '**' }, completionsProvider),
         vscode.languages.registerCodeActionsProvider(
@@ -145,6 +149,8 @@ export function setupCommonProviders() {
         vscode.window.registerWebviewViewProvider(ActionsViewProvider.viewId, NEURO.viewProviders.actions),
         vscode.window.registerWebviewViewProvider(ImagesViewProvider.viewId, NEURO.viewProviders.images),
         vscode.window.registerWebviewViewProvider(ExecuteViewProvider.viewId, NEURO.viewProviders.execute),
+        vscode.window.registerWebviewViewProvider(CompanionsViewProvider.viewId, NEURO.viewProviders.companions),
+        NEURO.viewProviders.images,
     ];
 
     return providers;

@@ -25,6 +25,11 @@ export interface NeuroPilotAPI {
             calculateDiffs(): void; // TODO: implement types
         };
         /**
+         * 
+         * @param path The path to the file.
+         */
+        isPathNeuroSafe(path: string): boolean;
+        /**
          * @example new CancelEvent()
          */
         CancelEvent: typeof RCECancelEvent;
@@ -34,5 +39,5 @@ export interface NeuroPilotAPI {
 type ItselfOrArray<T> = T | T[];
 
 export * from './actions';
-export type * from './companions';
+export * from './companions';
 export { ActionForcePriorityEnum } from 'neuro-game-sdk';

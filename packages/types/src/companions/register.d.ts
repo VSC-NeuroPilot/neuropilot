@@ -1,4 +1,4 @@
-import { Disposable, Position } from 'vscode';
+import { Disposable, Event, Position } from 'vscode';
 import { ActionForceParams, InjectionBaseData, RCEAction } from '../actions/types';
 
 export class CompanionAPI extends Disposable {
@@ -7,6 +7,7 @@ export class CompanionAPI extends Disposable {
     /* Action registrations */
     /**
      * Add an action to NeuroPilot's actions registry.
+     * You must have declared the `actions:manage` contribution point.
      * @param actions An array of {@link RCEAction actions} that will be registered.
      * @param register Whether or not these actions should be immediately registered to Neuro. This does not effect your ability to register the action at any point, this simply acts as a shorthand.
      */
@@ -14,30 +15,35 @@ export class CompanionAPI extends Disposable {
 
     /**
      * Remove an action from NeuroPilot's actions registry.
+     * You must have declared the `actions:manage` contribution point.
      * @param actions An array of action names to remove from the registry.
      */
     removeActions(actions: string[]): void;
 
     /**
      * Registers an action to Neuro.
+     * You must have declared either the `actions:manage` or `actions:manage_others` contribution point.
      * @param actions An action name. That action must already have been added via {@link CompanionAPI.addActions}.
      */
     registerAction(action: string): void;
 
     /**
      * Unregisters an action to Neuro.
+     * You must have declared either the `actions:manage` or `actions:manage_others` contribution point.
      * @param actions An action name. That action must already have been added via {@link CompanionAPI.addActions}
      */
     unregisterAction(action: string): void;
 
     /**
      * Re-attempts to register all actions
+     * You must have declared either the `actions:manage` or `actions:manage_others` contribution point.
      * @param conservative If true, only re-register actions as is deemed necessary.
      */
     reregisterAllActions(conservative?: boolean): void;
 
     /**
      * Try to force an action from Neuro.
+     * You must have specified the `actions:force` contribution point.
      * @param params An object describing the action force's parameters.
      * @param strict If true, fails if any action in the parameter object cannot be executed by Neuro, otherwise simply strips out those actions if found.
      * @return `true` if successfully forced an action, `false` otherwise.
@@ -46,11 +52,20 @@ export class CompanionAPI extends Disposable {
 
     /**
      * Inject into any registered action and modify most of its properties.
+     * You must have specified the `actions:inject` contribution point.
      * @param name The action name to inject into
      * @param injectorCallback The callback for injection data
      * @param force Allows changing the action's description and schema. **Don't set this to true if you don't need it!**
      */
     injectIntoAction(name: string, injectorCallback: Partial<InjectionBaseData>, force?: boolean): void;
+
+    /**
+     * Send freeform context to Neuro.
+     * You must have specified the `context` contribution point.
+     * @param message The context to send to Neuro. Will be formatted as "Message from (companion): "
+     * @param silent If false, will prompt Neuro more strongly to react to that context. Defaults to true.
+     */
+    sendContext(message: string, silent?: boolean): void;
 
     /* Neuro Cursor */
     /**
@@ -64,6 +79,16 @@ export class CompanionAPI extends Disposable {
      * @param location The location to move her cursor to. `null` removes the cursor entirely and `undefined` moves it to the last known location (failing that, an error is logged and no cursor is placed).
      */
     setCursor(location?: Position | null): void;
+
+    /**
+     * Subscribe to the event that fires if Neuro's cursor position changed.
+     * You must have declared the `cursor:get` contribution point.
+     * 
+     * The listener will receive the same information as if your companion had called {@link CompanionAPI.getCursor} manually.
+     * 
+     * See also: {@link Event VS Code's Event type}
+     */
+    onDidMoveCursor: Event<Position | null | undefined>;
 }
 
 export interface CompanionMeta {

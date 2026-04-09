@@ -1,9 +1,11 @@
+import { NeuroPilotAPI } from '@vsc-neuropilot/api-types';
+
 import { actionHandlerFailure, actionHandlerRetry, actionHandlerSuccess, actionValidationAccept, actionValidationFailure, actionValidationRetry } from '@/utils/neuro_client';
 import { RCECancelEvent } from '@events/utils';
-import { NeuroPilotAPI } from '@vsc-neuropilot/api-types';
 import { Companion } from './companions';
 import { getAction, getActions } from '@/rce';
 import { findByToken } from '@/plugins';
+import { isPathNeuroSafe } from '@/utils/misc';
 
 export const api: NeuroPilotAPI = {
     Companion,
@@ -23,13 +25,13 @@ export const api: NeuroPilotAPI = {
                 if (typeof action === 'string') {
                     const foundAction = getAction(action);
                     if (!foundAction) return foundAction;
-                    const actionReturn = Object.assign(foundAction, { source: findByToken(foundAction.sourceToken) });
+                    const actionReturn = Object.assign(foundAction, { source: findByToken(foundAction.sourceToken)?.name });
                     delete actionReturn?.sourceToken;
                     return actionReturn;
                 } else {
                     const actions = getActions(action);
                     return actions.map((a) => {
-                        const newObject = Object.assign(a, { source: findByToken(a.sourceToken) });
+                        const newObject = Object.assign(a, { source: findByToken(a.sourceToken)?.name });
                         delete newObject.sourceToken;
                         return newObject;
                     });
@@ -37,8 +39,9 @@ export const api: NeuroPilotAPI = {
             },
         },
         diffs: {
-            calculateDiffs() {}, // TODO: implement function
+            calculateDiffs() { }, // TODO: implement function
         },
+        isPathNeuroSafe,
         CancelEvent: RCECancelEvent,
     },
 };

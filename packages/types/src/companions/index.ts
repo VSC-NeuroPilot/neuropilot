@@ -1,2 +1,2 @@
 export * from './errors';
-export * from './register.d';
+export type * from './register.d';

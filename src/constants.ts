@@ -7,6 +7,7 @@ import type { GitExtension } from '@typing/git.d';
 import { ActionsViewProvider } from '@views/actions';
 import { ImagesViewProvider } from '@views/image';
 import type { ExecuteViewProvider } from '@views/execute';
+import { CompanionsViewProvider } from '@views/companions';
 
 export interface NeuroTask {
     id: string;
@@ -16,8 +17,9 @@ export interface NeuroTask {
 
 interface NeuroViewProviders {
     actions: ActionsViewProvider | null;
-    images: ImagesViewProvider | null;
+    companions: CompanionsViewProvider | null;
     execute: ExecuteViewProvider | null;
+    images: ImagesViewProvider | null;
 }
 
 interface Neuro {
@@ -116,8 +118,9 @@ export const NEURO: Neuro = {
     tempDisabledActions: [],
     viewProviders: {
         actions: null,
-        images: null,
+        companions: null,
         execute: null,
+        images: null,
     },
 };
 

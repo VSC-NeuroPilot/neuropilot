@@ -1,9 +1,15 @@
-import { EventEmitter } from 'vscode';
+import { Disposable, EventEmitter } from 'vscode';
 
-const companionChangeEvent = new EventEmitter<{ name: string; }>();
+interface CompanionChangeEvent {
+    name: string;
+    enabled: boolean;
+}
 
-export function fireCompanionChangeEvent(name: string) {
-    companionChangeEvent.fire({ name });
+const companionChangeEvent = new EventEmitter<CompanionChangeEvent>();
+
+export function fireCompanionChangeEvent(data: CompanionChangeEvent) {
+    companionChangeEvent.fire(data);
 }
 
 export const onDidCompanionChange = companionChangeEvent.event;
+export const companionChangeEmitterDisposable = Disposable.from(companionChangeEvent);

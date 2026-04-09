@@ -5,7 +5,9 @@ import { Disposable, Position } from 'vscode';
 import { addActions, getAction, getActions, registerAction, removeActions, reregisterAllActions, tryForceActions, unregisterAction } from '@/rce';
 import { addToRegistry, findByName, removeFromRegistry } from '@/plugins';
 import { getVirtualCursor, setVirtualCursor } from '@/utils/misc';
+import { onDidMoveCursorEvent } from '@events/cursor';
 import { fireCompanionChangeEvent } from '@events/companions';
+import { NEURO } from '@/constants';
 
 export class Companion extends Disposable implements CompanionAPI {
     private readonly data: CompanionMeta;
@@ -79,6 +81,11 @@ export class Companion extends Disposable implements CompanionAPI {
         addActions([finalObject]);
     }
 
+    sendContext(message: string, silent?: boolean): void {
+        if (!this.data.contributes.includes('context')) throw new PermissionError('sendContext', ['context']);
+        NEURO.client?.sendContext(message, silent);
+    }
+
 
     getCursor(): Position | null | undefined {
         if (!this.data.contributes.includes('cursor:get')) throw new PermissionError('getCursor', ['cursor:get']);
@@ -90,6 +97,11 @@ export class Companion extends Disposable implements CompanionAPI {
         return setVirtualCursor(location);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    onDidMoveCursor(listener: (e: Position | null | undefined) => any, thisArgs?: any, disposables?: Disposable[]): Disposable {
+        if (!this.data.contributes.includes('cursor:get')) throw new PermissionError('onDidCursorMove', ['cursor:get']);
+        return onDidMoveCursorEvent(listener, thisArgs, disposables);
+    };
 
     constructor(meta: CompanionMeta) {
         super(() => {
@@ -97,21 +109,28 @@ export class Companion extends Disposable implements CompanionAPI {
             const actionsToRemove = getActions().filter((a) => a.sourceToken === this.token).map((a) => a.name); // TODO: this is a really bad way to do it but the alternative requires a bit of refactoring so leave this for now
             removeActions(actionsToRemove);
             // TODO: hook into the RCE system to cancel all those things if necessary
-            fireCompanionChangeEvent(this.data.name);
+            fireCompanionChangeEvent({
+                name: this.data.name,
+                enabled: false,
+            });
         });
-        keepTryingRegistration(meta.name);
+        keepTryingRegistration(meta);
         this.data = meta;
         this.token = crypto.randomUUID();
+        fireCompanionChangeEvent({
+            name: this.data.name,
+            enabled: true,
+        });
     }
 }
 
 export type CompanionToken = string;
 
-function keepTryingRegistration(name: string) {
+function keepTryingRegistration(data: CompanionMeta) {
     try {
-        addToRegistry(name, crypto.randomUUID());
+        addToRegistry(data, crypto.randomUUID());
     } catch(erm) {
-        if (erm instanceof RegistryError && erm.message !== 'Name is in use.') keepTryingRegistration(name);
+        if (erm instanceof RegistryError && erm.message !== 'Name is in use.') keepTryingRegistration(data);
         else throw erm;
     }
 }
