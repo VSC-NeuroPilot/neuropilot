@@ -15,7 +15,7 @@
   "devDependencies": {
     "@arethetypeswrong/core": "^0.18.2",
     "@types/vscode": "^1.95.0",
-    "@typescript/native-preview": "7.0.0-dev.20260404.1",
+    "@typescript/native-preview": "7.0.0-dev.20260408.1",
     "tsdown": "^0.21.7"
   },
   "peerDependencies": {
