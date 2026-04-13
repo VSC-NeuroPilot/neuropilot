@@ -1,14 +1,7 @@
 import { Disposable, EventEmitter } from 'vscode';
 import { ActionData } from 'neuro-game-sdk';
 
-export type ActionStatus = 'pending' | 'success' | 'failure' | 'denied' | 'exception' | 'timeout' | 'schema' | 'cancelled';
-
-export interface ActionsEventData {
-    readonly action: string;
-    readonly status: ActionStatus;
-    readonly message?: string;
-    readonly executionId: string;
-}
+import { ActionsEventData, ActionStatus } from '@vsc-neuropilot/api-types';
 
 const actionsEventEmitter = new EventEmitter<ActionsEventData>();
 export const onDidAttemptAction = actionsEventEmitter.event;

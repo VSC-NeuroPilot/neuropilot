@@ -1,5 +1,5 @@
 import { Disposable, Event, Position } from 'vscode';
-import { ActionForceParams, InjectionBaseData, RCEAction } from '../actions/types';
+import { ActionForceParams, ActionsEventData, InjectionBaseData, RCEAction } from '../actions/types';
 
 export class CompanionAPI extends Disposable {
     constructor(data: CompanionMeta);
@@ -58,6 +58,23 @@ export class CompanionAPI extends Disposable {
      * @param force Allows changing the action's description and schema. **Don't set this to true if you don't need it!**
      */
     injectIntoAction(name: string, injectorCallback: Partial<InjectionBaseData>, force?: boolean): void;
+
+    /**
+     * Subscribe to the event that fires if an action status was changed.]
+     * You must have declared the `actions:process` contribution point.
+     * 
+     * Note that this event fires when action statuses change, see the example below to filter to actions beginning execution.
+     * @example
+     * 
+     * ```ts
+     * companion.onDidAttemptAction((data) => {
+     *     if (data.status === 'pending' && data.message === 'Validating action...') {
+     *         doSomething(data)
+     *     }
+     * })
+     * ```
+     */
+    onDidAttemptAction: Event<ActionsEventData>;
 
     /**
      * Send freeform context to Neuro.

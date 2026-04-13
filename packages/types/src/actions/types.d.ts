@@ -1,8 +1,10 @@
 import { JSONSchema7Object } from 'json-schema';
 import { ActionForcePriorityEnum, Action, type NeuroClient } from 'neuro-game-sdk';
 import type { PermissionLevel } from './enums';
-import type { RCECancelEvent, RCEContext } from './classes';
+import type { RCECancelEvent, RCEContext, ActionStatus } from './classes';
 import type { CompanionAPI } from '../companions/register';
+
+//#region Action forces
 
 /**
  * The parameters for forcing actions.
@@ -25,8 +27,10 @@ export interface ActionForceParams {
     overridePermissions?: PermissionLevel.COPILOT | PermissionLevel.AUTOPILOT | Record<string, PermissionLevel.AUTOPILOT | PermissionLevel.COPILOT>;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type PromptGenerator<T extends JSONSchema7Object | undefined, E = any> = string | ((context: RCEContext<T, E>) => string);
+//#endregion
+
+
+//#region Action definition types
 
 /**
  * ActionHandler to use with constants for records of actions and their corresponding handlers.
@@ -146,6 +150,9 @@ export interface RCEAction<T extends JSONSchema7Object | undefined = any, E = an
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type PromptGenerator<T extends JSONSchema7Object | undefined, E = any> = string | ((context: RCEContext<T, E>) => string);
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type RCEHandler<T extends JSONSchema7Object | undefined, E = any> = (context: RCEContext<T, E>) => RCEHandlerReturns;
 /**
  * The possible values that an RCE handler can return.
@@ -178,4 +185,17 @@ export interface ActionHandlerResult {
 
 type ActionHandlerSuccess = 'success' | 'failure' | 'retry';
 
+//#endregion
+
 export type InjectionBaseData = Omit<RCEAction, 'name'>;
+
+//#region action event types
+
+export interface ActionsEventData {
+    readonly action: string;
+    readonly status: ActionStatus;
+    readonly message?: string;
+    readonly executionId: string;
+}
+
+//#endregion
