@@ -1,4 +1,4 @@
-import { type RCEAction, RegistryError, type ActionForceParams, type CompanionAPI, CompanionMeta, PermissionError, InjectionBaseData, BaseCompanionError } from '@vsc-neuropilot/api-types';
+import { type RCEAction, RegistryError, type ActionForceParams, type CompanionAPI, CompanionMeta, PermissionError, InjectionBaseData, BaseCompanionError, ActionsEventData } from '@vsc-neuropilot/api-types';
 import crypto from 'node:crypto';
 import { Disposable, Position } from 'vscode';
 
@@ -8,6 +8,7 @@ import { getVirtualCursor, setVirtualCursor } from '@/utils/misc';
 import { onDidMoveCursorEvent } from '@events/cursor';
 import { fireCompanionChangeEvent } from '@events/companions';
 import { NEURO } from '@/constants';
+import { onDidAttemptAction } from '@events/actions';
 
 export class Companion extends Disposable implements CompanionAPI {
     private readonly data: CompanionMeta;
@@ -81,9 +82,15 @@ export class Companion extends Disposable implements CompanionAPI {
         addActions([finalObject]);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    onDidAttemptAction(listener: (e: ActionsEventData) => any, thisArgs?: any, disposables?: Disposable[]): Disposable {
+        if (!this.data.contributes.includes('actions:process')) throw new PermissionError('onDidAttemptAction', ['actions:process']);
+        return onDidAttemptAction(listener, thisArgs, disposables);
+    }
+
     sendContext(message: string, silent?: boolean): void {
         if (!this.data.contributes.includes('context')) throw new PermissionError('sendContext', ['context']);
-        NEURO.client?.sendContext(message, silent);
+        NEURO.client?.sendContext(`Message from ${this.data.name}: ${message}`, silent);
     }
 
 
@@ -127,6 +134,7 @@ export class Companion extends Disposable implements CompanionAPI {
 export type CompanionToken = string;
 
 function keepTryingRegistration(data: CompanionMeta) {
+    // TODO: add a timeout / other way to handle throws
     try {
         addToRegistry(data, crypto.randomUUID());
     } catch(erm) {
