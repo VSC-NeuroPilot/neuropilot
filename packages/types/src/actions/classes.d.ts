@@ -78,7 +78,7 @@ export interface RCEContext<T extends JSONSchema7Object | undefined = any, K = a
     /**
      * Clears request timers and cancel events before handler execution.
      * This prevents timers/events from triggering during async handler execution.
-     * Should be called immediately before invoking the handler.
+     * You usually shouldn't need to call this, but there is no harm in doing so one or more times.
      */
     clearPreHandlerResources(): void;
 }
