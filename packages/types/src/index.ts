@@ -12,6 +12,9 @@ export interface NeuroPilotAPI {
      * Public, useful utilities you might want to use in your extension.
      */
     utils: {
+        /**
+         * Utilities for generating action validation messages
+         */
         actionValidation: {
             /**
              * Function to return an object that indicates handler success.
@@ -37,6 +40,9 @@ export interface NeuroPilotAPI {
              */
             retry(message: string, historyNote?: string): ActionValidationResult;
         };
+        /**
+         * Utililties for generating action handler messages
+         */
         actionHandler: {
             /**
              * Create a successful action result.
@@ -66,6 +72,9 @@ export interface NeuroPilotAPI {
              */
             retry(message: string, historyNote?: string): ActionHandlerResult;
         };
+        /**
+         * Utilities for the action listing
+         */
         actionsListing: {
             /**
              * Get an action or an array of actions.
@@ -74,6 +83,9 @@ export interface NeuroPilotAPI {
              */
             getActions(action?: string | string[]): ItselfOrArray<RCEAction & { source?: string; }> | undefined
         };
+        /**
+         * Utilities for generating and applying diffs
+         */
         diffs: {
             /**
              * @todo Documentation + types for how to use (cc: @Pasu4)
@@ -88,7 +100,9 @@ export interface NeuroPilotAPI {
         };
         /**
          * Checks if a file is Neuro-safe, according to the rules the user has set in NeuroPilot's settings.
-         * @param path The path to the file.
+         * 
+         * It is recommended that you use this to check file paths if your actions are accessing a file for any reason.
+         * @param path The path to the file. This utility expects an *absolute* path.
          */
         isPathNeuroSafe(path: string): boolean;
         /**
