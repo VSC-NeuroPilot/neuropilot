@@ -3,7 +3,7 @@ import assert from 'node:assert';
 import { NeuroClient } from 'neuro-game-sdk';
 import globToRegExp from 'glob-to-regexp';
 import { fileTypeFromBuffer } from 'file-type';
-import { ActionValidationResult, PermissionLevel } from '@vsc-neuropilot/api-types';
+import { ActionValidationResult, DiffRange, DiffRangeType, PermissionLevel } from '@vsc-neuropilot/api-types';
 
 import { NEURO } from '@/constants';
 import { ACCESS, CONFIG, CONNECTION, CursorPositionContextStyle, getPermissionLevel, setPermissionLevel } from '@/config';
@@ -572,26 +572,14 @@ export function getVirtualCursor(): vscode.Position | null | undefined {
     }
 }
 
-export const enum DiffRangeType {
-    Added,
-    Modified,
-    Removed,
-}
-
-export interface DiffRange {
-    range: vscode.Range;
-    type: DiffRangeType;
-    removedText?: string;
-}
-
 /**
  * Calculates the difference between the original and modified text. The ranges are based on the modified text.
  * @param startPosition The position where the diff starts, used to calculate positions from offsets.
  * @param original The original text. Must have consistent line endings with `modified`.
  * @param modified The modified text. Must have consistent line endings with `original`.
+ * @param tokenRegExp The regular expression to use for tokenizing the text.
  */
-export function getDiffRanges(startPosition: vscode.Position, original: string, modified: string): DiffRange[] {
-    const tokenRegExp = /\w+|\r?\n|\s+|./g;
+export function getDiffRanges(startPosition: vscode.Position, original: string, modified: string, tokenRegExp = /\w+|\r?\n|\s+|./g): DiffRange[] {
     const originalTokens = original.match(tokenRegExp) ?? [];
     const modifiedTokens = modified.match(tokenRegExp) ?? [];
 

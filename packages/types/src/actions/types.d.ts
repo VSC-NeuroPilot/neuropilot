@@ -1,6 +1,6 @@
 import { JSONSchema7Object } from 'json-schema';
 import { ActionForcePriorityEnum, Action, type NeuroClient } from 'neuro-game-sdk';
-import type { PermissionLevel } from './enums';
+import type { PermissionLevel, DiffRangeType } from './enums';
 import type { RCECancelEvent, RCEContext, ActionStatus } from './classes';
 import type { CompanionAPI } from '../companions/register';
 
@@ -196,6 +196,54 @@ export interface ActionsEventData {
     readonly status: ActionStatus;
     readonly message?: string;
     readonly executionId: string;
+}
+
+//#endregion
+
+//#region Patience diff
+
+export interface DiffLine {
+    /** The text of the line. */
+    text: string;
+    /** The original line number in the old version of the text, or -1 if the line is new. */
+    oldIndex: number;
+    /** The line number in the new version of the text, or -1 if the line was deleted. */
+    newIndex: number;
+}
+export interface DiffPlusLine extends DiffLine {
+    /** Whether the line was moved. */
+    moved: boolean;
+    /**
+     * The original line number in the old version of the text, or -1 if the line is new.
+     * For moved lines, this is the line number this line was moved from.
+     */
+    oldIndex: number;
+    /**
+     * The line number in the new version of the text, or -1 if the line was deleted.
+     * For moved lines, this is the line number this line was moved to.
+     * If this is -1 for a moved line, it is the counterpart of another moved line where the correct index is set.
+     */
+    newIndex: number;
+}
+
+export interface Diff {
+    /** The lines in the diff. */
+    lines: DiffLine[];
+    /** The number of lines in the old text that do not appear in the new text (i.e., deleted or changed lines). */
+    lineCountDeleted: number;
+    /** The number of lines in the new text that do not appear in the old text (i.e., inserted or changed lines). */
+    lineCountInserted: number;
+}
+
+export interface DiffPlus extends Diff {
+    lines: DiffPlusLine[];
+    lineCountMoved: number;
+}
+
+export interface DiffRange {
+    range: vscode.Range;
+    type: DiffRangeType;
+    removedText?: string;
 }
 
 //#endregion

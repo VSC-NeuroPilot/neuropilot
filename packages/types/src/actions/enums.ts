@@ -4,3 +4,10 @@ export const enum PermissionLevel {
     COPILOT = 1,
     AUTOPILOT = 2,
 }
+
+/** Type of diff range */
+export const enum DiffRangeType {
+    Added,
+    Modified,
+    Removed,
+}

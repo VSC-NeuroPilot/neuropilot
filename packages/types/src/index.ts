@@ -1,6 +1,7 @@
 import type { RCECancelEvent } from './actions/classes';
-import type { ActionHandlerResult, ActionValidationResult, RCEAction } from './actions/types';
+import type { ActionHandlerResult, ActionValidationResult, Diff, DiffPlus, DiffRange, RCEAction, DiffPlusLine } from './actions/types';
 import type { CompanionAPI } from './companions/register';
+import type * as vscode from 'vscode';
 
 export interface NeuroPilotAPI {
     /**
@@ -88,19 +89,58 @@ export interface NeuroPilotAPI {
          */
         diffs: {
             /**
-             * @todo Documentation + types for how to use (cc: @Pasu4)
-             * @param oldLines Old lines
-             * @param newLines New lines
+             * Calculate the diff between two sets of lines using the Patience diff algorithm.
+             *
+             * The algorithm is not limited to line-based diffs, you can also use it to calculate word- or
+             * character-based diffs by splitting your text into arrays of words or characters instead of lines (at
+             * the cost of performance).
+             * However, documentation and property names still refer to everything as lines.
+             * @param oldLines The lines before the change.
+             * @param newLines The lines after the change.
+             * @see {@link https://github.com/jonTrent/PatienceDiff}
              */
-            calculateDiffs(oldLines: string[], newLines: string[]): void; // TODO: implement types
+            calculateDiff(oldLines: string[], newLines: string[]): Diff;
             /**
-             * @todo implement diff highlighting with the green/red/orange colours
+             * Calculate the diff between two sets of lines, taking moved lines into account.
+             *
+             * Note that moved lines are duplicated in the resulting diff:
+             * A line will appear once with `oldIndex` set to the position it was moved from and `newIndex` set to the
+             * position it was moved to, and a counterpart of that line will also appear with the same text and
+             * `newIndex` set to -1. This is part of the original implementation of the algorithm, which we did not modify.
+             * See also: {@link DiffPlusLine.newIndex}
+             * @param oldLines The lines before the change.
+             * @param newLines The lines after the change.
+             * @see {@link NeuroPilotAPI.utils.diffs.calculateDiff calculateDiff}
              */
-            applyDiffHighlighting(): void; // TODO: implement types
+            calculateDiffPlus(oldLines: string[], newLines: string[]): DiffPlus;
+            /**
+             * Calculates the difference between the original and modified text. The ranges are based on the new text.
+             * @param startPosition The position to offset the resulting ranges by.
+             * @param oldText The text before the change.
+             * @param newText The text after the change.
+             * @param tokenRegExp The regular expression used for tokenization. The global flag must be set, and every
+             * character in the text must be matched.
+             * Defaults to `/\w+|\r?\n|\s+|./g` (word diff).
+             * Examples:
+             * - Line diff: `/.*(?:\r?\n|$)/g`
+             * - Word diff: `/\w+|\r?\n|\s+|./g`
+             * - Character diff: `/.|\r?\n/g`
+             */
+            calculateDiffRanges(startPosition: vscode.Position, oldText: string, newText: string, tokenRegExp?: RegExp): DiffRange[];
+            /**
+             * Apply diff highlighting to a text editor based on the provided diff ranges.
+             * If you use {@link NeuroPilotAPI.utils.diffs.calculateDiffRanges calculateDiffRanges} to calculate the
+             * diff ranges, the current text in the editor should be provided as the `newText` parameter.
+             * @param editor The text editor to highlight.
+             * @param diffRanges The diff ranges to highlight.
+             * If you use {@link NeuroPilotAPI.utils.diffs.calculateDiffRanges calculateDiffRanges} to calculate these,
+             * the current text in the editor should be provided as the `newText` parameter.
+             */
+            applyDiffHighlighting(editor: vscode.TextEditor, diffRanges: DiffRange[]): void;
         };
         /**
          * Checks if a file is Neuro-safe, according to the rules the user has set in NeuroPilot's settings.
-         * 
+         *
          * It is recommended that you use this to check file paths if your actions are accessing a file for any reason.
          * @param path The path to the file. This utility expects an *absolute* path.
          */

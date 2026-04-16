@@ -1,11 +1,14 @@
-import { NeuroPilotAPI } from '@vsc-neuropilot/api-types';
+import type * as vscode from 'vscode';
+
+import { Diff, DiffPlus, DiffRange, NeuroPilotAPI } from '@vsc-neuropilot/api-types';
 
 import { actionHandlerFailure, actionHandlerRetry, actionHandlerSuccess, actionValidationAccept, actionValidationFailure, actionValidationRetry } from '@/utils/neuro_client';
 import { RCECancelEvent } from '@events/utils';
 import { Companion } from './companions';
 import { getAction, getActions } from '@/rce';
 import { findByToken } from '@/plugins';
-import { isPathNeuroSafe } from '@/utils/misc';
+import { getDiffRanges, isPathNeuroSafe, showDiffRanges } from '@/utils/misc';
+import { patienceDiff, patienceDiffPlus } from '@/patience_diff';
 
 export const api: NeuroPilotAPI = {
     Companion,
@@ -39,8 +42,36 @@ export const api: NeuroPilotAPI = {
             },
         },
         diffs: {
-            calculateDiffs() { }, // TODO: implement function
-            applyDiffHighlighting() { }, // TODO: implement function
+            calculateDiff(oldLines: string[], newLines: string[]) {
+                const diff = patienceDiff(oldLines, newLines);
+                return {
+                    lines: diff.lines.map(line => ({
+                        text: line.line,
+                        oldIndex: line.aIndex,
+                        newIndex: line.bIndex,
+                    })),
+                    lineCountDeleted: diff.lineCountDeleted,
+                    lineCountInserted: diff.lineCountInserted,
+                } satisfies Diff;
+            },
+            calculateDiffPlus(oldLines: string[], newLines: string[]) {
+                const diff = patienceDiffPlus(oldLines, newLines);
+                return {
+                    lines: diff.lines.map(line => ({
+                        text: line.line,
+                        oldIndex: line.aIndex,
+                        newIndex: line.bIndex,
+                        moved: line.moved ?? false,
+                    })),
+                    lineCountDeleted: diff.lineCountDeleted,
+                    lineCountInserted: diff.lineCountInserted,
+                    lineCountMoved: diff.lineCountMoved,
+                } satisfies DiffPlus;
+            },
+            calculateDiffRanges: getDiffRanges,
+            applyDiffHighlighting(editor: vscode.TextEditor, diffRanges: DiffRange[]) {
+                showDiffRanges(editor, ...diffRanges);
+            },
         },
         isPathNeuroSafe,
         CancelEvent: RCECancelEvent,
