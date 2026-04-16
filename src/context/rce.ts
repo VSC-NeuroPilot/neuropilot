@@ -1,9 +1,9 @@
 import type { JSONSchema7Object } from 'json-schema';
 import type { ActionData } from 'neuro-game-sdk';
 import { Disposable, Progress } from 'vscode';
-import { RCEContext as _RCEContext, ActionValidationResult, RCEAction } from '@vsc-neuropilot/api-types';
+import { RCEContext as _RCEContext, ActionValidationResult, RCEAction, ActionStatus } from '@vsc-neuropilot/api-types';
 
-import { ActionStatus, updateActionStatus } from '@events/actions';
+import { updateActionStatus } from '@events/actions';
 import { getAction } from '@/rce';
 
 export type RCEStorage = Record<string | number | symbol, unknown>;

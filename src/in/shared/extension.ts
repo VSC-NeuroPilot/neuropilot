@@ -12,7 +12,7 @@ import { emergencyDenyRequests, acceptRceRequest, denyRceRequest, revealRceNotif
 import type { GitExtension } from '@typing/git';
 import { getGitExtension } from '@/git';
 import { openDocsOnTarget, registerDocsCommands, registerDocsLink } from './docs';
-import { sendChangelogOnDemand } from '@/changelog';
+import { sendChangelogOnDemand, loadAllChangelogs } from '@/changelog';
 import { moveCursorEmitterDiposable } from '@events/cursor';
 import { loadIgnoreFiles } from '@/utils/ignore_files';
 import { getWorkspacePath, normalizePath } from '@/utils/misc';
@@ -132,6 +132,9 @@ export function initializeCommonState(context: vscode.ExtensionContext) {
         filePreviewProvider,
     );
     checkDeprecatedSettings(context.extension.packageJSON.version as string);
+
+    // Load all changelog versions on activation
+    loadAllChangelogs();
 }
 
 export function setupCommonProviders() {

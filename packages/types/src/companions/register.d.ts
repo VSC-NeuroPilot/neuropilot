@@ -84,6 +84,14 @@ export class CompanionAPI extends Disposable {
      */
     sendContext(message: string, silent?: boolean): void;
 
+    /**
+     * Add a changelog entry that Neuro can query for your companion.
+     * You must have specified the `changelog` contribution point.
+     * @param version The version tag for your companion
+     * @param changelog The changelog for that version. It is strongly recommended to follow Markdown formatting. 
+     */
+    addChangelog(version: string, changelog: string): void;
+
     /* Neuro Cursor */
     /**
      * Get Neuro's current cursor location in the current file.

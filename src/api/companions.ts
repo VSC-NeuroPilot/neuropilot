@@ -9,6 +9,7 @@ import { onDidMoveCursorEvent } from '@events/cursor';
 import { fireCompanionChangeEvent } from '@events/companions';
 import { NEURO } from '@/constants';
 import { onDidAttemptAction } from '@events/actions';
+import { addChangelogs } from '@/changelog';
 
 export class Companion extends Disposable implements CompanionAPI {
     private readonly data: CompanionMeta;
@@ -91,6 +92,11 @@ export class Companion extends Disposable implements CompanionAPI {
     sendContext(message: string, silent?: boolean): void {
         if (!this.data.contributes.includes('context')) throw new PermissionError('sendContext', ['context']);
         NEURO.client?.sendContext(`Message from ${this.data.name}: ${message}`, silent);
+    }
+
+    addChangelog(version: string, changelog: string): void {
+        if (!this.data.contributes.includes('changelog')) throw new PermissionError('addChangelog', ['changelog']);
+        addChangelogs(this.data.name, version, changelog);
     }
 
 

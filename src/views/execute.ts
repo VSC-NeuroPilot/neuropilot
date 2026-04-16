@@ -1,8 +1,10 @@
-import { BaseWebviewViewProvider, Message } from './base';
-import { onDidAttemptAction, type ActionsEventData, type ActionStatus } from '../events/actions';
 import * as vscode from 'vscode';
-import { NEURO } from '@/constants';
 import assert from 'assert';
+import type { ActionsEventData, ActionStatus } from '@vsc-neuropilot/api-types';
+
+import { BaseWebviewViewProvider, Message } from './base';
+import { onDidAttemptAction } from '../events/actions';
+import { NEURO } from '@/constants';
 
 export interface ExecuteResult {
     status: ActionStatus;
