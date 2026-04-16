@@ -26,6 +26,10 @@ export function addChangelogs(name: string, version: string, body: string): void
     else changelogs[name][changelogToReplace].body = body;
 };
 
+export function deleteChangelogs(name: string): void {
+    delete changelogs[name];
+}
+
 /**
  * Load all changelog versions from CHANGELOG.md on extension activation.
  * This populates the changelogs object with all available versions.

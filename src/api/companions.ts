@@ -9,7 +9,7 @@ import { onDidMoveCursorEvent } from '@events/cursor';
 import { fireCompanionChangeEvent } from '@events/companions';
 import { NEURO } from '@/constants';
 import { onDidAttemptAction } from '@events/actions';
-import { addChangelogs } from '@/changelog';
+import { addChangelogs, deleteChangelogs } from '@/changelog';
 
 export class Companion extends Disposable implements CompanionAPI {
     private readonly data: CompanionMeta;
@@ -121,6 +121,7 @@ export class Companion extends Disposable implements CompanionAPI {
             removeFromRegistry(this.token);
             const actionsToRemove = getActions().filter((a) => a.sourceToken === this.token).map((a) => a.name); // TODO: this is a really bad way to do it but the alternative requires a bit of refactoring so leave this for now
             removeActions(actionsToRemove);
+            deleteChangelogs(this.data.name);
             // TODO: hook into the RCE system to cancel all those things if necessary
             fireCompanionChangeEvent({
                 name: this.data.name,
