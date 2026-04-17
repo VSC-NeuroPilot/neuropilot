@@ -56,10 +56,10 @@ export class CompanionAPI extends Disposable {
      * Inject into any registered action and modify most of its properties.
      * You must have specified the `actions:inject` contribution point.
      * @param name The action name to inject into
-     * @param injectorCallback The callback for injection data
-     * @param force Allows changing the action's description and schema. **Don't set this to true if you don't need it!**
+     * @param injection An object containing the properties to inject.
+     * @param force Allows changing the action's description and schema. Defaults to false. **Don't set this to true if you don't need it!**
      */
-    injectIntoAction(name: string, injectorCallback: Partial<InjectionBaseData>, force?: boolean): void;
+    injectIntoAction(name: string, injection: Partial<InjectionBaseData>, force?: boolean): void;
 
     /**
      * Subscribe to the event that fires if an action status was changed.]
