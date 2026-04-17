@@ -45,12 +45,6 @@ export interface RCEAction<T extends JSONSchema7Object | undefined = any, E = an
      * @example edit_file -> Edit File // if displayName isn't set
      */
     displayName?: string;
-    /** 
-     * The JSON schema for validating the action parameters if experimental schemas are disabled.
-     * Do not use this if you don't have an "experimental schema". Instead, simply specify {@link Action.schema the normal schema property}.
-     * @todo likely deprecating experimental schemas
-     */
-    schemaFallback?: Action['schema'];
     /**
      * An object that defines an array of functions to validate the action's "environment".
      * Validators run before requests/executions to ensure environment/input validity.
