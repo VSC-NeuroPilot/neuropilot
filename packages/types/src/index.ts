@@ -8,21 +8,21 @@ interface ActionValidationUtils {
      * Function to return an object that indicates handler success.
      * @param message The message that will be sent to Neuro
      * @param historyNote If supplied, an action status update with its status set to success will be fired with the note. Otherwise, assumes that you've already done that yourself.
-     * @returns {ActionHandlerResult} An object with a successful handler result
+     * @returns {ActionHandlerResult} An object with a successful validation result
     */
     success(message?: string, historyNote?: string): ActionValidationResult;
     /**
      * Function to return an object that indicates handler failure.
      * @param message The message that will be sent to Neuro
      * @param historyNote If supplied, an action status update with its status set to success will be fired with the note. Otherwise, assumes that you've already done that yourself.
-     * @returns {ActionHandlerResult} An object with a failed handler result
+     * @returns {ActionHandlerResult} An object with a failed validation result
      */
     failure(message: string, historyNote?: string): ActionValidationResult;
     /**
      * Function to return an object that indicates handler failure.
      * @param message The message that will be sent to Neuro
      * @param historyNote If supplied, an action status update with its status set to success will be fired with the note. Otherwise, assumes that you've already done that yourself.
-     * @returns {ActionHandlerResult} An object with a failed handler result
+     * @returns {ActionHandlerResult} An object with a failed validation result
      */
     retry(message: string, historyNote?: string): ActionValidationResult;
 }
