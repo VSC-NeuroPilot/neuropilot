@@ -100,6 +100,7 @@ export interface RCEAction<T extends JSONSchema7Object | undefined = any, E = an
     /** 
      * The function to generate a prompt for the action request (Copilot Mode). 
      * The prompt should fit the phrasing scheme "Neuro wants to [prompt]".
+     * Example: `"edit the current file."` resulting in "Neuro wants to edit the current file.".
      * 
      * Only set this to `null` if the action is never intended to be used in Copilot mode.
      * 
