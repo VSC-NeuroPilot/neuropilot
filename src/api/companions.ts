@@ -113,7 +113,7 @@ export class Companion extends Disposable implements CompanionAPI {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onDidMoveCursor(listener: (e: Position | null | undefined) => any, thisArgs?: any, disposables?: Disposable[]): Disposable {
-        if (!this.data.contributes.includes('cursor:get')) throw new PermissionError('onDidCursorMove', ['cursor:get']);
+        if (!this.data.contributes.includes('cursor:get')) throw new PermissionError('onDidMoveCursor', ['cursor:get']);
         return onDidMoveCursorEvent(listener, thisArgs, disposables);
     };
 
