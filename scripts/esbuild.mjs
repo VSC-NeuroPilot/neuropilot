@@ -183,6 +183,6 @@ try {
             process.exit(1);
     }
 } catch (erm) {
-    console.error(ansis.bgRed.white.bold(`💥  Build failed: ${erm}`));
+    console.error(ansis.bgRed.white.bold(`💥  Build failed: ${JSON.stringify(erm)}`));
     process.exit(1);
 }

@@ -1115,7 +1115,7 @@ export function handleReplaceText(context: RCEContext): RCEHandlerReturns {
             const replacement = useRegex ? substituteMatch(m, replaceWith) : replaceWith;
             edit.replace(document.uri, new vscode.Range(positionFromIndex(originalText, m.index), positionFromIndex(originalText, m.index + m[0].length)), replacement);
         } catch (erm) {
-            logOutput('ERROR', `Error while substituting match: ${erm}`);
+            logOutput('ERROR', `Error while substituting match: ${JSON.stringify(erm)}`);
             return actionHandlerFailure(erm instanceof Error ? erm.message : 'Unknown error while substituting match', 'Error while substituting match');
         }
     }
@@ -1691,7 +1691,7 @@ export function fileSaveListener(e: vscode.TextDocument) {
  * @param lineRange The line range to limit results to. If not specified, defaults to the entire text.
  * @returns The matches found in the text based on the match option.
  */
-function findAndFilter(regex: RegExp, text: string, cursorOffset: number, match: string, lineRange: LineRange | undefined = undefined): RegExpExecArray[] {
+function findAndFilter(regex: RegExp, text: string, cursorOffset: number, match: string, lineRange?: LineRange): RegExpExecArray[] {
     const matchIterator = text.matchAll(regex);
     let matches: RegExpStringIterator<RegExpExecArray> | RegExpExecArray[];
 

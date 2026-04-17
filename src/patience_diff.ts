@@ -275,7 +275,7 @@ export function patienceDiff(aLines: string[], bLines: string[], diffPlusFlag = 
     // none found, at which point the subsequence is dumped to the result.
     //
 
-    function recurseLCS(aLo: number, aHi: number, bLo: number, bHi: number, uniqueCommonMap: Map<string, LinkedIndexPair> | undefined = undefined): void {
+    function recurseLCS(aLo: number, aHi: number, bLo: number, bHi: number, uniqueCommonMap?: Map<string, LinkedIndexPair>): void {
         const x = longestCommonSubsequence(uniqueCommonMap || uniqueCommon(aLines, aLo, aHi, bLines, bLo, bHi));
 
         if (x.length === 0) {

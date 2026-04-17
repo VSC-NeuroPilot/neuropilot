@@ -80,7 +80,7 @@
     "no-unsafe-optional-chaining": "error",
     "no-unused-labels": "error",
     "no-unused-private-class-members": "error",
-    "no-unused-vars": "error",
+    "no-unused-vars": "off",
     "no-useless-backreference": "error",
     "no-useless-catch": "error",
     "no-useless-escape": "error",
@@ -121,9 +121,15 @@
     "typescript/no-inferrable-types": "error",
     "typescript/prefer-for-of": "error",
     "typescript/prefer-function-type": "error",
-    "eslint-js/no-useless-assignment": "warn"
+    "typescript/restrict-template-expressions": "off",
+    "typescript-js/no-unused-vars": "error"
   },
-  "jsPlugins": ["oxlint-plugin-eslint"],
+  "jsPlugins": [
+    {
+      "name": "typescript-js",
+      "specifier": "@typescript-eslint/eslint-plugin"
+    }
+  ],
   "overrides": [
     {
       "files": [

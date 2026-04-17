@@ -96,7 +96,7 @@ function attemptConnection(currentAttempt: number, maxAttempts: number, interval
         NEURO.connected = true;
         shouldAutoReconnect = true; // Reset flag on successful connection
 
-        showAPIMessage('connected');
+        void showAPIMessage('connected');
 
         NEURO.client.onClose = () => {
             NEURO.connected = false;
@@ -114,17 +114,17 @@ function attemptConnection(currentAttempt: number, maxAttempts: number, interval
                     }, interval);
                 } else {
                     logOutput('WARNING', `Failed to reconnect after ${maxAttempts} attempts`);
-                    showAPIMessage('failed', `Failed to reconnect to the Neuro API after ${maxAttempts} attempt(s).`);
+                    void showAPIMessage('failed', `Failed to reconnect to the Neuro API after ${maxAttempts} attempt(s).`);
                 }
             } else {
                 // Manual disconnection - show appropriate message
-                showAPIMessage('disconnect');
+                void showAPIMessage('disconnect');
             }
         };
 
         NEURO.client.onError = (erm: unknown) => {
             logOutput('ERROR', 'Could not connect to Neuro API, error: ' + JSON.stringify(erm));
-            showAPIMessage('error');
+            void showAPIMessage('error');
         };
 
         NEURO.client.sendContext(
@@ -154,7 +154,7 @@ function attemptConnection(currentAttempt: number, maxAttempts: number, interval
             }, interval);
         } else {
             logOutput('WARNING', `Failed to connect after ${maxAttempts} attempts`);
-            showAPIMessage('failed', `Failed to connect to the Neuro API after ${maxAttempts} attempt(s).`);
+            void showAPIMessage('failed', `Failed to connect to the Neuro API after ${maxAttempts} attempt(s).`);
         }
     };
 }
@@ -177,7 +177,7 @@ export async function disconnectClient() {
 
 // Add a function to manually reconnect
 export function reconnectClient() {
-    disconnectClient() // Clean up existing connection
+    void disconnectClient() // Clean up existing connection
         .then(createClient); // Start fresh connection
 }
 
@@ -856,7 +856,7 @@ export async function waitFor(predicate: () => boolean, interval: number, timeou
  * @param overrideCursorStyle If provided, overrides the cursor style setting for this context.
  * @returns The formatted context.
  */
-export function formatContext(context: NeuroPositionContext, overrideCursorStyle: CursorPositionContextStyle | undefined = undefined): string {
+export function formatContext(context: NeuroPositionContext, overrideCursorStyle?: CursorPositionContextStyle): string {
     const fence = getFence(context.contextBefore + context.contextAfter);
     const rawContextBefore = context.contextBefore;
     const rawContextAfter = context.contextAfter;
@@ -962,8 +962,9 @@ export const turtleSafari = (input: string) => input.replace(/(?<!\\)insert_turt
 /**
  * Log a caught exception and surface an error to report to GitHub.
  */
+// oxlint-disable-next-line typescript/no-redundant-type-constituents
 export function notifyOnCaughtException(name: string, error: Error | unknown): void {
-    logOutput('ERROR', `Error occurred while executing action ${name}: ${error}`);
+    logOutput('ERROR', `Error occurred while executing action ${name}: ${JSON.stringify(error)}`);
     vscode.window.showErrorMessage(`${CONNECTION.nameOfAPI} tried to run the action "${name}", but an exception was thrown!`, 'View Logs', 'Disable Action for...', 'Report on GitHub').then(
         async (v) => {
             switch (v) {
@@ -1025,7 +1026,7 @@ export function formatString(template: string, format: Record<string, unknown>):
         const key = match[1];
         const value = match[0] === '$$' ? '$' : getProperty(format, key);
         if (value !== undefined) {
-            result = result.substring(0, pos) + String(value) + result.substring(pos + length);
+            result = result.substring(0, pos) + JSON.stringify(value) + result.substring(pos + length);
         }
     }
     return result;

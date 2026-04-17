@@ -638,7 +638,7 @@ export async function RCEActionHandler(actionData: ActionData) {
                 for (const hook of context.action.contextSetupHook) {
                     setupArray.push(hook(context));
                 }
-                Promise.allSettled(setupArray).then(() => context!.lifecycle.setupHooks = true);
+                void Promise.allSettled(setupArray).then(() => context!.lifecycle.setupHooks = true);
             }
 
             // Validate schema

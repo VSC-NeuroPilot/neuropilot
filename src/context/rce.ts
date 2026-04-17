@@ -87,7 +87,7 @@ export class RCEContext<T extends JSONSchema7Object | undefined = any, K = any> 
             this.storage = undefined;
             this.data = {} as never;
             this.action = {} as never;
-            this._updateStatus = (_status, _message) => undefined;
+            this._updateStatus = () => undefined;
         });
         this.data = data;
         this.action = getAction(data.name)!;
