@@ -75,6 +75,7 @@ export class Companion extends Disposable implements CompanionAPI {
         const baseObject: InjectionBaseData & { source: string; } = Object.assign(action, { name: undefined, source: findByName(action.sourceToken) });
 
         const finalInjects = Object.assign(baseObject, injects, { name: undefined }); // does setting name: undefined even work or does it have to be null
+        delete finalInjects.name;
         // TODO: upgrade injection logic to be smarter when removing and readding and all that
         if (!action.injectedBy) action.injectedBy = [];
         action.injectedBy.push({ companion: this.data.name, injects });
