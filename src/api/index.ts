@@ -28,13 +28,13 @@ export const api: NeuroPilotAPI = {
                 if (typeof action === 'string') {
                     const foundAction = getAction(action);
                     if (!foundAction) return foundAction;
-                    const actionReturn = Object.assign(foundAction, { source: findByToken(foundAction.sourceToken)?.name });
+                    const actionReturn = {...foundAction, source: findByToken(foundAction.sourceToken)?.name };
                     delete actionReturn?.sourceToken;
                     return actionReturn;
                 } else {
                     const actions = getActions(action);
                     return actions.map((a) => {
-                        const newObject = Object.assign(a, { source: findByToken(a.sourceToken)?.name });
+                        const newObject = {...a, source: findByToken(a.sourceToken)?.name };
                         delete newObject.sourceToken;
                         return newObject;
                     });
