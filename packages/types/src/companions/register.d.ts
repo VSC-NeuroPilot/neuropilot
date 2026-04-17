@@ -62,7 +62,7 @@ export class CompanionAPI extends Disposable {
     injectIntoAction(name: string, injection: Partial<InjectionBaseData>, force?: boolean): void;
 
     /**
-     * Subscribe to the event that fires if an action status was changed.]
+     * Subscribe to the event that fires if an action status was changed.
      * You must have declared the `actions:process` contribution point.
      * 
      * Note that this event fires when action statuses change, see the example below to filter to actions beginning execution.
