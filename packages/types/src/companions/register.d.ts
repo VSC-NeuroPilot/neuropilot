@@ -46,6 +46,8 @@ export class CompanionAPI extends Disposable {
      * You must have specified the `actions:force` contribution point.
      * @param params An object describing the action force's parameters.
      * @param strict If true, fails if any action in the parameter object cannot be executed by Neuro, otherwise simply strips out those actions if found.
+     * Defaults to false.
+     * If actions are stripped out, at least one action must remain, otherwise the action force will fail.
      * @return `true` if successfully forced an action, `false` otherwise.
      */
     tryForceActions(params: ActionForceParams, strict?: boolean): boolean;
