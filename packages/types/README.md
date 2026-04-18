@@ -9,6 +9,7 @@ Install with:
 ```sh
 npm install -D @vsc-neuropilot/api-types
 # or your package manager's equivalent
+# Make sure that you also have @types/vscode installed!
 ```
 
 Then, in your own extension, declare an extension dependency on NeuroPilot:

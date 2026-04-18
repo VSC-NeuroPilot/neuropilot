@@ -3,6 +3,11 @@
   "version": "1.0.0",
   "type": "module",
   "types": "./dist/index.d.mts",
+  "files": [
+    "dist",
+    "CHANGELOG.md",
+    "SECURITY.md"
+  ],
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
