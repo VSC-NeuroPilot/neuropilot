@@ -9,7 +9,6 @@ import { StatusStrings, RefTypeStrings } from '@typing/git_status';
 import { logOutput, simpleFileName, isPathNeuroSafe, normalizePath, getWorkspacePath, getWorkspaceUri } from '@/utils/misc';
 import { actionValidationAccept, actionValidationFailure, actionValidationRetry, actionHandlerSuccess, actionHandlerFailure, actionHandlerRetry } from '@/utils/neuro_client';
 import { RCECancelEvent } from '@events/utils';
-import { JSONSchema7Definition } from 'json-schema';
 import { addActions, registerAction, reregisterAllActions, unregisterAction } from './rce';
 import { filePreviewProvider } from '@previews/files';
 
@@ -358,44 +357,9 @@ export const gitActions = {
         category: CATEGORY_GIT,
         schema: {
             type: 'object',
-            oneOf: [
-                {
-                    properties: {
-                        filePath: { type: 'string', description: 'A file to run diffs against. If omitted, will diff the entire ref.' },
-                        diffType: { type: 'string', enum: ['diffWithHEAD', 'diffIndexWithHEAD', 'fullDiff'], description: 'The type of diff to run.' },
-                    },
-                    required: ['diffType'],
-                    additionalProperties: false,
-                },
-                {
-                    properties: {
-                        ref1: { type: 'string', description: 'The ref to diff with.' },
-                        filePath: { type: 'string', description: 'A file to run diffs against. If omitted, will diff the entire ref.' },
-                        diffType: { type: 'string', enum: ['diffWith', 'diffIndexWith'], description: 'The type of diff to run.' },
-                    },
-                    required: ['ref1', 'diffType'],
-                    additionalProperties: false,
-                },
-                {
-                    properties: {
-                        ref1: { type: 'string', description: 'The ref to diff with.' },
-                        ref2: { type: 'string', description: 'The ref to diff ref1 against.' },
-                        filePath: { type: 'string', description: 'A file to run diffs against. If omitted, will diff the entire ref.' },
-                        diffType: { type: 'string', const: 'diffBetween', description: 'The type of diff to run.' },
-                    },
-                    required: ['ref1', 'ref2', 'diffType'],
-                    additionalProperties: false,
-                },
-            ] as JSONSchema7Definition[],
-        },
-        // TODO: This fallback contains descriptions, which is not officially supported.
-        //       I don't think it will be used in the next dev stream, so I'll leave it for now.
-        //       Remove this comment once it is confirmed that descriptions are stable, or remove the descriptions if they are not.
-        schemaFallback: {
-            type: 'object',
             properties: {
-                ref1: { type: 'string', description: 'The first ref to use to diff with. May not be used in some diff types.' },
-                ref2: { type: 'string', description: 'The second ref to diff against the first ref. Will not be used in some diff types.' },
+                ref1: { type: 'string', description: 'The first ref to use to diff with. Only used if diffType is "diffWith", "diffIndexWith", and "diffBetween".' },
+                ref2: { type: 'string', description: 'The second ref to diff against the first ref. Only used if diffType is "diffBetween".' },
                 filePath: { type: 'string', description: 'For certain diff types, you can specify a file to diff. If omitted, will usually diff the entire ref.' },
                 diffType: { type: 'string', enum: ['diffWithHEAD', 'diffWith', 'diffIndexWithHEAD', 'diffIndexWith', 'diffBetween', 'fullDiff'], description: 'The type of diff to run. This will also affect what parameters are required.' },
             },

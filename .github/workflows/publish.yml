@@ -24,7 +24,7 @@ jobs:
     outputs:
       VERSION: ${{ steps.build.outputs.VERSION }}
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         submodules: true
 
@@ -34,7 +34,7 @@ jobs:
         version: 10.14.0
 
     - name: Setup Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
         node-version: 'latest'
         cache: 'pnpm'
@@ -62,7 +62,7 @@ jobs:
         pnpm vsce package --no-dependencies
     
     - name: Upload VSIX file
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: NeuroPilot ${{ steps.build.outputs.VERSION }}
         path: neuropilot-base-${{ steps.build.outputs.VERSION }}.vsix
@@ -85,11 +85,11 @@ jobs:
       url: https://marketplace.visualstudio.com/item?itemName=vsc-neuropilot.neuropilot-base
     steps:
       - name: Checkout repo # why
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Download VSIX
         id: vsce-vsix-down
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
       
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -97,7 +97,7 @@ jobs:
           version: 10.14.0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 'latest'
       
@@ -113,11 +113,11 @@ jobs:
       url: https://open-vsx.org/extension/vsc-neuropilot/neuropilot-base
     steps:
       - name: Checkout repo # why
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       
       - name: Download VSIX
         id: ovsx-vsix-down
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
       
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -125,7 +125,7 @@ jobs:
           version: 10.14.0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 'latest'
       

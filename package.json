@@ -685,7 +685,8 @@
 					"neuropilot.actions.experimentalSchemas": {
 						"type": "boolean",
 						"default": true,
-						"markdownDescription": "Whether or not to toggle schemas that may use \"unsupported\" schema properties.\n\nRequires reloading permissions if changed."
+						"markdownDescription": "Whether or not to toggle schemas that may use \"unsupported\" schema properties.\n\nRequires reloading permissions if changed.",
+						"deprecationMessage": "Experimental schemas are no longer existent, each action only has 1 schema."
 					}
 				}
 			}
@@ -850,35 +851,35 @@
 		"@vscode/test-cli": "^0.0.12",
 		"@vscode/test-electron": "^2.5.2",
 		"@vscode/test-web": "^0.0.80",
-		"@vscode/vsce": "^3.7.1",
-		"baseline-browser-mapping": "^2.10.9",
+		"@vscode/vsce": "^3.9.1",
+		"baseline-browser-mapping": "^2.10.19",
 		"chalk": "^5.6.2",
 		"cross-env": "^10.1.0",
-		"esbuild": "^0.27.4",
+		"esbuild": "^0.28.0",
 		"esbuild-plugin-polyfill-node": "^0.3.0",
-		"eslint": "^10.1.0",
+		"eslint": "^10.2.1",
 		"eslint-plugin-jsdoc": "^62.8.0",
-		"eslint-plugin-unicorn": "^63.0.0",
+		"eslint-plugin-unicorn": "^64.0.0",
 		"glob": "^13.0.6",
-		"globals": "^17.4.0",
+		"globals": "^17.5.0",
 		"husky": "^9.1.7",
 		"mocha": "^11.7.5",
 		"npm-run-all": "^4.1.5",
-		"ovsx": "^0.10.9",
-		"playwright": "^1.58.2",
+		"ovsx": "^0.10.11",
+		"playwright": "^1.59.1",
 		"ts-mockito": "^2.6.1",
 		"tsx": "^4.21.0",
-		"typescript": "^5.9.3",
-		"typescript-eslint": "^8.57.1",
-		"yaml": "^2.8.2"
+		"typescript": "^6.0.3",
+		"typescript-eslint": "^8.58.2",
+		"yaml": "^2.8.3"
 	},
 	"dependencies": {
 		"@vscode/codicons": "^0.0.45",
-		"file-type": "^21.3.3",
+		"file-type": "^22.0.1",
 		"glob-to-regexp": "^0.4.1",
 		"ignore": "^7.0.5",
 		"jsonschema": "^1.5.0",
 		"neuro-game-sdk": "^1.0.10",
-		"preact": "^10.29.0"
+		"preact": "^10.29.1"
 	}
 }

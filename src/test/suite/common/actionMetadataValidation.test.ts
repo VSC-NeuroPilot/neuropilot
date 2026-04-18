@@ -33,12 +33,6 @@ suite('Validate action metadata', async () => {
             if ('schema' in editingActions[a] && editingActions[a].schema) {
                 assert.ok(validate(editingActions[a].schema, metaschema).valid);
             }
-            if ('schemaFallback' in editingActions[a] && editingActions[a].schemaFallback) {
-                assert.ok(validate(editingActions[a].schemaFallback, metaschema).valid);
-            }
-            if ('schemaFallback' in editingActions[a] && !('schema' in editingActions[a])) {
-                throw new assert.AssertionError({ message: `Action "${a}" has a fallback schema but no main schema!` });
-            }
         }
     });
 
@@ -50,12 +44,6 @@ suite('Validate action metadata', async () => {
             if ('schema' in gitActions[a] && gitActions[a].schema) {
                 assert.ok(validate(gitActions[a].schema, metaschema).valid);
             }
-            if ('schemaFallback' in gitActions[a] && gitActions[a].schemaFallback) {
-                assert.ok(validate(gitActions[a].schemaFallback, metaschema).valid);
-            }
-            if ('schemaFallback' in gitActions[a] && !('schema' in gitActions[a])) {
-                throw new assert.AssertionError({ message: `Action "${a}" has a fallback schema but no main schema!` });
-            }
         }
     });
 
@@ -65,12 +53,6 @@ suite('Validate action metadata', async () => {
             assert.strictEqual(a, lintActions[a].name);
             if ('schema' in lintActions[a] && lintActions[a].schema) {
                 assert.ok(validate(lintActions[a].schema, metaschema).valid);
-            }
-            if ('schemaFallback' in lintActions[a] && lintActions[a].schemaFallback) {
-                assert.ok(validate(lintActions[a].schemaFallback, metaschema).valid);
-            }
-            if ('schemaFallback' in lintActions[a] && !('schema' in lintActions[a])) {
-                throw new assert.AssertionError({ message: `Action "${a}" has a fallback schema but no main schema!` });
             }
         }
     });

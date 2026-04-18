@@ -8,6 +8,7 @@ updates:
       timezone: "Etc/UTC"
     labels:
       - dependabot
+      - javascript
       - meta
     ignore:
       - dependency-name: "@types/vscode" # Manually bump with the VS Code engine version
@@ -30,3 +31,13 @@ updates:
       security-dev:
         applies-to: security-updates
         dependency-type: development
+  - package-ecosystem: "github-actions"
+    directory: /
+    schedule:
+      interval: monthly
+      time: "00:00"
+      timezone: "Etc/UTC"
+    labels:
+      - dependabot
+      - github_actions
+      - meta

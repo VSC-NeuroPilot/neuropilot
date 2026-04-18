@@ -5,7 +5,7 @@
 import { Action } from 'neuro-game-sdk';
 import { RCEAction, ActionValidationResult, ActionHandlerResult } from '@vsc-neuropilot/api-types';
 
-import { ACTIONS, Permission } from '@/config';
+import { Permission } from '@/config';
 import { logOutput, OutputTag, turtleSafari } from '@/utils/misc';
 
 //#region Action metadata & helpers
@@ -16,16 +16,10 @@ import { logOutput, OutputTag, turtleSafari } from '@/utils/misc';
  * @returns The action stripped to its basic form, without the handler and permissions.
  */
 export function stripToAction(action: RCEAction): Action {
-    let schema: Action['schema'];
-    if (ACTIONS.experimentalSchemas && action.schemaFallback) {
-        schema = action.schema;
-    } else {
-        schema = action.schemaFallback ?? action.schema ?? undefined;
-    }
     return {
         name: action.name,
         description: turtleSafari(action.description),
-        schema,
+        schema: action.schema,
     };
 }
 

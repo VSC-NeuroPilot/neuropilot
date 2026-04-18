@@ -848,15 +848,6 @@ export const editingActions = {
             required: ['diff'],
             additionalProperties: false,
         },
-        schemaFallback: {
-            type: 'object',
-            properties: {
-                diff: { type: 'string', examples: ['>>>>>> SEARCH\ndef turtle():\n    return "Vedal"\n======\ndef turtle():\n    return "insert_turtle_here"\n<<<<<< REPLACE'] },
-                moveCursor: { type: 'boolean', default: false },
-            },
-            required: ['diff'],
-            additionalProperties: false,
-        },
         handler: handleDiffPatch,
         // TODO: I'm not sure if or how this action would have a preview effect, like would it work if a big highlight range was added to the targted text?
         validators: {

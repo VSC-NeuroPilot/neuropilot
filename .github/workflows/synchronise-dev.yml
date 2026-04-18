@@ -12,6 +12,8 @@ concurrency:
 jobs:
     sync:
         runs-on: ubuntu-latest
+        permissions:
+            contents: write
         steps:
             - name: Checkout repo
               uses: actions/checkout@v6
@@ -25,5 +27,5 @@ jobs:
                 git config set user.email actions@github.com
                 git fetch
                 git switch dev
-                git merge master -m 'Synchronise changes with `master` from ${{ github.repositoryUrl }} with `dev`'
+                git merge master -m 'Synchronise changes from `master` at ${{ github.repositoryUrl }} with `dev`'
                 git push

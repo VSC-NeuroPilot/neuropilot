@@ -9,15 +9,15 @@ jobs:
       name: Type checker
       runs-on: ubuntu-latest
       steps:
-        - uses: actions/checkout@v4
+        - uses: actions/checkout@v6
         
         - name: Setup pnpm
           uses: pnpm/action-setup@v4
           with:
-            version: 10.14.0
+            version: 10.33.0
         
         - name: Setup Node.js
-          uses: actions/setup-node@v4
+          uses: actions/setup-node@v6
           with:
             node-version: 22.14.0
             cache: 'pnpm'
@@ -32,15 +32,15 @@ jobs:
       name: Lint checker
       runs-on: ubuntu-latest
       steps:
-          - uses: actions/checkout@v4
+          - uses: actions/checkout@v6
 
           - name: Setup pnpm
             uses: pnpm/action-setup@v4
             with:
-              version: 10.14.0
+              version: 10.33.0
 
           - name: Setup Node.js
-            uses: actions/setup-node@v4
+            uses: actions/setup-node@v6
             with:
               node-version: 22.14.0
               cache: 'pnpm'

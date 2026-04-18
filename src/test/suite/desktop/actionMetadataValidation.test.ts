@@ -15,12 +15,6 @@ suite('Validate action schemas', async () => {
             if ('schema' in terminalActions[a] && terminalActions[a].schema) {
                 assert.ok(validate(terminalActions[a].schema, metaschema).valid);
             }
-            if ('schemaFallback' in terminalActions[a] && terminalActions[a].schemaFallback) {
-                assert.ok(validate(terminalActions[a].schemaFallback, metaschema).valid);
-            }
-            if ('schemaFallback' in terminalActions[a] && !('schema' in terminalActions[a])) {
-                throw new assert.AssertionError({ message: `Action "${a}" has a fallback schema but no main schema!` });
-            }
         }
     });
 

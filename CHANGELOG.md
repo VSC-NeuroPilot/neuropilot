@@ -22,6 +22,10 @@ Changes between each version before then will not be listed.
       - *may* means possibly, not guaranteed.
   - At any time, you may disable preview effects using `neuropilot.actions.disablePreviewEffects`.
 
+### Removals
+
+- Removed experimental schemas. Neuro will be given a relatively safe schema without using "fancier" semantics.
+
 ### Fixes
 
 - A small amount of action handlers (like `terminate_task`) weren't updating their execution status correctly. Alongside a refactoring of the way handlers can update status, these handlers have also been fixed to actually update the execution status.
