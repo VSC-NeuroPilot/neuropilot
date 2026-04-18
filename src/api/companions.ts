@@ -1,28 +1,29 @@
-import { type RCEAction, RegistryError, type ActionForceParams, type CompanionAPI, CompanionMeta, PermissionError, InjectionBaseData, BaseCompanionError, ActionsEventData } from '@vsc-neuropilot/api-types';
+import { type RCEAction, type CompanionAPI, CompanionMeta, PermissionError, InjectionBaseData, BaseCompanionError, Contributions } from '@vsc-neuropilot/api-types';
 import crypto from 'node:crypto';
-import { Disposable, Position } from 'vscode';
+import { Disposable } from 'vscode';
 
-import { addActions, getAction, getActions, registerAction, removeActions, reregisterAllActions, tryForceActions, unregisterAction } from '@/rce';
-import { addToRegistry, findByName, removeFromRegistry } from '@/plugins';
+import { addActions, getAction, getActions, RCEActionPlus, registerAction, removeActions, reregisterAllActions, tryForceActions, unregisterAction } from '@/rce';
+import { addToRegistry, findByName, registry, removeFromRegistry } from '@/plugins';
 import { getVirtualCursor, setVirtualCursor } from '@/utils/misc';
 import { onDidMoveCursorEvent } from '@events/cursor';
 import { fireCompanionChangeEvent } from '@events/companions';
 import { NEURO } from '@/constants';
 import { onDidAttemptAction } from '@events/actions';
 import { addChangelogs, deleteChangelogs } from '@/changelog';
+import { CompanionMetaWithName } from '@/plugins/utility-types';
 
 export class Companion extends Disposable implements CompanionAPI {
-    private readonly data: CompanionMeta;
+    private readonly data: CompanionMetaWithName;
     private readonly token: CompanionToken;
 
 
+    @validateContributions(Contributions.ACTIONS_MANAGE)
     addActions(actions: RCEAction[], register?: boolean) {
-        if (!this.data.contributes.includes('actions:manage')) throw new PermissionError('addActions', ['actions:manage']);
         addActions(actions, register, this.token);
     };
 
+    @validateContributions(Contributions.ACTIONS_MANAGE)
     removeActions(actionNames: string[]) {
-        if (!this.data.contributes.includes('actions:manage')) throw new PermissionError('removeActions', ['actions:manage']);
         const actionList = getActions(actionNames)
             .filter((a) => actionNames.includes(a.name) && a.sourceToken === this.token)
             .map((a) => a.name);
@@ -30,92 +31,80 @@ export class Companion extends Disposable implements CompanionAPI {
         removeActions(actionList);
     };
 
+    @validateContributions(Contributions.ACTIONS_MANAGE, Contributions.ACTIONS_MANAGE_OTHERS)
     registerAction(action: string) {
-        if (!this.data.contributes.includes('actions:manage') || !this.data.contributes.includes('actions:manage_others')) throw new PermissionError('registerAction', ['actions:manage', 'actions:manage_others']);
-        if (!this.data.contributes.includes('actions:manage_others')) {
+        if (!this.data.contributes.includes(Contributions.ACTIONS_MANAGE_OTHERS)) {
             const actionObject = getAction(action);
             if (actionObject !== undefined && actionObject.sourceToken !== this.token) {
-                throw new PermissionError('registerAction', ['actions:manage_others'], `Action "${actionObject.name}" does not belong to this extension.`);
+                throw new PermissionError('registerAction', [Contributions.ACTIONS_MANAGE_OTHERS], `Action "${actionObject.name}" does not belong to this extension.`);
             }
         }
         registerAction(action);
     };
 
+    @validateContributions(Contributions.ACTIONS_MANAGE, Contributions.ACTIONS_MANAGE_OTHERS)
     unregisterAction(action: string) {
-        if (!this.data.contributes.includes('actions:manage') || !this.data.contributes.includes('actions:manage_others')) throw new PermissionError('unregisterAction', ['actions:manage', 'actions:manage_others']);
-        if (!this.data.contributes.includes('actions:manage_others')) {
+        if (!this.data.contributes.includes(Contributions.ACTIONS_MANAGE_OTHERS)) {
             const actionObject = getAction(action);
             if (actionObject !== undefined && actionObject.sourceToken !== this.token) {
-                throw new PermissionError('unregisterAction', ['actions:manage_others'], `Action "${actionObject.name}" does not belong to this extension.`);
+                throw new PermissionError('unregisterAction', [Contributions.ACTIONS_MANAGE_OTHERS], `Action "${actionObject.name}" does not belong to this extension.`);
             }
         }
         unregisterAction(action);
     };
 
+    @validateContributions(Contributions.ACTIONS_MANAGE, Contributions.ACTIONS_MANAGE_OTHERS)
     reregisterAllActions(conservative?: boolean) {
-        if (!this.data.contributes.includes('actions:manage') || !this.data.contributes.includes('actions:manage_others')) throw new PermissionError('reregisterAllActions', ['actions:manage', 'actions:manage_others']);
         reregisterAllActions(conservative);
     };
 
-    tryForceActions(p: ActionForceParams, s = false) {
-        if (!this.data.contributes.includes('actions:force')) throw new PermissionError('tryForceActions', ['actions:force']);
-        return tryForceActions(p, s);
-    };
+    @validateContributions(Contributions.ACTIONS_FORCE)
+    tryForceActions = tryForceActions;
 
+    @validateContributions(Contributions.ACTIONS_INJECT)
     injectIntoAction(name: string, injects: Partial<InjectionBaseData>, force = false) {
-        if (!this.data.contributes.includes('actions:inject')) {
-            throw new PermissionError('injectAction', ['actions:inject'], `Attempted to inject into action "${name}"`, this.data.name);
-        }
         const action = getAction(name)!; // TODO: add handling for undefined action
 
         const injectKeys = Object.keys(injects);
 
         if (!force && (injectKeys.includes('description') || injectKeys.includes('schema'))) throw new BaseCompanionError('injectIntoAction', 'Cannot inject into description or schema!', 'Attempted to inject into description or schema without force flag.', this.data.name);
 
-        const baseObject: InjectionBaseData & { source: string; } = Object.assign(action, { name: undefined, source: findByName(action.sourceToken) });
+        const token = findByName(action.sourceToken);
+        const source = token ? registry[token].name : 'NeuroPilot';
+        const baseObject: RCEActionPlus & { source: string; } = { ...action, source };
 
-        const finalInjects = Object.assign(baseObject, injects, { name: undefined }); // does setting name: undefined even work or does it have to be null
+        const finalInjects: Partial<RCEActionPlus> & { source: string; } = { ...baseObject, ...injects };
         delete finalInjects.name;
-        // TODO: upgrade injection logic to be smarter when removing and readding and all that
+        delete finalInjects.sourceToken;
         if (!action.injectedBy) action.injectedBy = [];
         action.injectedBy.push({ companion: this.data.name, injects });
         removeActions([action.name]);
-        const finalObject = Object.assign(action, finalInjects);
+        const finalObject = { ...action, ...finalInjects };
         addActions([finalObject]);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onDidAttemptAction(listener: (e: ActionsEventData) => any, thisArgs?: any, disposables?: Disposable[]): Disposable {
-        if (!this.data.contributes.includes('actions:process')) throw new PermissionError('onDidAttemptAction', ['actions:process']);
-        return onDidAttemptAction(listener, thisArgs, disposables);
-    }
+    @validateContributions(Contributions.ACTIONS_PROCESS)
+    onActionStatusChanged = onDidAttemptAction;
 
+    @validateContributions(Contributions.CONTEXT)
     sendContext(message: string, silent?: boolean): void {
-        if (!this.data.contributes.includes('context')) throw new PermissionError('sendContext', ['context']);
         NEURO.client?.sendContext(`Message from ${this.data.name}: ${message}`, silent);
     }
 
+    @validateContributions(Contributions.CHANGELOG)
     addChangelog(version: string, changelog: string): void {
-        if (!this.data.contributes.includes('changelog')) throw new PermissionError('addChangelog', ['changelog']);
         addChangelogs(this.data.name, version, changelog);
     }
 
 
-    getCursor(): Position | null | undefined {
-        if (!this.data.contributes.includes('cursor:get')) throw new PermissionError('getCursor', ['cursor:get']);
-        return getVirtualCursor();
-    }
+    @validateContributions(Contributions.CURSOR_GET)
+    getCursor = getVirtualCursor;
 
-    setCursor(location?: Position | null): void {
-        if (!this.data.contributes.includes('cursor:set')) throw new PermissionError('setCursor', ['cursor:set']);
-        return setVirtualCursor(location);
-    }
+    @validateContributions(Contributions.CURSOR_SET)
+    setCursor = setVirtualCursor;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onDidMoveCursor(listener: (e: Position | null | undefined) => any, thisArgs?: any, disposables?: Disposable[]): Disposable {
-        if (!this.data.contributes.includes('cursor:get')) throw new PermissionError('onDidMoveCursor', ['cursor:get']);
-        return onDidMoveCursorEvent(listener, thisArgs, disposables);
-    };
+    @validateContributions(Contributions.CURSOR_GET)
+    onDidMoveCursor = onDidMoveCursorEvent;
 
     constructor(meta: CompanionMeta) {
         super(() => {
@@ -129,9 +118,10 @@ export class Companion extends Disposable implements CompanionAPI {
                 enabled: false,
             });
         });
-        keepTryingRegistration(meta);
-        this.data = meta;
+        const metaObject = { ...meta, name: meta.name ? meta.name : meta.extensionId.split('.')[1] };
+        this.data = metaObject;
         this.token = crypto.randomUUID();
+        addToRegistry(metaObject, this.token);
         fireCompanionChangeEvent({
             name: this.data.name,
             enabled: true,
@@ -141,12 +131,55 @@ export class Companion extends Disposable implements CompanionAPI {
 
 export type CompanionToken = string;
 
-function keepTryingRegistration(data: CompanionMeta) {
-    // TODO: add a timeout / other way to handle throws
-    try {
-        addToRegistry(data, crypto.randomUUID());
-    } catch(erm) {
-        if (erm instanceof RegistryError && erm.message !== 'Name is in use.') keepTryingRegistration(data);
-        else throw erm;
-    }
+function validateContributions(...contributions: Contributions[]) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Decorator must accept any function signature
+    return function <This, Value extends (this: This, ...args: any) => any>(
+        _value: Value | undefined,
+        context: ClassMethodDecoratorContext<This, Value> | ClassFieldDecoratorContext<This, Value>,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Decorator return types vary by kind (void for methods, initializer for fields)
+    ): any {
+        const methodName = typeof context.name === 'string'
+            ? context.name
+            : context.name.description ?? String(context.name);
+
+        if (context.kind === 'method') {
+            context.addInitializer(function (this: This) {
+                const companionInstance = this as Companion;
+                const allowed = contributions.every((c) => companionInstance['data'].contributes.includes(c));
+
+                if (!allowed) {
+                    // Replace with a method that always throws
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic property access requires any
+                    (this as any)[context.name] = function () {
+                        throw new PermissionError(methodName, contributions);
+                    };
+                }
+                // If allowed, leave the original method untouched
+            });
+            return;
+        }
+
+        if (context.kind === 'field') {
+            return function (this: This, initialValue: Value): Value {
+                // Handle both arrow functions and direct assignments
+                if (typeof initialValue !== 'function') return initialValue;
+
+                const companionInstance = this as Companion;
+                const allowed = contributions.every((c) => companionInstance['data'].contributes.includes(c));
+
+                if (!allowed) {
+                    // Return a function that always throws
+                    return (function () {
+                        throw new PermissionError(methodName, contributions);
+                    }) as unknown as Value;
+                }
+
+                // If allowed, return the original function
+                return initialValue;
+            };
+        }
+
+        const _exhaustive: never = context;
+        throw new Error(`Unsupported decorator kind: ${(_exhaustive as ClassMethodDecoratorContext | ClassFieldDecoratorContext).kind}`);
+    };
 }
