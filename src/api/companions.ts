@@ -1,6 +1,7 @@
 import { type RCEAction, type CompanionAPI, CompanionMeta, PermissionError, InjectionBaseData, BaseCompanionError, Contributions } from '@vsc-neuropilot/api-types';
-import crypto from 'node:crypto';
 import { Disposable } from 'vscode';
+import crypto from 'node:crypto';
+import assert from 'node:assert';
 
 import { addActions, getAction, getActions, RCEActionPlus, registerAction, removeActions, reregisterAllActions, tryForceActions, unregisterAction } from '@/rce';
 import { addToRegistry, findByName, registry, removeFromRegistry } from '@/plugins';
@@ -63,7 +64,9 @@ export class Companion extends Disposable implements CompanionAPI {
 
     @validateContributions(Contributions.ACTIONS_INJECT)
     injectIntoAction(name: string, injects: Partial<InjectionBaseData>, force = false) {
-        const action = getAction(name)!; // TODO: add handling for undefined action
+        const action = getAction(name);
+
+        assert(action, new BaseCompanionError('injectIntoAction', `The action "${name}" is not registered.`, 'Injecting into an undefined action.', this.data.name));
 
         const injectKeys = Object.keys(injects);
 
