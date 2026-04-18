@@ -187,9 +187,22 @@ export type InjectionBaseData = Omit<RCEAction, 'name'>;
 //#region action event types
 
 export interface ActionsEventData {
+    /**
+     * The name of the action whose status was just updated.
+     */
     readonly action: string;
+    /**
+     * The action's current status.
+     */
     readonly status: ActionStatus;
+    /**
+     * The message attached to the status update.
+     */
     readonly message?: string;
+    /**
+     * A unique ID that is generated for every execution.
+     * Can be used to separate multiple executions of the same action.
+     */
     readonly executionId: string;
 }
 

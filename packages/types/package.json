@@ -28,5 +28,6 @@
   "exports": {
     ".": "./dist/index.mjs",
     "./package.json": "./package.json"
-  }
+  },
+  "sideEffects": false
 }

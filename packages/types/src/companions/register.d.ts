@@ -1,5 +1,6 @@
-import { Disposable, Event, Position } from 'vscode';
+import { Disposable, Event, Position, ExtensionContext, Extension } from 'vscode';
 import { ActionForceParams, ActionsEventData, InjectionBaseData, RCEAction } from '../actions/types';
+import { Contributions } from './enum';
 
 export class CompanionAPI extends Disposable {
     constructor(data: CompanionMeta);
@@ -76,7 +77,7 @@ export class CompanionAPI extends Disposable {
      * })
      * ```
      */
-    onDidAttemptAction: Event<ActionsEventData>;
+    onActionStatusChanged: Event<ActionsEventData>;
 
     /**
      * Send freeform context to Neuro.
@@ -119,21 +120,33 @@ export class CompanionAPI extends Disposable {
 }
 
 export interface CompanionMeta {
-    name: string;
+    /** 
+     * The human-readable name of your companion.
+     * If left undefined, will use the extension name (not the extension display name!) from the {@link CompanionMeta.extensionId extensionId} property.
+     */
+    name?: string;
+    /**
+     * The ID of your extensino, as idenfitied on the marketplace.
+     * You can pass this in from your {@link ExtensionContext context object} by using the {@link Extension.id context.extension.id} property.
+     * 
+     * You can also construct this from your package.json file using the format `${publisher}.${name}`.
+     */
+    extensionId: string;
+    /**
+     * The author of the companion.
+     * (that's you!)
+     * 
+     * You only need to put in a display name (and that's likely the only amount of space given for your display name anyways)
+     */
     author: string;
-    docs: string;
-    contributes: CompanionContributions[];
+    /**
+     * A link to your comapnion's documentation page.
+     * This page can either be your repo, wiki, or separate ssite hosting your documentation.
+     */
+    docs?: string;
+    /**  
+     * An array of contributions this extension adds. Some features require a specific contribution to be specified, see the documentation.  
+     * @see {@link https://vsc-neuropilot.github.io/docs/api}  
+     */
+    contributes: Contributions[];
 }
-
-export type CompanionContributions =
-      'actions:manage' // Add, remove, register and unregister the companion's actions to/from the actions registry
-    | 'actions:manage_others' // Register and unregister other companion's actions to/from Neuro.
-    | 'actions:inject' // Inject into NeuroPilot's built-in actions (maybe also allow injecting to non-vanilla actions as well?)
-    | 'actions:process' // Process actions after RCE
-    | 'actions:force' // Force actions from Neuro
-    | 'changelog' // Allows Neuro to view the companion's changelog via `get_changelog`
-    | 'context' // Send context to Neuro
-    | 'cursor:get' // View Neuro's cursor
-    | 'cursor:set' // Move Neuro's cursor
-    | 'images' // Add to images carousel (here usually for API sanity testing)
-    ;

@@ -668,7 +668,7 @@ export async function RCEActionHandler(actionData: ActionData) {
             stage = 'validating schema';
             if (context.action.schema) {
                 context.updateStatus('pending', 'Validating schema...');
-                const schema = ACTIONS.experimentalSchemas ? context.action.schema ?? context.action.schemaFallback : context.action.schema;
+                const schema = context.action.schema;
                 const schemaValidationResult = validate(actionData.params, schema, { required: true });
                 if (!schemaValidationResult.valid) {
                     const messagesArray: string[] = [];

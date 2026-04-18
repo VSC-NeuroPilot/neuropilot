@@ -1,34 +1,10 @@
 import type { JSONSchema7Object } from 'json-schema';
 import type { ActionData } from 'neuro-game-sdk';
-import { Disposable, Progress } from 'vscode';
-import { RCEContext as _RCEContext, ActionValidationResult, RCEAction, ActionStatus } from '@vsc-neuropilot/api-types';
+import { Disposable } from 'vscode';
+import { RCEContext as _RCEContext, RCEAction, ActionStatus, RCELifecycleMetadata, RCERequestState, RCEStorage, SimplifiedStatusUpdateHandler } from '@vsc-neuropilot/api-types';
 
 import { updateActionStatus } from '@events/actions';
 import { getAction } from '@/rce';
-
-export type RCEStorage = Record<string | number | symbol, unknown>;
-
-export interface RCELifecycleMetadata {
-    events?: Disposable[];
-    preview?: { dispose: () => unknown };
-    validatorResults?: {
-        sync?: ActionValidationResult[];
-    };
-    setupHooks?: boolean;
-}
-
-export type SimplifiedStatusUpdateHandler = (status: ActionStatus, message?: string) => void;
-
-export interface RCERequestState {
-    prompt: string;
-    notificationVisible: boolean;
-    attachNotification: (progress: Progress<{ message?: string; increment?: number }>) => Promise<void>;
-    resolve: () => void;
-    resolved: boolean;
-    interval?: NodeJS.Timeout | null;
-    timeout?: NodeJS.Timeout | null;
-}
-
 /**
  * RCE executes the methods of {@link RCEAction} (and therefore passes the context object) in the following order:
  * 1. Setup hooks

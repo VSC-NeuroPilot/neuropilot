@@ -22,12 +22,37 @@ export interface RCELifecycleMetadata {
 export type SimplifiedStatusUpdateHandler = (status: ActionStatus, message?: string) => void;
 
 export interface RCERequestState {
+    /**
+     * The prompt used for the request. Constructed from {@link RCEAction.promptGenerator the action's promptGenerator}.
+     */
     prompt: string;
+    /**
+     * Whether or not the notification is visible on screen.
+     */
     notificationVisible: boolean;
+    /**
+     * The function to report progress on the notification.
+     * Should not be necessary to call in most circumstances.
+     * @param progress A {@link Progress} object which reports updates for the RCE request.
+     * @returns A promise that resolves when the request is resolved in some way.
+     */
     attachNotification: (progress: Progress<{ message?: string; increment?: number }>) => Promise<void>;
+    /**
+     * Resolves the request, clearing timers and resources used by this object.
+     * Should not be necessary to call in most circumstances.
+     */
     resolve: () => void;
+    /**
+     * Whether or not the request has been resolved.
+     */
     resolved: boolean;
+    /**
+     * The interval timeout that reports progress to VS Code.
+     */
     interval?: NodeJS.Timeout | null;
+    /**
+     * The timeout object that times out the request itself.
+     */
     timeout?: NodeJS.Timeout | null;
 }
 
@@ -41,17 +66,36 @@ export interface RCERequestState {
  * 6. Some arbitrary time in between here, event listeners for cancel events may also be fired, and the predicate will receive the context object as well.
  * 7. Handler
  */
-export interface RCEContext<T extends JSONSchema7Object | undefined = any, K = any> extends Disposable {
+export class RCEContext<T extends JSONSchema7Object | undefined = any, K = any> extends Disposable {
+    /** The name of the action currently being executed  */
     name: string;
+    /** When the execution context was created */
     createdAt: string;
 
+    /**
+     * The action data received from Neuro.
+     * @see {@link ActionData}
+     */
     data: ActionData<T>;
+    /**
+     * The RCE action whose name corresponds to the action data Neuro sent in.
+     * @see {@link RCEAction}
+     */
     action: RCEAction<T, K>;
+    /**
+     * Whether or not the action was forced from an action force.
+     */
     readonly forced: boolean;
 
-    /** Lifecycle-specific data */
+    /** 
+     * Metadata specific to this context lifecycle.
+     * @see {@link RCELifecycleMetadata lifecycle metadata interface}
+     */
     readonly lifecycle: RCELifecycleMetadata;
-    /** Request-specific data (copilot mode only) */
+    /** 
+     * Data pertaining to the request for the execution.
+     * Only populated in Copilot node.
+     */
     request?: RCERequestState;
     /**
      * Ephemeral storage.

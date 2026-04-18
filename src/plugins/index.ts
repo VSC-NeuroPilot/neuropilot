@@ -1,15 +1,16 @@
-import { CompanionMeta, RegistryError } from '@vsc-neuropilot/api-types';
+import { CompanionRegistryError } from '@vsc-neuropilot/api-types';
+import { CompanionMetaWithName } from './utility-types';
 
-export const registry: Record<string, CompanionMeta> = {};
+export const registry: Record<string, CompanionMetaWithName> = {};
 
 const BANNED_NAMES = ['NeuroPilot', 'NeuroPilot Base', 'NeuroPilot (Base)'];
 
-export function addToRegistry(data: CompanionMeta, token: string) {
+export function addToRegistry(data: CompanionMetaWithName, token: string) {
     if (BANNED_NAMES.includes(data.name) || Object.values(registry).some(meta => meta?.name === data.name)) {
-        throw new RegistryError('Name is in use.', 'registering to the companion registry');
+        throw new CompanionRegistryError('Name is in use.', 'registering to the companion registry');
     }
     if (Object.keys(registry).includes(token)) {
-        throw new RegistryError('Another companion is already using this UUID.', 'registering to the companion registry');
+        throw new CompanionRegistryError('Another companion is already using this UUID.', 'registering to the companion registry');
     }
     registry[token] = data;
 };
@@ -19,7 +20,7 @@ export function removeFromRegistry(token: string) {
 }
 
 export function findByName(name?: string) {
-    if (name === undefined) return 'NeuroPilot (Base)';
+    if (name === undefined) return undefined;
     return Object.keys(registry).find(k => registry[k]?.name === name);
 }
 
