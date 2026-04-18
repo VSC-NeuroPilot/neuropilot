@@ -1,5 +1,7 @@
 import { JSONSchema7Object } from 'json-schema';
 import { ActionForcePriorityEnum, Action, type NeuroClient } from 'neuro-game-sdk';
+import { Range } from 'vscode';
+
 import type { PermissionLevel, DiffRangeType } from './enums';
 import type { RCECancelEvent, RCEContext, ActionStatus } from './classes';
 import type { CompanionAPI } from '../companions/register';
@@ -249,7 +251,7 @@ export interface DiffPlus extends Diff {
 }
 
 export interface DiffRange {
-    range: vscode.Range;
+    range: Range;
     type: DiffRangeType;
     removedText?: string;
 }

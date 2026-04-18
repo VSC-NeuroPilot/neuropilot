@@ -1,17 +1,14 @@
-import { CompanionContributions } from '@vsc-neuropilot/api-types';
-
 import { BaseWebviewViewProvider, Message } from './base';
 import { onDidCompanionChange } from '@events/companions';
 import { registry } from '@/plugins';
 import { NEURO } from '@/constants';
+import { CompanionMetaWithName } from '@/plugins/utility-types';
 
-export type ViewProviderMessage = {
+interface CompanionEnabledViewProviderMessage extends CompanionMetaWithName, Message {
     type: 'enabled';
-    name: string;
-    author: string;
-    docs: string;
-    contributions: CompanionContributions[];
-} | {
+}
+
+export type ViewProviderMessage = CompanionEnabledViewProviderMessage | {
     type: 'disabled';
     name: string;
 };
@@ -27,13 +24,12 @@ export class CompanionsViewProvider extends BaseWebviewViewProvider<ViewMessage,
         const event = onDidCompanionChange((c) => {
             if (c.enabled) {
                 const enabledCompanion = Object.values(registry).find((m) => m.name === c.name)!;
-                this.postMessage({
-                    type: 'enabled',
-                    name: c.name,
-                    author: enabledCompanion.author,
-                    docs: enabledCompanion.docs,
-                    contributions: enabledCompanion.contributes,
-                });
+                this.postMessage(
+                    {
+                        ...enabledCompanion,
+                        type: 'enabled',
+                    },
+                );
             } else {
                 this.postMessage({
                     type: 'disabled',
@@ -51,10 +47,7 @@ export class CompanionsViewProvider extends BaseWebviewViewProvider<ViewMessage,
         for (const c of companions) {
             this.postMessage({
                 type: 'enabled',
-                name: c.name,
-                author: c.author,
-                docs: c.docs,
-                contributions: c.contributes,
+                ...c,
             });
         }
     }

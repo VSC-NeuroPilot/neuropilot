@@ -1,36 +1,30 @@
 import { render } from 'preact';
 import { useState, useEffect, useMemo } from 'preact/hooks';
 import type { ViewProviderMessage } from '@/views/companions';
-import type { CompanionContributions } from '@vsc-neuropilot/api-types';
-
-interface CompanionInfo {
-    name: string;
-    author: string;
-    docs: string;
-    contributions: CompanionContributions[];
-}
+import { Contributions } from '@vsc-neuropilot/api-types';
+import { CompanionMetaWithName } from '@/plugins/utility-types';
 
 interface State {
-    companions: Record<string, CompanionInfo>;
+    companions: Record<string, CompanionMetaWithName>;
 }
 
-const contributionLabels: Record<CompanionContributions, string> = {
-    'actions:manage': 'Manage its own actions',
-    'actions:manage_others': 'Manage other companions\' actions',
-    'actions:inject': 'Inject into vanilla actions',
-    'actions:process': 'Process actions by Neuro',
-    'actions:force': 'Force actions from Neuro',
-    'changelog': 'Provide changelogs',
-    'context': 'Send context to Neuro',
-    'cursor:get': 'View Neuro\'s cursor',
-    'cursor:set': 'Move Neuro\'s cursor',
-    'images': 'Add images to the image carousel',
+const contributionLabels: Record<Contributions, string> = {
+    [Contributions.ACTIONS_MANAGE]: 'Manage its own actions',
+    [Contributions.ACTIONS_MANAGE_OTHERS]: 'Manage other companions\' actions',
+    [Contributions.ACTIONS_INJECT]: 'Inject into other actions',
+    [Contributions.ACTIONS_PROCESS]: 'Process actions by Neuro',
+    [Contributions.ACTIONS_FORCE]: 'Force actions from Neuro',
+    [Contributions.CHANGELOG]: 'Provide changelogs',
+    [Contributions.CONTEXT]: 'Send context to Neuro',
+    [Contributions.CURSOR_GET]: 'View Neuro\'s cursor',
+    [Contributions.CURSOR_SET]: 'Move Neuro\'s cursor',
+    [Contributions.IMAGES]: 'Try an unimplemented feature',
 };
 
 function CompanionsView() {
     const vscode = useMemo(acquireVsCodeApi<State>, []);
     const oldState = useMemo(vscode.getState, [vscode]);
-    const [companions, setCompanions] = useState<Record<string, CompanionInfo>>(oldState?.companions ?? {});
+    const [companions, setCompanions] = useState<Record<string, CompanionMetaWithName>>(oldState?.companions ?? {});
 
     // Save state whenever it changes
     useEffect(() => {
@@ -46,10 +40,8 @@ function CompanionsView() {
                     setCompanions(prev => ({
                         ...prev,
                         [message.name]: {
-                            name: message.name,
-                            author: message.author,
-                            docs: message.docs,
-                            contributions: message.contributions,
+                            ...message,
+                            type: undefined,
                         },
                     }));
                     break;
@@ -100,11 +92,11 @@ function CompanionsView() {
                                     </a>
                                 }
                             </div>
-                            {companion.contributions.length > 0 &&
+                            {companion.contributes.length > 0 &&
                                 <div class="contributions">
                                     <span class="contributions-label">Provides:</span>
                                     <ul class="contributions-list">
-                                        {companion.contributions.map(contribution =>
+                                        {companion.contributes.map(contribution =>
                                             <li key={contribution} class="contribution-item">
                                                 <i class="codicon codicon-check"></i>
                                                 <span>{contributionLabels[contribution] || contribution}</span>
