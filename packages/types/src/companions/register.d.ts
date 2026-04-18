@@ -141,7 +141,7 @@ export interface CompanionMeta {
     author: string;
     /**
      * A link to your comapnion's documentation page.
-     * This page can either be your repo, wiki, or separate ssite hosting your documentation.
+     * This page can either be your repo, wiki, or separate site hosting your documentation.
      */
     docs?: string;
     /**  
