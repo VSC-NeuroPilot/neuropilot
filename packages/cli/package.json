@@ -1,0 +1,28 @@
+{
+  "name": "@vsc-neuropilot/dev-cli",
+  "version": "1.0.0",
+  "description": "VSC-NeuroPilot's dev CLI",
+  "type": "module",
+  "bin": {
+    "np": "./bin/index.js"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "prepare": "pnpm build",
+    "start": "node ./bin/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@octokit/rest": "^22.0.1",
+    "ansis": "^4.2.0",
+    "citty": "^0.2.2"
+  },
+  "devDependencies": {
+    "@types/node": "22.14.0",
+    "@typescript/native-preview": "7.0.0-dev.20260418.1",
+    "tsdown": "^0.21.7"
+  }
+}
