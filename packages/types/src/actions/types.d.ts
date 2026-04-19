@@ -247,12 +247,16 @@ export interface Diff {
 
 export interface DiffPlus extends Diff {
     lines: DiffPlusLine[];
+    /** The number of lines that were moved. */
     lineCountMoved: number;
 }
 
 export interface DiffRange {
+    /** The line/column range of the part of the diff. */
     range: Range;
+    /** The type of the diff range (added, removed or modified). */
     type: DiffRangeType;
+    /** The text that was removed. Only applicable for removed and modified ranges. */
     removedText?: string;
 }
 
