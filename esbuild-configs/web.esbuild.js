@@ -16,6 +16,7 @@ export async function web(prodFlag, watchFlag) {
         sourcemap: !prodFlag,
         sourcesContent: false,
         platform: 'browser',
+        target: 'es2022',
         outfile: 'out/web/extension.js',
         external: ['vscode'],
         logLevel: 'warning',
@@ -69,6 +70,7 @@ export async function webTest(_prodFlag, watchFlag) {
         sourcemap: true, // Always generate sourcemaps for tests
         sourcesContent: true, // Include source content for better debugging        
         platform: 'browser',
+        target: 'es2022',
         outfile: 'out/web/test/index.js',
         tsconfig: './test-tsconfigs/tsconfig.web.json',
         banner: {
@@ -139,6 +141,7 @@ export async function webTestBrowser(_prodFlag, watchFlag) {
         sourcemap: true,
         sourcesContent: true,
         platform: 'browser',
+        target: 'es2022',
         outfile: 'out/web/test/browser.js',
         tsconfig: './test-tsconfigs/tsconfig.web.json',
         banner: {
