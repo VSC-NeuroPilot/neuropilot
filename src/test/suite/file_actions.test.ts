@@ -469,6 +469,7 @@ suite('File Actions', () => {
         // Desktop consistently closes the old tab after folder rename; web may not. Only enforce on desktop.
         const workspaceSchemeAfter = vscode.workspace.workspaceFolders![0].uri.scheme;
         const isDesktopAfter = workspaceSchemeAfter === 'file';
+        await new Promise((resolve) => setTimeout(resolve, 100));
         if (isDesktopAfter) {
             assert.strictEqual(uris.some(uri => uri.path === fileUri.path), false, 'The old file should not be visible in the editor');
         }
