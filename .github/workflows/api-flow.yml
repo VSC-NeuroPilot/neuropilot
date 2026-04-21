@@ -49,7 +49,7 @@ jobs:
       - name: Version types
         if: inputs.increment != 'none'
         run: |
-          git config set user.name GitHub Actions
+          git config set user.name "GitHub Actions"
           git config set user.email actions@github.com
 
           if [ "${{ inputs.prerelease }}" = "true" ]; then
