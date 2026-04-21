@@ -51,9 +51,9 @@ jobs:
           git config set user.email actions@github.com
 
           if [ "${{ inputs.prerelease }}" = "true" ]; then
-            pnpm version pre${{ inputs.increment }}
+            pnpm version pre${{ inputs.increment }} --tag next
           else
-            pnpm version ${{ inputs.increment }}
+            pnpm version ${{ inputs.increment }} --tag latest
           fi
 
           git push --follow-tags
