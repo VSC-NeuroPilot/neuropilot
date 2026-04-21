@@ -6,6 +6,7 @@ on:
       increment:
         type: choice
         description: The version increment. 'release' simply removes the prerelease mark, or increments the prerelease counter.
+        required: true
         options:
           - none
           - release
@@ -15,6 +16,7 @@ on:
       prerelease:
         type: boolean
         description: Whether or not this is a prerelease
+        default: false
 
 jobs:
   publiah:
