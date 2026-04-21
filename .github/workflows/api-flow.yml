@@ -16,7 +16,7 @@ on:
       prerelease:
         type: boolean
         description: Whether or not this is a prerelease
-        default: false
+        default: true
 
 jobs:
   publiah:
