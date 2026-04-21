@@ -5,7 +5,7 @@ on:
     inputs:
       increment:
         type: choice
-        description: The version increment. 'release' simply removes the prerelease mark, or increments the prerelease counter.
+        description: The version increment. 'release' simply removes the prerelease mark, or increments the prerelease counter if marked as prerelease.
         required: true
         options:
           - none
