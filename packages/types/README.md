@@ -2,6 +2,10 @@
 
 This package contains the types for the [NeuroPilot VS Code extension](https://github.com/VSC-NeuroPilot/neuropilot).
 
+> [!WARNING]
+> The API is currently unstable and may change at any notice!
+> Please make sure to stay on top of new releases.
+
 ## Usage
 
 Install with:
