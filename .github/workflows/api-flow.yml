@@ -24,6 +24,9 @@ jobs:
     environment:
       name: npm registry (API types)
       url: https://npmx.dev/package/@vsc-neuropilot/api-types
+    permissions:
+        contents: write
+        id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@v6
