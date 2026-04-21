@@ -1,0 +1,9 @@
+{
+    "extends": "./tsconfig.base.json",
+    "compilerOptions": {
+        "types": ["node", "./meta.d.ts"],
+        "allowJs": true,
+        "checkJs": true
+    },
+    "include": ["**/*.config.*"]
+}

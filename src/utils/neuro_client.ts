@@ -55,11 +55,12 @@ export function actionValidationAccept(message?: string, historyNote?: string): 
  */
 export function actionValidationFailure(message: string, historyNote?: string): ActionValidationResult {
     logOutput('WARNING', 'Action failed: ' + message);
+    historyNote ??= message;
     return {
         success: false,
         retry: false,
         message: message !== undefined ? `Action failed: ${message}` : 'Action failed.',
-        historyNote,
+        historyNote: `Validator failed: ${historyNote}`,
     };
 }
 
@@ -105,10 +106,11 @@ export function actionHandlerSuccess(message?: string, historyNote?: string): Ac
  */
 export function actionHandlerFailure(message: string, historyNote?: string): ActionHandlerResult {
     logOutput('WARNING', 'Action failed: ' + message);
+    historyNote ??= message;
     return {
         success: 'failure',
-        message,
-        historyNote,
+        message: message !== undefined ? `Action failed: ${message}` : 'Action failed.',
+        historyNote: `Action handler failed: ${historyNote}`,
     };
 }
 
@@ -120,10 +122,11 @@ export function actionHandlerFailure(message: string, historyNote?: string): Act
  */
 export function actionHandlerRetry(message: string, historyNote?: string): ActionHandlerResult {
     logOutput('WARNING', 'Action failed: ' + message + '\nRequesting retry.');
+    historyNote ??= message;
     return {
         success: 'retry',
-        message,
-        historyNote,
+        message: 'Action failed: ' + message + '\nPlease retry the action.',
+        historyNote: `Action handler failed: ${historyNote}\nRequesting retry.`,
     };
 }
 

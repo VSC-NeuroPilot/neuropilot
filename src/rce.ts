@@ -74,6 +74,7 @@ export const cancelRequestAction: RCEAction = {
     promptGenerator: () => '', // No prompt needed for this action
     defaultPermission: PermissionLevel.AUTOPILOT,
     hidden: true,
+    autoRegister: false,
 };
 
 /**
@@ -251,6 +252,8 @@ export async function acceptRceRequest(): Promise<void> {
         return;
     }
 
+    unregisterAction(cancelRequestAction.name);
+
     NEURO.client?.sendContext(`${CONNECTION.userName} has accepted your request.`);
 
     const actionData = activeContext.data;
@@ -264,13 +267,13 @@ export async function acceptRceRequest(): Promise<void> {
         switch (result.success) {
             case 'retry': {
                 activeContext.updateStatus('failure', result.historyNote);
-                NEURO.client?.sendContext(result.message ? 'Action failed: ' + result.message : '\nPlease retry the action.');
+                NEURO.client?.sendContext(result.message ?? 'Action failed. Please retry the action.');
                 activeContext.done(false);
                 break;
             }
             default: {
                 if (result.historyNote) activeContext.updateStatus(result.success, result.historyNote);
-                const messageString = result.success === 'failure' ? result.message ? 'Action failed: ' + result.message : 'Action failed.' : result.message ?? 'Action successful.'; // this needs to be more reasonable to read
+                const messageString = result.message ?? (result.success === 'failure' ? 'Action failed.' : 'Action successful.');
                 NEURO.client?.sendContext(messageString);
                 break;
             }
@@ -593,27 +596,26 @@ export function getExtendedActionsInfo(): ExtendedActionInfo[] {
 
 function processResult(result: ActionHandlerResult): { status: 'success' | 'failure'; statusMessage: string; contextMessage: string | undefined } {
     const status = result.success === 'success' ? 'success' : 'failure';
-    let statusMessage: string;
-    let contextMessage: string | undefined;
 
-    const failedStatusMessage = result.historyNote ? 'Action failed: ' + result.historyNote : 'Action failed.';
-    const failedContextMessage = result.message ? 'Action failed: ' + result.message : 'Action failed.';
-    if (result.success === 'success') {
-        statusMessage = result.historyNote ?? 'Action succeeded.';
-        contextMessage = result.message;
-    } else if (result.success === 'failure') {
-        statusMessage = failedStatusMessage;
-        contextMessage = failedContextMessage;
-    } else { // result.success === 'retry'
-        statusMessage = failedStatusMessage + '\nRequesting retry.';
-        contextMessage = failedContextMessage + '\nPlease retry the action.';
-    }
+    // TODO: Require a context message in actionHandlerFailure / actionHandlerRetry so we can get rid of this
+    const contextMessage = result.message ?? (
+        result.success === 'success' ? undefined // No context message will be sent
+        : result.success === 'failure' ? 'Action failed.'
+        : 'Action failed. Please retry the action.'
+    );
+    const statusMessage = result.historyNote ?? (
+        result.success === 'success' ? 'Action succeeded.'
+        : result.success === 'failure' ? 'Action failed.'
+        : 'Action failed. Please retry the action.'
+    );
+
     return { status, statusMessage, contextMessage };
 }
 
 type ActionStages = 'initializing'
     | 'validating schema'
-    | 'running validators'
+    | 'running synchronous validators'
+    | 'running asynchronous validators'
     | 'setting up cancel events'
     | 'executing handler'
     | 'creating Copilot request';
@@ -628,6 +630,7 @@ export async function RCEActionHandler(actionData: ActionData) {
     let stage: ActionStages = 'initializing';
     let context: RCEContext | undefined;
     let alreadySentResult = false;
+    let cancelled = false;
     function sendResult(message?: string, retry = false) {
         if (!alreadySentResult) {
             alreadySentResult = true;
@@ -688,34 +691,30 @@ export async function RCEActionHandler(actionData: ActionData) {
             }
 
             // Validate custom
-            stage = 'running validators';
-            if (context.action.validators) {
-                if (context.action.validators.sync) {
-                    if (!context.lifecycle.validatorResults) {
-                        context.lifecycle.validatorResults = {};
-                    }
-                    if (!context.lifecycle.validatorResults.sync) {
-                        context.lifecycle.validatorResults.sync = [];
-                    }
-                    context.updateStatus('pending', 'Running validators...');
-                    for (const validate of context.action.validators.sync) {
-                        const actionResult = await validate(context);
-                        if (!actionResult.success) {
-                            context.lifecycle.validatorResults.sync.push(actionResult);
-                            if (!(actionResult.retry ?? false))
-                                clearActionForce();
-                            sendResult(actionResult.message, !(actionResult.retry ?? false));
-                            context.updateStatus(
-                                'failure',
-                                actionResult.historyNote ? `Validator failed: ${actionResult.historyNote}` : 'Validator failed' + (actionResult.retry ? '\nRequesting retry' : ''),
-                            );
-                            context.done(false);
-                            return;
-                        }
+            if (context.action.validators?.sync && context.action.validators?.sync.length > 0) {
+                stage = 'running synchronous validators';
+                context.updateStatus('pending', 'Running synchronous validators...');
+                if (!context.lifecycle.validatorResults) {
+                    context.lifecycle.validatorResults = {};
+                }
+                if (!context.lifecycle.validatorResults.sync) {
+                    context.lifecycle.validatorResults.sync = [];
+                }
+                for (const validate of context.action.validators.sync) {
+                    const actionResult = validate(context);
+                    context.lifecycle.validatorResults.sync.push(actionResult);
+                    if (!actionResult.success) {
+                        if (!(actionResult.retry ?? false))
+                            clearActionForce();
+                        sendResult(actionResult.message, !(actionResult.retry ?? false));
+                        context.updateStatus(
+                            'failure',
+                            actionResult.historyNote ?? 'Validator failed.' + (actionResult.retry ? '\nRequesting retry' : ''),
+                        );
+                        context.done(false);
+                        return;
                     }
                 }
-                // implementation needs this to be moved to *after* setup of cancel events
-                if (context.action.validators.async) logOutput('INFO', `Action "${actionData.name}" uses asynchronous validators, which have not been implemented yet.`);
             }
 
             // Set up cancel events
@@ -724,6 +723,7 @@ export async function RCEActionHandler(actionData: ActionData) {
             //     // I could make one long `if` chain but I'm not insane enough
             // } else
             // TODO: revisit above later 
+            let cancelPromiseReject: ((reason?: Error) => void) | undefined;
             if (ACTIONS.enableCancelEvents && context.action.cancelEvents) {
                 stage = 'setting up cancel events';
                 context.lifecycle.events = [];
@@ -746,11 +746,17 @@ export async function RCEActionHandler(actionData: ActionData) {
                     } else {
                         createdLogReason = createdReason;
                     }
+                    cancelled = true;
                     logOutput('WARNING', `${CONNECTION.nameOfAPI}'${CONNECTION.nameOfAPI.endsWith('s') ? '' : 's'} action ${context!.action.name} was cancelled because ${createdLogReason}`);
                     NEURO.client?.sendContext(`Your request was cancelled because ${createdReason}`);
                     context!.updateStatus('cancelled', `Cancelled because ${createdLogReason}`);
                     clearRceRequest(context!);
                     context!.done(false);
+
+                    // Reject the cancel promise to interrupt async validators
+                    if (cancelPromiseReject) {
+                        cancelPromiseReject(new Error(`Request was cancelled because ${createdLogReason}`));
+                    }
                 };
                 for (const eventObject of context.action.cancelEvents) {
                     const eventDetails = eventObject(context);
@@ -761,16 +767,86 @@ export async function RCEActionHandler(actionData: ActionData) {
                 }
             }
 
+            // Check if action was cancelled before async validators start
+            if (cancelled) {
+                return;
+            }
+
+            if (context.action.validators?.async && context.action.validators.async.length > 0) {
+                stage = 'running asynchronous validators';
+                sendResult('Now validating your request further, please wait a moment...');
+                context.updateStatus('pending', 'Running asynchronous validators...');
+                if (!context.lifecycle.validatorResults) {
+                    context.lifecycle.validatorResults = {};
+                }
+                if (!context.lifecycle.validatorResults.async) {
+                    context.lifecycle.validatorResults.async = [];
+                }
+                const asyncArray = [];
+                for (const v of context.action.validators.async) {
+                    asyncArray.push(v(context));
+                };
+
+                // Add 1-second timeout for async validators
+                const timeoutPromise = new Promise<never>((_, reject) => {
+                    setTimeout(() => reject(new Error('Async validators timed out after 1 second')), 1000);
+                });
+
+                // Create cancellation promise that can be rejected by cancel events
+                const cancelPromise = new Promise<never>((_, reject) => {
+                    cancelPromiseReject = reject;
+                });
+
+                let results;
+                try {
+                    // Wait for the first of the following:
+                    // - All async validators complete
+                    // - The request times out
+                    // - The request is cancelled by a cancel event
+                    results = await Promise.race([Promise.all(asyncArray), timeoutPromise, cancelPromise]);
+                } catch (erm) {
+                    // Check if action was cancelled
+                    if (cancelled) {
+                        return;
+                    }
+
+                    clearActionForce();
+                    if (erm instanceof Error && erm.message.startsWith('Async validators timed out')) {
+                        NEURO.client?.sendContext(`Action failed: ${erm.message}`);
+                        context.updateStatus('failure', `Action failed: ${erm.message}`);
+                        context.done(false);
+                        return;
+                    }
+                    else throw erm;
+                }
+
+                context.lifecycle.validatorResults.async.push(...results);
+                for (const r of results) {
+                    if (!r.success) {
+                        // TODO: Handle reforcing an action
+                        if (!(r.retry ?? false))
+                            clearActionForce();
+                        NEURO.client?.sendContext(r.message ?? 'Action failed.');
+                        context.updateStatus(
+                            'failure',
+                            r.historyNote ?? 'Validator failed.',
+                        );
+                        context.done(false);
+                        return;
+                    }
+                }
+            }
+
             if (effectivePermission === PermissionLevel.AUTOPILOT) {
                 stage = 'executing handler';
                 context.updateStatus('pending', 'Executing handler...');
                 // Clear timers and cancel events before handler execution to prevent them from triggering mid-execution
-                // TODO: It's probably better to avoid having to set up cancel events in the first place if possible (unless on async validators of course)
+                // TODO: It's probably better to avoid having to set up cancel events in the first place here (unless on async validators of course)
                 context.clearPreHandlerResources();
                 const result = context.action.handler(context);
                 if (isThenable(result)) {
                     clearActionForce();
-                    sendResult();
+                    sendResult(); // TODO: Add a small "Running the action" result to send to Neuro?
 
                     const resolvedResult = await result;
                     const { status, statusMessage, contextMessage } = processResult(resolvedResult);
@@ -787,7 +863,7 @@ export async function RCEActionHandler(actionData: ActionData) {
                     if (resolvedResult.success !== 'retry')
                         clearActionForce();
                     context.updateStatus(status, statusMessage);
-                    sendResult(contextMessage, resolvedResult.success !== 'retry');
+                    sendResult(contextMessage, resolvedResult.success === 'retry');
                     context.done(resolvedResult.success === 'success');
                 }
             }

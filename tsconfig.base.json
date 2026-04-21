@@ -10,6 +10,7 @@
 		"strict": true,
 		"skipLibCheck": true,
 		"skipDefaultLibCheck": true,
+		"tsBuildInfoFile": "build/types.tsbuildinfo",
 		"paths": {
 			"@ctx/*": [
 				"./src/context/*"

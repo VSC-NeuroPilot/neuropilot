@@ -3,11 +3,7 @@
 As seen on TV (dev stream)!
 
 > [!WARNING]
-> We recently migrated our extension namespace from `pasu4` to `vsc-neuropilot`, and the extension ID from `neuropilot` to `neuropilot-base`.
-> Please uninstall `pasu4.neuropilot`, as all updates will be published to `vsc-neuropilot.neuropilot-base`.
-> This applies to both VS Marketplace and Open VSX (even though there weren't many install on Open VSX in the first place).
->
-> `pasu4.neuropilot` is being kept around for historical reasons on VS Marketplace. All versions prior to v2.1.0 are published exclusively on that namespace on VS Marketplace.
+> If you are installing the extension from Open VSX, be aware that your editor may or may not be supported. Review any extension API compatibility breaks between VS Code and your editor to determine whether or not NeuroPilot will function correctly.
 
 **Disclaimer: For simplicity, all mentions of Neuro also apply to Evil unless otherwise stated.**
 
@@ -17,36 +13,19 @@ If you don't have a Neuro-sama, you can use one of the tools listed [here](https
 > [!CAUTION]
 > Depending on the permissions you activate and which of the aforementioned testing tools / AIs you use, this extension can be quite destructive to your system. I do not take responsibility for any damages caused by this extension, neither do any contributors of this project. Use Copilot mode for dangerous permissions or use the extension on a virtual machine.
 
-Capabilities of this extension include:
+This extension allows Neuro to interact with files, edit them, view linting issues by installed language servers, run defined tasks, spin up shells, and ask for cookies.
 
-- letting Neuro make inline code suggestions.
-- adding Neuro as a chat participant for Copilot Chat.
-- letting Neuro edit the current file.
-- letting Neuro read and open files in the workspace.
-- letting Neuro create, rename and delete files in the workspace.
-- letting Neuro run pre-defined tasks.
-- letting Neuro interact with the git repository, if one is present in the open workspace.
-- giving Neuro direct terminal access.
-    <!-- - letting Neuro read what you type in real time. -->
-    <!--
-    Not sure about including this one - this was something she could *not* do in the past, but was later implemented and moved to the list of things she *could* do.
-    (Also, this comment block is indented because it would cause formatting issues otherwise.)
-    -->
-- letting Neuro view linting diagnostics, and be updated on linting diagnostics as they come in.
-
-These can all be turned on or off using the extension's permission settings.
-All permissions are set to "Off" by default, [except one](vscode://settings/neuropilot.permission.requestCookies).
+These can all be toggled and adjusted using the Action Permissions view on the sidebar.
+All actions are set to "Off" by default, except for two (Request Cookies and View Changelog).
 
 For more detailed documentation, visit [the docs site](https://vsc-neuropilot.github.io/docs).
-We've recently migrated a lot of information there, so you're more likely to find the information you're looking for there.
-
-> [!WARNING]
-> If you are installing the extension from Open VSX, be aware that your editor may or may not be supported. Review any extension API compatibility breaks between VS Code and your editor to determine whether or not NeuroPilot will function correctly.
 
 ## How to use
 
 On startup, the extension will immediately try to establish a connection to the Neuro API.
 If the extension was started before the API was ready, or you lose connection to the API, you can use the command "NeuroPilot: Reconnect" from the Command Palette.
+
+The amount of times the extension should retry is [also configurable](vscode://settings/neuropilot.connection.retryAmount), in addition to [the interval between each try](vscode://settings/neuropilot.connection.retryInterval).
 
 ### Autopilot/Copilot Mode
 
@@ -56,7 +35,14 @@ If the extension was started before the API was ready, or you lose connection to
 We refer to permission modes in NeuroPilot as either Autopilot mode (top GIF) or Copilot mode (bottom GIF) which can be configured alongside disabling it completely.
 These refer to different levels of permission Neuro can be given over certain groups of actions.
 
-This is in addition to the chat and completions feature that forms part of the Copilot mode on this extension.
+### Copilot Chat integration
+
+This extension adds a chat participant that allows you to interact with her as if she was Copilot.
+This includes:
+
+- Chatting with her through the chat sidebar (invoked by typing `@neuro`, `@evil` or `@neuroapi`).
+- Requesting inline completions (tab-complete, as its known).
+- Asking her to fix or explain lint errors.
 
 ## Security
 
@@ -69,20 +55,22 @@ This is mainly to prevent her from opening `.vscode/tasks.json` to essentially r
 
 Neuro also can't change the global git configuration, only the one local to the current repository.
 
-Note that if Neuro has direct terminal access, you should assume all security features are pretty much out the window, since she can just rewrite the settings file and run whatever commands she wants.
+Note that:
 
-The same advice applies for ticking some of the *Access* settings if you gave Autopilot-level permissions to Neuro for editing files.
+- if Neuro has direct terminal access;
+- Neuro has Autopilot permissions for editing files and you let her edit dotfiles (allowing editing files and folders that start with a `.`); or
+- allow her to run tasks that execute code written by her
+
+...then you should assume all security features are pretty much out the window, since she can just rewrite the settings file and run whatever commands she wants.
+There are no safeguards on what she can run in the shell due to the various different shells that exist and aliasing also being a thing.
+
 You can find more security advice on the docs site, linked above. It also mentions how to customize the security settings.
-
-## Commands/Actions
-
-Please refer to the docs site above.
 
 ## Further Info
 
 ### Credits
 
-This extension uses the [TypeScript/JavaScript SDK](https://github.com/AriesAlex/typescript-neuro-game-sdk) by [AriesAlex](https://github.com/AriesAlex).
+This extension uses the [TypeScript/JavaScript Neuro SDK](https://github.com/AriesAlex/typescript-neuro-game-sdk) by [AriesAlex](https://github.com/AriesAlex).
 
 Documentation by [@KTrain5169](https://github.com/KTrain5169).
 
@@ -90,9 +78,9 @@ Extension icon by Xaendril.
 
 ### Neuro's cursor
 
-Assuming the [Edit Active Document](vscode://settings/neuropilot.permission.editActiveDocument) permission isn't set to `Off`, Neuro gains her own cursor, indicated by the pink cursor in text documents. This cursor will only appear in files she has access to (which is affected by the `Allow Unsafe Paths` and `Include`/`Exclude` Patterns settings.) and you can also move the cursor yourself using the aforementioned `Move Neuro's Cursor Here` command. This allows her to work on the same file as the programmer but without having to rely on the normal cursor, which solves some problems relating to their respective actions.
+Neuro gains her own cursor through this extension, indicated by the pink cursor in text documents. This cursor will only appear in files she has access to (which is affected by the *Access* category settings.) and you can also move the cursor yourself using the aforementioned `Move Neuro's Cursor Here` command. This allows her to work on the same file as the programmer but without having to rely on the normal cursor, which solves some problems relating to their respective actions, especially with Copilot mode.
 
-Neuro's cursor will be indicated with a cursor decoration inside the text editor itself, but you can also identify the line it's on by looking to the side and looking for this icon:
+Neuro's cursor will be indicated with a cursor decoration inside the text editor itself, but you can also identify the line it's on by looking to the side (where all the line numbers are) and looking for this icon:
 
 ![NeuroPilot v1 icon (pink)](assets/heart.png)
 

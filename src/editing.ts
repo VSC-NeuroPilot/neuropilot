@@ -8,7 +8,7 @@ import { actionValidationAccept, actionValidationFailure, actionValidationRetry,
 import { CONFIG, CONNECTION } from '@/config';
 import { createCursorPositionChangedEvent } from '@events/cursor';
 import { RCECancelEvent } from '@events/utils';
-import { addActions, registerAction, unregisterAction } from '@/rce';
+import { addActions } from '@/rce';
 import { createPreviewCursor, createPreviewHighlight } from '@previews/edits';
 
 export const CATEGORY_EDITING = 'Editing';
@@ -901,15 +901,6 @@ export function addEditingActions() {
         editingActions.edit_with_diff,
         editingActions.save,
     ]);
-}
-
-export function toggleSaveAction(): void {
-    const autoSave = vscode.workspace.getConfiguration('files').get<string>('autoSave');
-    if (autoSave === 'afterDelay') {
-        unregisterAction(editingActions.save.name);
-    } else {
-        registerAction(editingActions.save.name);
-    }
 }
 
 export function handlePlaceCursor(context: RCEContext): RCEHandlerReturns {

@@ -193,7 +193,8 @@ export const gitActions = {
         cancelEvents: commonCancelEvents,
         promptGenerator: (context: RCEContext) => `add the file "${context.data.params.filePath}" to the staging area.`,
         validators: {
-            sync: [gitValidator, filePathGitValidator],
+            sync: [gitValidator],
+            async: [filePathGitValidator],
         },
         registerCondition: () => !!repo,
     },
@@ -286,7 +287,8 @@ export const gitActions = {
         cancelEvents: commonCancelEvents,
         promptGenerator: (context: RCEContext) => `remove the file "${context.data.params.filePath}" from the staging area.`,
         validators: {
-            sync: [gitValidator, filePathGitValidator],
+            sync: [gitValidator],
+            async: [filePathGitValidator],
         },
         registerCondition: () => !!repo,
     },
@@ -376,7 +378,8 @@ export const gitActions = {
         cancelEvents: commonCancelEvents,
         promptGenerator: (context: RCEContext) => `obtain ${context.data.params?.filePath ? `"${context.data.params.filePath}"'s` : 'a'} Git diff${context.data.params?.ref1 && context.data.params?.ref2 ? ` between ${context.data.params.ref1} and ${context.data.params.ref2}` : context.data.params?.ref1 ? ` at ref ${context.data.params.ref1}` : ''}${context.data.params?.diffType ? ` (of type "${context.data.params.diffType}")` : ''}.`,
         validators: {
-            sync: [gitValidator, filePathGitValidator, gitDiffValidator],
+            sync: [gitValidator, gitDiffValidator],
+            async: [filePathGitValidator],
         },
         registerCondition: () => !!repo,
     },
@@ -426,7 +429,8 @@ export const gitActions = {
         cancelEvents: commonCancelEvents,
         promptGenerator: (context: RCEContext) => `get the Git blame for the file "${context.data.params.filePath}".`,
         validators: {
-            sync: [gitValidator, filePathGitValidator],
+            sync: [gitValidator],
+            async: [filePathGitValidator],
         },
         registerCondition: () => !!repo,
     },

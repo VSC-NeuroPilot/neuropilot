@@ -21,6 +21,15 @@ Changes between each version before then will not be listed.
     - Support for changing other colours used in the extension (e.x. colours for diff added, diff removed, diff modified, highlight) *may* be added later.
       - *may* means possibly, not guaranteed.
   - At any time, you may disable preview effects using `neuropilot.actions.disablePreviewEffects`.
+- Actions can now have asynchronous validators. This allows validators requiring asynchronous operations to be properly handled according to the Neuro API specification.
+  - To accomodate for this, file, lint and git actions now have some or all of their validators moved to async validators instead.
+  - Async validators have a (for now hardcoded) 1-second timeout limit, and are also stopped from progressing if a cancel event fires.
+
+### Changes
+
+- The RCE system was reworked to handle asynchronous operations much better, in preparation for the upcoming public API. As a result, there may be slightly more context being sent to Neuro (most notably, from the new asynchronous validation system).
+  - Minor note: Action forces have also been reworked to go through RCE, also in preparation for the upcoming public API. This shouldn't change anything on Neuro's end, however, other than forcing retries over and over again for Neuro if she continuously fails to input stuff correctly.
+
 
 ### Removals
 
