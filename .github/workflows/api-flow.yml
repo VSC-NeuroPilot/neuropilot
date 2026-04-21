@@ -19,7 +19,7 @@ on:
         default: true
 
 jobs:
-  publiah:
+  publish:
     runs-on: ubuntu-latest
     environment:
       name: npm registry (API types)
