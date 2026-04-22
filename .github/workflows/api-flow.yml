@@ -19,7 +19,7 @@ on:
           - premajor
       preid:
         type: choice
-        description: The preid to put as the prerelease type. Required if the increment input uses prerelease, ignored otherwise.
+        description: The preid to put as the prerelease type. Required if the increment input uses a prerelease increment, ignored otherwise.
         required: false
         options:
           - pre
