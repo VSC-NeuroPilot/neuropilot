@@ -77,9 +77,9 @@ jobs:
           cd packages/types
 
           if [ "${{ steps.input-validation.outputs.prerelease }}" = "true" ]; then
-            GIT_TAG=$(pnpm version ${{ inputs.increment }} --no-git-tag-version)
-          else
             GIT_TAG=$(pnpm version ${{ inputs.increment }} --no-git-tag-version --preid ${{ inputs.preid }})
+          else
+            GIT_TAG=$(pnpm version ${{ inputs.increment }} --no-git-tag-version)
           fi
 
           VERSION=$(pnpm show ./ version)

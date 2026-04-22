@@ -1,6 +1,6 @@
 {
   "name": "@vsc-neuropilot/api-types",
-  "version": "1.0.0-0",
+  "version": "0.0.0",
   "type": "module",
   "types": "./dist/index.d.mts",
   "files": [
@@ -8,6 +8,11 @@
     "CHANGELOG.md",
     "SECURITY.md"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VSC-NeuroPilot/neuropilot",
+    "directory": "packages/types"
+  },
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
@@ -15,7 +20,7 @@
     "prepare": "pnpm build"
   },
   "keywords": [],
-  "author": "",
+  "author": "KTrain5369",
   "license": "ISC",
   "devDependencies": {
     "@arethetypeswrong/core": "^0.18.2",
