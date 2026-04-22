@@ -6,7 +6,8 @@
   "files": [
     "dist",
     "CHANGELOG.md",
-    "SECURITY.md"
+    "SECURITY.md",
+    "CONTRIBUTING.md"
   ],
   "repository": {
     "type": "git",
