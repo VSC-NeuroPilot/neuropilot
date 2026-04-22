@@ -5,7 +5,7 @@ on:
     inputs:
       increment:
         type: choice
-        description: The version increment. 'release' simply removes the prerelease mark, or increments the prerelease counter if marked as prerelease.
+        description: The version/prerelease increment. 'release' simply removes the prerelease mark, or increments the prerelease counter if marked as prerelease.
         required: true
         options:
           - none
@@ -13,11 +13,17 @@ on:
           - patch
           - minor
           - major
-      prerelease:
-        type: boolean
-        description: Whether or not this is a prerelease
-        default: true
-
+          - prerelease
+          - prepatch
+          - preminor
+          - premajor
+      preid:
+        type: choice
+        description: The preid
+        required: false
+        options:
+          - pre
+          - rc
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -25,9 +31,21 @@ jobs:
       name: npm registry (API types)
       url: https://npmx.dev/package/@vsc-neuropilot/api-types
     permissions:
-        contents: write
-        id-token: write
+      contents: write
+      id-token: write
     steps:
+      - name: Validate inputs
+        run: |
+          # Check if increment requires preid
+          case "${{ inputs.increment }}" in
+            prerelease|prepatch|preminor|premajor)
+              if [ "${{ inputs.preid }}" = "" ]; then
+                echo "Error: preid is required when increment is ${{ inputs.increment }}"
+                exit 1
+              fi
+              ;;
+          esac
+
       - name: Checkout
         uses: actions/checkout@v6
 
@@ -47,7 +65,6 @@ jobs:
       - name: Install deps
         run: |
           pnpm install --frozen-lockfile
-          cd packages/types
 
       - name: Version types
         if: inputs.increment != 'none'
@@ -55,13 +72,29 @@ jobs:
           git config set user.name "GitHub Actions"
           git config set user.email actions@github.com
 
-          if [ "${{ inputs.prerelease }}" = "true" ]; then
-            pnpm version pre${{ inputs.increment }} --tag next
+          cd packages/types
+
+          if [ "${{ inputs.preid }}" != "" ]; then
+            GIT_TAG=$(pnpm version ${{ inputs.increment }} --no-git-tag-version --preid ${{ inputs.preid }})
           else
-            pnpm version ${{ inputs.increment }} --tag latest
+            GIT_TAG=$(pnpm version ${{ inputs.increment }} --no-git-tag-version)
           fi
 
+          VERSION=$(pnpm show ./ version)
+          git add package.json
+          git commit -nm "bump api to v$VERSION"
+          git tag "$GIT_TAG"
+
           git push --follow-tags
-        
+
       - name: Publish types package
-        run: pnpm publish
+        run: |
+          cd packages/types
+
+          if [ "${{ inputs.preid }}" != "" ]; then
+            pnpm publish --access public --no-git-checks --tag prerelease
+          else
+            pnpm publish --access public --no-git-checks --tag latest
+          fi
+
+          echo "Finished publishing."
