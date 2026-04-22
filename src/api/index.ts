@@ -7,7 +7,7 @@ import { RCECancelEvent } from '@events/utils';
 import { Companion } from './companions';
 import { getAction, getActions } from '@/rce';
 import { findByToken } from '@/plugins';
-import { getDiffRanges, isPathNeuroSafe, showDiffRanges } from '@/utils/misc';
+import { getDiffRanges, getWorkspacePath, getWorkspaceUri, isPathNeuroSafe, normalizePath, showDiffRanges, simpleFileName } from '@/utils/misc';
 import { patienceDiff, patienceDiffPlus } from '@/patience_diff';
 
 export const api: NeuroPilotAPI = {
@@ -73,7 +73,15 @@ export const api: NeuroPilotAPI = {
                 showDiffRanges(editor, ...diffRanges);
             },
         },
-        isPathNeuroSafe,
+        filePaths: {
+            simpleFileName,
+            normalizePath,
+            isPathNeuroSafe,
+        },
+        workspace: {
+            getWorkspaceUri,
+            getWorkspacePath,
+        },
         CancelEvent: RCECancelEvent,
     },
 };

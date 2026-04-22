@@ -118,6 +118,39 @@ interface DiffUtils {
     applyDiffHighlighting(editor: vscode.TextEditor, diffRanges: DiffRange[]): void;
 }
 
+interface FilePathUtils {
+    /**
+     * Simplifies the file path
+     * @param fileName The path of the file
+     */
+    simpleFileName(fileName: string): string;
+    /**
+     * Normalizes the path so it looks consistent when sending to Neuro.
+     * @param path The path to be normalized
+     */
+    normalizePath(path: string): string;
+    /**
+     * Checks if a file is Neuro-safe, according to the rules the user has set in NeuroPilot's settings.
+     *
+     * It is recommended that you use this to check file paths if your actions are accessing a file for any reason.
+     * @param path The path to the file. This utility expects an *absolute* path.
+     */
+    isPathNeuroSafe(path: string): boolean;
+}
+
+interface WorkspaceUtils {
+    /**
+     * Gets the full workspace uri that is normally targeted for operations.
+     * In multi-root workspaces this is the first open workspace.
+     */
+    getWorkspaceUri(): vscode.Uri | undefined;
+    /**
+     * Gets the full workspace path that is normally targeted for operations.
+     * (Same as calling {@link WorkspaceUtils.getWorkspaceUri getWorkspaceUri}.fsPath)
+     */
+    getWorkspacePath(): string | undefined;
+}
+
 interface Utils {
     /**
      * Utilities for generating action validation messages
@@ -136,12 +169,13 @@ interface Utils {
      */
     diffs: DiffUtils;
     /**
-     * Checks if a file is Neuro-safe, according to the rules the user has set in NeuroPilot's settings.
-     *
-     * It is recommended that you use this to check file paths if your actions are accessing a file for any reason.
-     * @param path The path to the file. This utility expects an *absolute* path.
+     * Utilities for working with file paths
      */
-    isPathNeuroSafe(path: string): boolean;
+    filePaths: FilePathUtils;
+    /**
+     * Utilities for getting the current workspace
+     */
+    workspace: WorkspaceUtils;
     /**
      * Creates a new cancel event for RCE.
      * Make sure to properly dispose of them when you no longer need the cancel events.
