@@ -20,7 +20,7 @@ export class CompanionAPI extends Disposable {
              * @param noChildren For folders, does not mark its children in the preview effect. Has no effect on files.
              * @returns A Disposable that, when its dispose method is called, unmarks the marked files.
              */
-            markPreviewFiles(uris: vscode.Uri[], promptString: string, absolutelyAllFiles = false, noChildren = false): Disposable;
+            markPreviewFiles(uris: Uri[], promptString: string, absolutelyAllFiles?: boolean, noChildren?: boolean): Disposable;
         }
         edits: {
             /**
