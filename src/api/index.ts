@@ -3,7 +3,6 @@ import type * as vscode from 'vscode';
 import { Diff, DiffPlus, DiffRange, NeuroPilotAPI } from '@vsc-neuropilot/api-types';
 
 import { actionHandlerFailure, actionHandlerRetry, actionHandlerSuccess, actionValidationAccept, actionValidationFailure, actionValidationRetry } from '@/utils/neuro_client';
-import { RCECancelEvent } from '@events/utils';
 import { Companion } from './companions';
 import { getAction, getActions } from '@/rce';
 import { findByToken } from '@/plugins';
@@ -82,6 +81,5 @@ export const api: NeuroPilotAPI = {
             getWorkspaceUri,
             getWorkspacePath,
         },
-        CancelEvent: RCECancelEvent,
     },
 };

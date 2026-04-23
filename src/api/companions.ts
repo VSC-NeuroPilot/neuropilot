@@ -1,5 +1,5 @@
 import { type RCEAction, type CompanionAPI, CompanionMeta, PermissionError, InjectionBaseData, BaseCompanionError, Contributions } from '@vsc-neuropilot/api-types';
-import { Disposable } from 'vscode';
+import { Disposable, Position, Uri } from 'vscode';
 import crypto from 'node:crypto';
 import assert from 'node:assert';
 
@@ -12,10 +12,34 @@ import { NEURO } from '@/constants';
 import { onDidAttemptAction } from '@events/actions';
 import { addChangelogs, deleteChangelogs } from '@/changelog';
 import { CompanionMetaWithName } from '@/plugins/utility-types';
+import { RCECancelEvent } from '@events/utils';
+import { filePreviewProvider } from '@previews/files';
+import { createPreviewCursor, createPreviewHighlight, placePreviewCursor, placePreviewHighlight } from '@previews/edits';
 
 export class Companion extends Disposable implements CompanionAPI {
     private readonly data: CompanionMetaWithName;
     private readonly token: CompanionToken;
+
+    actionUtils = {
+        files: {
+            markPreviewFiles(uris: Uri[], promptString: string, absolutelyAllFiles = false, noChildren = false) {
+                return filePreviewProvider.mark(uris, promptString, absolutelyAllFiles, noChildren);
+            },
+        },
+        edits: {
+            setPreviewCursor(position: Position, prompt: string) {
+                const decoration = createPreviewCursor();
+                placePreviewCursor(decoration, position, prompt);
+                return decoration;
+            },
+            setPreviewHighlight(startPosition: Position, endPosition: Position, prompt: string) {
+                const decoration = createPreviewHighlight();
+                placePreviewHighlight(decoration, startPosition, endPosition, prompt);
+                return decoration;
+            },
+        },
+        CancelEvent: RCECancelEvent,
+    };
 
 
     @validateContributions(Contributions.ACTIONS_MANAGE)

@@ -1,9 +1,51 @@
-import { Disposable, Event, Position, ExtensionContext, Extension } from 'vscode';
+import { Disposable, Event, Position, ExtensionContext, Extension, Uri, TextEditorDecorationType } from 'vscode';
 import { ActionForceParams, ActionsEventData, InjectionBaseData, RCEAction } from '../actions/types';
 import { Contributions } from './enum';
+import { RCECancelEvent } from '../actions';
 
 export class CompanionAPI extends Disposable {
     constructor(data: CompanionMeta);
+
+    /**
+     * Utilities specific to creating actions.
+     * These are separated due to them returning Disposables that need to be handled better.
+     */
+    actionUtils: {
+        files: {
+            /**
+             * Mark certain files with a preview effect.
+             * @param uris An array of files to mark. Direct inputs here are automatically assumed to be Neuro-safe, you must perform your own Neuro-safe checks at call time.
+             * @param promptString A string that describes what Neuro is about to do. Should match the scheme "Neuro wants to (do something)"
+             * @param absolutelyAllFiles For folders, bypass checking children for Neuro-safe path validation and highlights them anyways. Has no effect on files.
+             * @param noChildren For folders, does not mark its children in the preview effect. Has no effect on files.
+             * @returns A Disposable that, when its dispose method is called, unmarks the marked files.
+             */
+            markPreviewFiles(uris: vscode.Uri[], promptString: string, absolutelyAllFiles = false, noChildren = false): Disposable;
+        }
+        edits: {
+            /**
+             * Set a preview cursor that matches the normal colour scheme for NeuroPilot's preview cursor.
+             * @param location A {@link Position} object where the cursor will be placed.
+             * @param prompt The prompt suffix that displays when hovering over the cursor. Must match the scheme "Neuro wants to (x)"
+             * @returns The {@link TextEditorDecorationType} that was used to create the highlight.
+             */
+            setPreviewCursor(location: Position, prompt: string): TextEditorDecorationType;
+            /**
+             * Set a preview highlight that matches the normal colour scheme for NeuroPilot's preview highlights.
+             * @param startPosition A {@link Position} object that marks the start of the highlight.
+             * @param endPosition A {@link Position} object that marks the end of the highlight.
+             * @param prompt The prompt suffix that displays when hovering over the cursor. Must match the scheme "Neuro wants to (x)"
+             * @returns The {@link TextEditorDecorationType} that was used to create the highlight.
+             */
+            setPreviewHighlight(startPosition: Position, endPosition: Position, prompt: string): TextEditorDecorationType;
+        }
+        /**
+         * Creates a new cancel event for RCE.
+         * Make sure to properly dispose of them when you no longer need the cancel events.
+         * If you are adding them to the cancel events array of an action, this should automatically be handled.
+         */
+        CancelEvent: typeof RCECancelEvent;
+    };
 
     /* Action registrations */
     /**

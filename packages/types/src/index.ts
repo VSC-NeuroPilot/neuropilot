@@ -1,4 +1,3 @@
-import type { RCECancelEvent } from './actions/classes';
 import type { ActionHandlerResult, ActionValidationResult, Diff, DiffPlus, DiffRange, RCEAction, DiffPlusLine } from './actions/types';
 import type { CompanionAPI } from './companions/register';
 import type * as vscode from 'vscode';
@@ -58,6 +57,7 @@ interface ActionHandlerUtils {
 interface ActionsListingUtils {
     /**
      * Get an action or an array of actions.
+     * @todo split into overloads for sanity
      * @param action A string or array of strings of action names.
      * @returns An action (if a string was provided), undefined (if a string was provided and nothing was found), or an array of actions (if nothing or an array was provided)
      */
@@ -176,12 +176,6 @@ interface Utils {
      * Utilities for getting the current workspace
      */
     workspace: WorkspaceUtils;
-    /**
-     * Creates a new cancel event for RCE.
-     * Make sure to properly dispose of them when you no longer need the cancel events.
-     * If you are adding them to the cancel events array of an action, this should automatically be handled.
-     */
-    CancelEvent: typeof RCECancelEvent;
 }
 
 export interface NeuroPilotAPI {
