@@ -170,43 +170,35 @@ function validateContributions(...contributions: Contributions[]) {
             : context.name.description ?? String(context.name);
 
         if (context.kind === 'method') {
-            context.addInitializer(function (this: This) {
+            // Return a wrapper installed on the prototype that checks permissions at call time,
+            // after the constructor has run and this.data has been set.
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- args must be any for generic method wrapping
+            return function (this: This, ...args: any[]): unknown {
                 const companionInstance = this as Companion;
-                const allowed = contributions.every((c) => companionInstance['data'].contributes.includes(c));
-
-                if (!allowed) {
-                    // Replace with a method that always throws
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic property access requires any
-                    (this as any)[context.name] = function () {
-                        throw new PermissionError(methodName, contributions);
-                    };
+                if (!contributions.every((c) => companionInstance['data'].contributes.includes(c))) {
+                    throw new PermissionError(methodName, contributions);
                 }
-                // If allowed, leave the original method untouched
-            });
-            return;
+                return _value!.apply(this, args);
+            } as unknown as Value;
         }
 
         if (context.kind === 'field') {
+            // Return a field initializer that wraps the function value.
+            // The wrapper itself does not access this.data — only the call-time check does.
             return function (this: This, initialValue: Value): Value {
-                // Handle both arrow functions and direct assignments
                 if (typeof initialValue !== 'function') return initialValue;
-
-                const companionInstance = this as Companion;
-                const allowed = contributions.every((c) => companionInstance['data'].contributes.includes(c));
-
-                if (!allowed) {
-                    // Return a function that always throws
-                    return (function () {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- args must be any for generic function wrapping
+                return (function (this: This, ...args: any[]): unknown {
+                    const companionInstance = this as Companion;
+                    if (!contributions.every((c) => companionInstance['data'].contributes.includes(c))) {
                         throw new PermissionError(methodName, contributions);
-                    }) as unknown as Value;
-                }
-
-                // If allowed, return the original function
-                return initialValue;
+                    }
+                    return initialValue.apply(this, args);
+                }) as unknown as Value;
             };
         }
 
-        const _exhaustive: never = context;
-        throw new Error(`Unsupported decorator kind: ${(_exhaustive as ClassMethodDecoratorContext | ClassFieldDecoratorContext).kind}`);
+        const exhaustive: never = context;
+        throw new Error(`Unsupported decorator kind: ${(exhaustive as ClassMethodDecoratorContext | ClassFieldDecoratorContext).kind}`);
     };
 }
