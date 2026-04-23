@@ -3,7 +3,6 @@ import { NeuroClient, type ActionData } from 'neuro-game-sdk';
 import { ActionForceParams } from '@vsc-neuropilot/api-types';
 
 import { TerminalSession } from './pseudoterminal';
-import type { GitExtension } from '@typing/git.d';
 import { ActionsViewProvider } from '@views/actions';
 import { ImagesViewProvider } from '@views/image';
 import type { ExecuteViewProvider } from '@views/execute';
@@ -127,12 +126,10 @@ export const NEURO: Neuro = {
 // this will likely be transformed for a different use later when the API rolls around
 interface ExtensionDependencies {
     copilotChat: boolean;
-    git: GitExtension | null;
 }
 
 export const EXTENSIONS: ExtensionDependencies = {
     copilotChat: false,
-    git: null,
 };
 
 export const PROMISE_REJECTION_STRING = 'Promise rejected';
