@@ -20,7 +20,7 @@ export class Companion extends Disposable implements CompanionAPI {
     private readonly data: CompanionMetaWithName;
     private readonly token: CompanionToken;
 
-    actionUtils = {
+    actionUtils: CompanionAPI['actionUtils'] = {
         files: {
             markPreviewFiles(uris: Uri[], promptString: string, absolutelyAllFiles = false, noChildren = false) {
                 return filePreviewProvider.mark(uris, promptString, absolutelyAllFiles, noChildren);
