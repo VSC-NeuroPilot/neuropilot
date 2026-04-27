@@ -938,10 +938,17 @@ export function translatePosition(pos: vscode.Position, delta: vscode.Position):
 }
 
 /**
- * Replaces all instances of `insert_turtle_here` in the input string with the User Name setting.
- * @param input String input to check.
+ * Formats a string based on configured values.
+ * See {@link formatString} for the format.
+ * @param input String input to format.
  */
-export const turtleSafari = (input: string) => input.replace(/(?<!\\)insert_turtle_here/g, CONNECTION.userName).replace(/\\insert_turtle_here/g, 'insert_turtle_here');
+export function turtleSafari(input: string): string {
+    return formatString(input, {
+        userName: CONNECTION.userName,
+        apiName: CONNECTION.nameOfAPI,
+        gameName: CONNECTION.gameName,
+    });
+}
 
 /**
  * Log a caught exception and surface an error to report to GitHub.

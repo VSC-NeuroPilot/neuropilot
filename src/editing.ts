@@ -576,7 +576,7 @@ export const editingActions = {
         description: 'Find text in the active document.'
             + ' If you set "useRegex" to true, you can use a Regex in the "find" parameter.'
             + ' This will place your cursor directly before or after the found text (depending on "moveCursor"), unless you searched for multiple instances.'
-            + ' Set "highlight" to true to highlight the found text, if you want to draw insert_turtle_here\'s or Chat\'s attention to it.'
+            + ' Set "highlight" to true to highlight the found text, if you want to draw ${userName}\'s or Chat\'s attention to it.'
             + ' If you search for multiple matches, the numbers at the start of each line are the one-based line numbers and not part of the code.',
         category: CATEGORY_EDITING,
         schema: {
@@ -643,7 +643,7 @@ export const editingActions = {
         name: 'undo',
         description: 'Undo the last change made to the active document.'
             + ' Where your cursor will be moved cannot be determined.' // It will move to the real cursor but thats kinda useless for her to know
-            + ' If this doesn\'t work, tell insert_turtle_here to focus your VS Code window.',
+            + ' If this doesn\'t work, tell ${userName} to focus your VS Code window.',
         category: CATEGORY_EDITING,
         handler: handleUndo,
         cancelEvents: commonCancelEvents,
@@ -757,7 +757,7 @@ export const editingActions = {
     highlight_lines: {
         name: 'highlight_lines',
         description: 'Highlight the specified lines.'
-            + ' Can be used to draw insert_turtle_here\'s or Chat\'s attention towards something.'
+            + ' Can be used to draw ${userName}\'s or Chat\'s attention towards something.'
             + ' This will not move your cursor.'
             + ' Line numbers are one-based.',
         category: CATEGORY_EDITING,
@@ -771,7 +771,7 @@ export const editingActions = {
     },
     get_user_selection: {
         name: 'get_user_selection',
-        description: 'Get insert_turtle_here\'s current selection and the text surrounding it.'
+        description: 'Get ${userName}\'s current selection and the text surrounding it.'
             + ' This will not move your own cursor.',
         category: CATEGORY_EDITING,
         handler: handleGetUserSelection,
@@ -783,16 +783,16 @@ export const editingActions = {
     },
     replace_user_selection: {
         name: 'replace_user_selection',
-        description: 'Replace insert_turtle_here\'s current selection with the provided text.'
-            + ' If insert_turtle_here has no selection, this will insert the text at insert_turtle_here\'s current cursor position.'
+        description: 'Replace ${userName}\'s current selection with the provided text.'
+            + ' If ${userName} has no selection, this will insert the text at ${userName}\'s current cursor position.'
             + ' After replacing/inserting, your cursor will be placed at the end of the inserted text.'
-            + ' If "requireSelectionUnchanged" is true, the action will be automatically cancelled if insert_turtle_here\'s selection changes or has changed since it was last obtained.',
+            + ' If "requireSelectionUnchanged" is true, the action will be automatically cancelled if ${userName}\'s selection changes or has changed since it was last obtained.',
         category: CATEGORY_EDITING,
         schema: {
             type: 'object',
             properties: {
-                content: { type: 'string', description: 'The content to replace insert_turtle_here\'s selection with.' },
-                requireSelectionUnchanged: { type: 'boolean', description: 'Does your change require that insert_turtle_here keeps his selection unchanged?' },
+                content: { type: 'string', description: 'The content to replace ${userName}\'s selection with.' },
+                requireSelectionUnchanged: { type: 'boolean', description: 'Does your change require that ${userName} keeps the selection unchanged?' },
             },
             required: ['content', 'requireSelectionUnchanged'],
         },
@@ -842,7 +842,7 @@ export const editingActions = {
         schema: {
             type: 'object',
             properties: {
-                diff: { type: 'string', description: 'The diff patch to apply. Must follow a pseudo-search-replace-diff format.', examples: ['>>>>>> SEARCH\ndef turtle():\n    return "Vedal"\n======\ndef turtle():\n    return "insert_turtle_here"\n<<<<<< REPLACE'] },
+                diff: { type: 'string', description: 'The diff patch to apply. Must follow a pseudo-search-replace-diff format.', examples: ['>>>>>> SEARCH\ndef turtle():\n    return "insert_turtle_here"\n======\ndef turtle():\n    return "Vedal"\n<<<<<< REPLACE'] },
                 moveCursor: { type: 'boolean', description: 'Whether or not to move the cursor to the end of the patch replacement.', default: false },
             },
             required: ['diff'],
