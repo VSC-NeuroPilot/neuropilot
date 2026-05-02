@@ -13,8 +13,8 @@ Changes between each version before then will not be listed.
 - NeuroPilot now has a public, extensible API that can be accessed by other extensions.
   - Details, including API interfaces, documentation, and versioning can be found at https://vsc-neuropilot.github.io/
     - API changelogs will usually not be listed here.
-  - Immediately after this is tested and stablized, the extension will have some of its built-in features (namely the Git actions, Copilot Chat actions, and possibly shell actions which encompass tasks and terminals) ripped out and offered as separate extensions, using this API.
-    - Because of this, you may see reduced bundle sizes in the future.
+  - The Git integration has been ripped out of the extension and is now published as a separate extension, and uses the API. The Copilot Chat integration is also planned to be given the same treatment.
+    - Because of this, you may see fairly reduced bundle sizes.
     - If you want to re-add these features, you can simply install the corresponding extensions.
   - Whenever companion extensions (extensions that hook into NeuroPilot) are connected, you'll see them listed in a new sidebar panel.
   - This API isn't limited to in-house extensions. Other developers can create extensions that hook into NeuroPilot too. Go wild!
