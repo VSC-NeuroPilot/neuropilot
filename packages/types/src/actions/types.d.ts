@@ -143,7 +143,7 @@ export interface RCEAction<T extends JSONSchema7Object | undefined = any, E = an
      * 
      * These functions will be parallelised, so the same key should not be accessed from multiple functions.
      */
-    contextSetupHook?: ((context: RCEContext<T, E>) => Thenable<void>)[];
+    contextSetupHooks?: ((context: RCEContext<T, E>) => Thenable<void>)[];
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

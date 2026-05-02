@@ -584,8 +584,8 @@
 					},
 					"neuropilot.connection.initialContext": {
 						"type": "string",
-						"default": "You are using an extension in Visual Studio Code that allows you to code together with Vedal.",
-						"markdownDescription": "The initial context to sent to Neuro-sama (or whatever is connected to NeuroPilot)\n\nTo replace with your name (according to [this setting](vscode://settings/neuropilot.connection.userName)), use `insert_turtle_here`.",
+						"default": "You are using an extension in Visual Studio Code that allows you to code together with ${userName}.",
+						"markdownDescription": "The initial context to sent to Neuro-sama (or whatever is connected to NeuroPilot)\n\nTo replace with your name (according to [this setting](vscode://settings/neuropilot.connection.userName)), use `${userName}`.",
 						"editPresentation": "multilineText"
 					},
 					"neuropilot.connection.autoConnect": {

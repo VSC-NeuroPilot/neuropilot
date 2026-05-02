@@ -105,7 +105,7 @@ export class RCEContext<T extends JSONSchema7Object | undefined = any, K = any> 
      * each stage.
      * This data does not persist across different executions.
      */
-    storage?: RCEStorage;
+    storage: RCEStorage;
     /**
      * Updates the status of the action on the action execution history panel
      * @param status The new status to update to

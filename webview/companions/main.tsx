@@ -94,7 +94,7 @@ function CompanionsView() {
                             </div>
                             {companion.contributes.length > 0 &&
                                 <div class="contributions">
-                                    <span class="contributions-label">Provides:</span>
+                                    <span class="contributions-label">Contributions:</span>
                                     <ul class="contributions-list">
                                         {companion.contributes.map(contribution =>
                                             <li key={contribution} class="contribution-item">

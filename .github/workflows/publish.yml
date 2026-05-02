@@ -102,7 +102,7 @@ jobs:
           node-version: 'latest'
       
       - name: Publish VSIX to VS Marketplace
-        run: ls && pnpm dlx @vscode/vsce publish -p ${{ secrets.MARKETPLACE_TOKEN }} --packagePath "${{ steps.vsce-vsix-down.outputs.download-path }}/NeuroPilot ${{ needs.build.outputs.VERSION }}/neuropilot-base-${{ needs.build.outputs.VERSION }}.vsix"
+        run: ls && pnpm dlx @vscode/vsce publish -p ${{ secrets.MARKETPLACE_TOKEN }} --packagePath "${{ steps.vsce-vsix-down.outputs.download-path }}/neuropilot-base-${{ needs.build.outputs.VERSION }}.vsix"
   
   ovsx-publish:
     name: Publish to Open VSX
@@ -130,4 +130,4 @@ jobs:
           node-version: 'latest'
       
       - name: Publish VSIX to Open VSX
-        run: ls && pnpm dlx ovsx publish -p ${{ secrets.REGISTRY_TOKEN }} --packagePath "${{ steps.ovsx-vsix-down.outputs.download-path }}/NeuroPilot ${{ needs.build.outputs.VERSION }}/neuropilot-base-${{ needs.build.outputs.VERSION }}.vsix"
+        run: ls && pnpm dlx ovsx publish -p ${{ secrets.REGISTRY_TOKEN }} --packagePath "${{ steps.ovsx-vsix-down.outputs.download-path }}/neuropilot-base-${{ needs.build.outputs.VERSION }}.vsix"

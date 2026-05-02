@@ -1,6 +1,6 @@
 import { defineCommand } from 'citty';
 
-export const download = defineCommand({
+export const downloadCommand = defineCommand({
     meta: { name: 'download', description: 'Download a release from GitHub Releases', alias: ['dl', 'down'] },
     args: {
         version: {
@@ -16,6 +16,12 @@ export const download = defineCommand({
             alias: ['i', 'in'],
             valueHint: 'stable',
         },
+        profile: {
+            type: 'string',
+            description: 'The profile to install the extension to. Does nothing if install flag is not passed. Defaults to the profile VS Code determines was last used.',
+            alias: ['p'],
+            valueHint: 'Default',
+        },
         hash: {
             type: 'boolean',
             description: 'Whether or not to show the SHA-256 hash of the downloaded file after the download.',
@@ -23,6 +29,17 @@ export const download = defineCommand({
         },
     },
     async run(ctx) {
-        const { Octokit } = await import('@octokit/rest');
+        if ((ctx.args.profile || ctx.args.p) && !(ctx.args.install || ctx.args.i || ctx.args.in)) {
+            throw new Error('Profile option specified, but install option not passed.');
+        };
+        const client = new (await import('@octokit/rest')).Octokit;
+        const release = await client.repos.getReleaseByTag({
+            owner: 'VSC-NeuroPilot',
+            repo: 'neuropilot',
+            tag: `ext-v${ctx.args.version}`,
+        });
+        if (release.status !== 200) {
+            throw new Error(`Error ${release.status} while calling the GitHub Releases API. (url: ${release.url})`);
+        }
     },
 });

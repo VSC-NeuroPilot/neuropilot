@@ -19,6 +19,12 @@ Changes between each version before then will not be listed.
   - Whenever companion extensions (extensions that hook into NeuroPilot) are connected, you'll see them listed in a new sidebar panel.
   - This API isn't limited to in-house extensions. Other developers can create extensions that hook into NeuroPilot too. Go wild!
 
+### Changes
+
+- Replaced the `insert_turtle_here` placeholder in context with a format similar to JavaScript templates.
+  - The new equivalent for `insert_turtle_here` is `${userName}`.
+  - See the documentation for available placeholders. <!-- TODO: Link + actually add to documentation -->
+
 ## 2.5.0
 
 ### New settings

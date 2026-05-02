@@ -1,11 +1,12 @@
 import * as assert from 'assert';
-import { editingActions } from '@/editing';
+import { editFileActions } from '@/edit_files';
+import { fileActions } from '@/file_operations';
 
 // Tests for the undo and save action prompt generators using real logic
 suite('undo/save Actions', () => {
     test('undo has non-empty fixed prompt', () => {
         // === Arrange & Act ===
-        const prompt = editingActions.undo.promptGenerator as string;
+        const prompt = editFileActions.undo.promptGenerator as string;
 
         // === Assert ===
         assert.ok(typeof prompt === 'string' && prompt.length > 0);
@@ -13,11 +14,9 @@ suite('undo/save Actions', () => {
 
     test('save has non-empty fixed prompt', () => {
         // === Arrange & Act ===
-        const prompt = editingActions.save.promptGenerator as string;
+        const prompt = fileActions.save.promptGenerator as string;
 
         // === Assert ===
         assert.ok(typeof prompt === 'string' && prompt.length > 0);
     });
 });
-
-
