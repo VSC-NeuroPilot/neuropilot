@@ -1,5 +1,6 @@
 import * as assert from 'assert';
-import { fileActions } from '@/file_actions';
+import { fileActions } from '@/file_operations';
+import { readFileActions } from '@/read_files';
 import type { RCEContext } from '@/context/rce';
 
 // Tests for file action prompt generators using real logic with loose checks
@@ -41,7 +42,7 @@ suite('file Actions', () => {
 
     test('open_file prompt formats path', () => {
         // === Arrange & Act ===
-        const prompt = fileActions.switch_files.promptGenerator({ data: { params: { filePath: 'src/index.ts' } } } as RCEContext);
+        const prompt = readFileActions.switch_files.promptGenerator({ data: { params: { filePath: 'src/index.ts' } } } as RCEContext);
 
         // === Assert ===
         assert.ok(typeof prompt === 'string' && prompt.length > 0);
@@ -50,7 +51,7 @@ suite('file Actions', () => {
 
     test('read_file prompt formats path', () => {
         // === Arrange & Act ===
-        const prompt = fileActions.read_file.promptGenerator({ data: { params: { filePath: 'README.md' } } } as RCEContext);
+        const prompt = readFileActions.read_file.promptGenerator({ data: { params: { filePath: 'README.md' } } } as RCEContext);
 
         // === Assert ===
         assert.ok(typeof prompt === 'string' && prompt.length > 0);
