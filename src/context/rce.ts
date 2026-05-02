@@ -36,7 +36,7 @@ export class RCEContext<T extends JSONSchema7Object | undefined = any, K = any> 
      * each stage.
      * This data does not persist across different executions.
      */
-    public storage?: RCEStorage;
+    public storage: RCEStorage;
     private _updateStatus: SimplifiedStatusUpdateHandler = (status: ActionStatus, message?: string) => updateActionStatus(this.data, status, message);
     /**
      * Updates the status of the action on the action execution history panel
@@ -61,7 +61,7 @@ export class RCEContext<T extends JSONSchema7Object | undefined = any, K = any> 
             for (const k in this.lifecycle) {
                 this.lifecycle[k as keyof typeof this.lifecycle] = undefined;
             }
-            this.storage = undefined;
+            this.storage = undefined as never;
             this.data = {} as never;
             this.action = {} as never;
             this._updateStatus = (_status, _message) => undefined;
