@@ -70,6 +70,8 @@ import '../../unit-test/tasks.simple.test';
 import '../../unit-test/rce.simple.test';
 import '../../unit-test/terminal.simple.test';
 import '../../unit-test/undo_and_save.simple.test';
+// API logic
+import '../../unit-test/api/companion.test';
 
 // Testing the meta stuff
 import '../test_utils.test';
