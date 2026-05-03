@@ -1,6 +1,6 @@
 import type * as vscode from 'vscode';
 
-import { Diff, DiffPlus, DiffRange, NeuroPilotAPI } from '@vsc-neuropilot/api-types';
+import { ConfigValue, Diff, DiffPlus, DiffRange, NeuroPilotAPI, NeuroPilotConfig } from '@vsc-neuropilot/api-types';
 
 import { actionHandlerFailure, actionHandlerRetry, actionHandlerSuccess, actionValidationAccept, actionValidationFailure, actionValidationRetry } from '@/utils/neuro_client';
 import { Companion } from './companions';
@@ -8,6 +8,39 @@ import { getAction, getActions } from '@/rce';
 import { findByToken } from '@/plugins';
 import { getDiffRanges, getWorkspacePath, getWorkspaceUri, isPathNeuroSafe, normalizePath, showDiffRanges, simpleFileName } from '@/utils/misc';
 import { patienceDiff, patienceDiffPlus } from '@/patience_diff';
+import { CONFIG, CONNECTION } from '@/config';
+
+class Config implements NeuroPilotConfig {
+    get beforeContext(): ConfigValue<number>
+    { return {settingID: 'beforeContext', value: CONFIG.beforeContext}; }
+
+    get afterContext(): ConfigValue<number>
+    { return {settingID: 'afterContext', value: CONFIG.afterContext}; }
+
+    get cursorFollowsNeuro(): ConfigValue<boolean>
+    { return {settingID: 'cursorFollowsNeuro', value: CONFIG.cursorFollowsNeuro}; }
+
+    get sendContentsOnFileChange(): ConfigValue<boolean>
+    { return {settingID: 'sendContentsOnFileChange', value: CONFIG.sendContentsOnFileChange}; }
+
+    get cursorPositionContextStyle(): ConfigValue<'off' | 'inline' | 'lineAndColumn' | 'both'>
+    { return {settingID: 'cursorPositionContextStyle', value: CONFIG.cursorPositionContextStyle}; }
+
+    get lineNumberContextFormat(): ConfigValue<string>
+    { return {settingID: 'lineNumberContextFormat', value: CONFIG.lineNumberContextFormat}; }
+
+    get websocketUrl(): ConfigValue<string>
+    { return {settingID: 'connection.websocketUrl', value: CONNECTION.websocketUrl}; }
+
+    get gameName(): ConfigValue<string>
+    { return {settingID: 'connection.gameName', value: CONNECTION.gameName}; }
+
+    get userName(): ConfigValue<string>
+    { return {settingID: 'connection.userName', value: CONNECTION.userName}; }
+
+    get nameOfAPI(): ConfigValue<string>
+    { return {settingID: 'connection.nameOfAPI', value: CONNECTION.nameOfAPI}; }
+}
 
 export const api: NeuroPilotAPI = {
     Companion,
@@ -82,4 +115,5 @@ export const api: NeuroPilotAPI = {
             getWorkspacePath,
         },
     },
+    config: new Config(),
 };

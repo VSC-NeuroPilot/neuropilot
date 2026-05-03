@@ -11,7 +11,7 @@ export const downloadCommand = defineCommand({
         },
         install: {
             type: 'enum',
-            description: 'Whether or not to install immediately after downloading. Fails immediately in non-TTY environments, as TTY is needed to confirm installation.',
+            description: 'Whether or not to install immediately after downloading, and to which build. Fails immediately in non-TTY environments, as TTY is needed to confirm installation.',
             options: ['stable', 'insiders'],
             alias: ['i', 'in'],
             valueHint: 'stable',
