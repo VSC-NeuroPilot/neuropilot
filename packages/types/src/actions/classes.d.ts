@@ -67,7 +67,7 @@ export interface RCERequestState {
  * 6. Some arbitrary time in between here, event listeners for cancel events may also be fired, and the predicate will receive the context object as well.
  * 7. Handler
  */
-export class RCEContext<T extends JSONSchema7Object | undefined = any, K = any> extends Disposable {
+export interface RCEContext<T extends JSONSchema7Object | undefined = any, K = any> extends Disposable {
     /** The name of the action currently being executed  */
     name: string;
     /** When the execution context was created */
@@ -143,38 +143,38 @@ export interface RCECancelEventInitializer<T = any> {
     events?: [Event<T>, ((data: T) => boolean | Promise<boolean>) | null][];
 }
 
-export class RCECancelEvent<T = any> {
+export interface RCECancelEvent<T = any> {
     /**
      * Publicly-exposed event.
      */
-    public readonly event: Event<T>;
+    readonly event: Event<T>;
 
     /**
      * Event disposable using {@link Disposable VS Code's Disposable class}.
      */
-    public readonly disposable: Disposable;
+    readonly disposable: Disposable;
 
     /**
      * The reason that will be used to send to Neuro-sama.
      */
-    public readonly reason?: ReasonGenerator<T>;
+    readonly reason?: ReasonGenerator<T>;
 
     /**
      * The reason that will be used to log the cancellation.
      */
-    public readonly logReason?: ReasonGenerator<T>;
+    readonly logReason?: ReasonGenerator<T>;
 
     /**
      * Fires the event.
      * @param data The data to provide in the fire.
      */
-    public fire(data: T): void;
-
-    /**
-     * Creates an instance of RCECancelEvent.
-     * @param init Initialization parameters.
-     */
-    constructor(init?: RCECancelEventInitializer<T>);
+    fire(data: T): void;
 }
+
+/**
+ * Creates an instance of RCECancelEvent.
+ * @param init Initialization parameters.
+ */
+export type RCECancelEventConstructor<T = any> = new (init?: RCECancelEventInitializer<T>) => RCECancelEvent;
 
 //#endregion

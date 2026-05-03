@@ -3,9 +3,7 @@ import { ActionForceParams, ActionsEventData, InjectionBaseData, RCEAction } fro
 import { Contributions } from './enum';
 import { RCECancelEvent } from '../actions';
 
-export class CompanionAPI extends Disposable {
-    constructor(data: CompanionMeta);
-
+export interface CompanionAPI extends Disposable {
     /**
      * Utilities specific to creating actions.
      * These are separated due to them returning Disposables that need to be handled better.
@@ -134,6 +132,8 @@ export class CompanionAPI extends Disposable {
      */
     onDidMoveCursor: Event<Position | null | undefined>;
 }
+
+export type CompanionAPIConstructor = new (data: CompanionMeta) => CompanionAPI;
 
 export interface CompanionMeta {
     /** 

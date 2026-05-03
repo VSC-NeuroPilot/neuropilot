@@ -1,5 +1,5 @@
 import type { ActionHandlerResult, ActionValidationResult, Diff, DiffPlus, DiffRange, RCEAction, DiffPlusLine } from './actions/types';
-import type { CompanionAPI } from './companions/register';
+import type { CompanionAPI, CompanionAPIConstructor } from './companions/register';
 import type * as vscode from 'vscode';
 
 interface ActionValidationUtils {
@@ -183,34 +183,40 @@ export interface NeuroPilotAPI {
      * Register your companion extension by creating a new object from this class.
      * See {@link CompanionAPI} for the API surface it exposes.
      */
-    Companion: typeof CompanionAPI;
+    Companion: CompanionAPIConstructor;
     /**
      * Public, useful utilities you might want to use in your extension.
      */
     utils: Utils;
+    config: NeuroPilotConfig;
+}
+
+export interface ConfigValue<T> {
+    /** The ID of the setting (without 'neuropilot.' at the start). */
+    readonly settingID: string;
+    /** The current configuration value. */
+    readonly value: T;
 }
 
 /**
- * The setting IDs of NeuroPilot's settings.
+ * Contains configuration values for NeuroPilot.
  * 
- * @example
- * ```ts
- * const nameOfAPI = vscode.workspace.getConfiguration('neuropilot').get<string>(NeuroPilotSetting.NameOfAPI);
- * ```
+ * Since these values come directly from the settings.json, it is possible that the user inputs an invalid value.
+ * NeuroPilot generally assumes that all config values are valid and of the correct type.
  */
-export const enum NeuroPilotSetting {
+export interface NeuroPilotConfig {
     /** The number of lines before the cursor position to include as context when editing a file or sending a completion request. */
-    BeforeContext = 'beforeContext',
+    readonly beforeContext: ConfigValue<number>;
     /** The number of lines after the cursor position to include as context when editing a file or sending a completion request. */
-    AfterContext = 'afterContext',
+    readonly afterContext: ConfigValue<number>;
     /** Whether the real cursor follows Neuro's cursor. */
-    CursorFollowsNeuro = 'cursorFollowsNeuro',
+    readonly cursorFollowsNeuro: ConfigValue<boolean>;
     /**
      * Whether to send contents of a file to Neuro when the user switches to it.
      * If false, Neuro will still know what file was switched to, but won't get the contents.
      * Neuro will never get the contents or the name of files that aren't Neuro-safe.
      */
-    SendContentsOnFileChange = 'sendContentsOnFileChange',
+    readonly sendContentsOnFileChange: ConfigValue<boolean>;
     /**
      * The style to use for specifying the cursor position in context messages.
      * Possible values are:
@@ -219,7 +225,7 @@ export const enum NeuroPilotSetting {
      * - `"lineAndColumn"`: Cursor position should be reported in <line>:<column> format (one-based).
      * - `"both"`: Combination of `"inline"` and `"lineAndColumn"`.
      */
-    CursorPositionContextStyle = 'cursorPositionContextStyle',
+    readonly cursorPositionContextStyle: ConfigValue<'off' | 'inline' | 'lineAndColumn' | 'both'>;
     /**
      * The format to use for line numbers in context messages.
      * This format should be prepended to every line.
@@ -229,45 +235,45 @@ export const enum NeuroPilotSetting {
      * - `"{n}|"`
      * - `"{n}: "`
      */
-    LineNumberContextFormat = 'lineNumberContextFormat',
+    readonly lineNumberContextFormat: ConfigValue<string>;
     /** The URL to connect to the Neuro API. */
-    WebsocketUrl = 'connection.websocketUrl',
+    readonly websocketUrl: ConfigValue<string>;
     /** The game name NeuroPilot reports to the API. */
-    GameName = 'connection.gameName',
+    readonly gameName: ConfigValue<string>;
     /** The name to indicate who is controlling this VS Code instance alongside the API server. This replaces the default name `Vedal`. */
-    UserName = 'connection.userName',
-    /** The name of the entity currently acting as the API server. You can add custom characters using `settings.json` if you ignore the lint error from VS Code. */
-    NameOfAPI = 'connection.nameOfAPI',
+    readonly userName: ConfigValue<string>;
+    /** The name of the entity currently acting as the API server. */
+    readonly nameOfAPI: ConfigValue<string>;
 
     // Commented access.* out for now because companions should use isPathNeuroSafe instead.
     // If we find a use case that is not covered by isPathNeuroSafe then we can add them back.
 
     // /** Whether to allow Neuro to access files and folders beginning with a dot. */
-    // DotFiles = 'access.dotFiles',
+    // readonly dotFiles: ConfigValue<boolean>;
     // /** Whether to allow Neuro to access files and folders outside the current workspace. */
-    // ExternalFiles = 'access.externalFiles',
+    // readonly externalFiles: ConfigValue<boolean>;
     // /**
     //  * Whether to allow Neuro to use environment variables in paths.
     //  * Resolving environent variables isn't implemented in NeuroPilot, so you won't have to implement it in your companion either.
     //  * However, you should still check for it.
     //  */
-    // EnvironmentVariables = 'access.environmentVariables',
+    // readonly environmentVariables: ConfigValue<boolean>;
     // /**
     //  * A case-sensitive list of glob patterns for files Neuro is allowed to open, i.e. she should be unable to open files that don't match this pattern.
-    //  * Should be applied before {@link ExcludePattern}.
+    //  * Should be applied before {@link NeuroPilotConfig.excludePattern excludePattern}.
     //  * 
     //  * Patterns without a slash should match any file or folder with that name.
     //  */
-    // IncludePattern = 'access.includePattern',
+    // readonly includePattern: ConfigValue<string[]>;
     // /**
     //  * A case-sensitive glob pattern for files Neuro is not allowed to open.
-    //  * Should be applied after {@link IncludePattern}.
+    //  * Should be applied after {@link NeuroPilotConfig.includePattern includePattern}.
     //  * 
     //  * Patterns without a slash should match any file or folder with that name.
     //  */
-    // ExcludePattern = 'access.excludePattern',
+    // readonly excludePattern: ConfigValue<string[]>;
     // /** Allow NeuroPilot to read ignore patterns from an ignore file (e.g. .gitignore). */
-    // InheritFromIgnoreFiles = 'access.inheritFromIgnoreFiles',
+    // readonly inheritFromIgnoreFiles: ConfigValue<boolean>;
     // /**
     //  * A list of ignore-style files to inherit Neuro-safe glob paths from.
     //  * Should support the full range of git's ignore pattern globs and ignore comments (lines starting with #).
@@ -277,7 +283,7 @@ export const enum NeuroPilotSetting {
     //  * 
     //  * Example: `[ ".gitignore", ".npmignore", ".prettierignore" ]`
     //  */
-    // IgnoreFiles = 'access.ignoreFiles',
+    // readonly ignoreFiles: ConfigValue<string[]>;
 }
 
 type ItselfOrArray<T> = T | T[];
