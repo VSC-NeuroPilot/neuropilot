@@ -1,8 +1,10 @@
 import { defineCommand, runMain } from 'citty';
 
-import { downloadCommand } from './commands/download';
-
 import pkg from '../package.json';
+
+import { downloadCommand } from './commands/download';
+import { newCommand } from './commands/new';
+import { testCommand } from './commands/test';
 
 const main = defineCommand({
     meta: {
@@ -10,7 +12,7 @@ const main = defineCommand({
         version: pkg.version,
         description: pkg.description,
     },
-    subCommands: { download: downloadCommand },
+    subCommands: { download: downloadCommand, new: newCommand, test: testCommand },
 });
 
 runMain(main);

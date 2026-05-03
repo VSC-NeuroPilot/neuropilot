@@ -62,6 +62,7 @@ export function run(): Promise<void> {
                 await import('../test_utils.test.js');
                 await import('../common/actionMetadataValidation.test.js');
                 await import('../../unit-test/rewrite_all.simple.test.js');
+                await import('../../unit-test/api/companion.test.js');
                 mocha.run((failures: number) => {
                     if (failures > 0) {
                         reject(new Error(`${failures} tests failed.`));

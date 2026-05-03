@@ -14,15 +14,17 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "@octokit/rest": "^22.0.1",
+    "adm-zip": "^0.5.17",
     "ansis": "^4.2.0",
     "citty": "^0.2.2"
   },
   "devDependencies": {
-    "@types/node": "22.14.0",
-    "@typescript/native-preview": "7.0.0-dev.20260418.1",
+    "@types/adm-zip": "^0.5.8",
+    "@types/node": "24.12.0",
+    "@typescript/native-preview": "7.0.0-dev.20260502.1",
     "tsdown": "^0.21.7"
   }
 }

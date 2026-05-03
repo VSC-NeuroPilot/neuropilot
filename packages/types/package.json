@@ -22,7 +22,7 @@
   },
   "keywords": [],
   "author": "KTrain5369",
-  "license": "ISC",
+  "license": "MIT",
   "devDependencies": {
     "@arethetypeswrong/core": "^0.18.2",
     "@types/vscode": "^1.95.0",
