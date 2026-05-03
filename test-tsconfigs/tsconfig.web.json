@@ -6,7 +6,10 @@
     // Important: Keep DOM here and avoid adding WebWorker.
     // Adding WebWorker alongside DOM on TS 5.9+ triggers duplicate lib symbol
     // definitions (TS6200/TS2374) during test:web:tsc.
-    "lib": ["ES2024", "DOM"],
+    "lib": [
+      "ES2024",
+      "DOM"
+    ],
     "sourceMap": true,
     "outDir": "../out/test/web",
     "rootDir": "../src/",
@@ -16,6 +19,7 @@
     // libs in the test harness. Do not disable unless you unify the lib set.
     "skipLibCheck": true,
     "types": [
+      "node",
       "mocha",
       "vscode"
     ]

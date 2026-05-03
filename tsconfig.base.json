@@ -11,6 +11,7 @@
 		"skipLibCheck": true,
 		"skipDefaultLibCheck": true,
 		"tsBuildInfoFile": "build/types.tsbuildinfo",
+		"types": ["node"],
 		"paths": {
 			"@ctx/*": [
 				"./src/context/*"
