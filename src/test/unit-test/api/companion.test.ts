@@ -4,6 +4,7 @@ import { Companion } from '@/api/companions';
 import assert, { AssertionError } from 'assert';
 import { changelogs } from '@/changelog';
 import { registry } from '@/plugins';
+import { assertProperties } from '@test/test_utils';
 
 const testCompanionMetadata = { name: 'NeuroPilot Unit Tests', author: 'VSC-NeuroPilot', extensionId: 'vsc-neuropilot.neuropilot-base', contributes: [Contributions.CHANGELOG] };
 
@@ -30,9 +31,7 @@ suite('Companion setup and teardown', () => {
     test('Added and removed to companion registry', () => {
         const metadata = { ...testCompanionMetadata, name: testCompanionMetadata.name + `-${Math.random()}` };
         const companion = new Companion(metadata);
-        console.log(companion['token']);
-        console.log(JSON.stringify(registry));
-        assert(registry[companion['token']].name === metadata.name);
+        assertProperties(registry[companion['token']], metadata, 'Metadata did not match as expected!');
         companion.dispose();
         assert(!Object.values(registry).includes(metadata));
     });
