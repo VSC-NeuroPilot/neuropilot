@@ -832,9 +832,12 @@
 		"test:web:browser:open:firefox": "vscode-test-web --headless --browser=firefox --extensionDevelopmentPath=. --extensionTestsPath=out/web/test/browser.js test-playground",
 		"test:web:browser:open:webkit": "vscode-test-web --headless --browser=webkit --extensionDevelopmentPath=. --extensionTestsPath=out/web/test/browser.js test-playground",
 		"test:web:browser:open:vscode": "vscode-test-web --headless --extensionDevelopmentPath=. --extensionTestsPath=out/web/test/browser.js test-playground",
+		"test:watch:desktop": "npm run build:desktop && npm-run-all -p test:watch:desktop:*",
 		"test:desktop": "npm run build:desktop && npm-run-all -s test:desktop:*",
 		"test:desktop:tsc": "tsc --noEmit --project test-tsconfigs/tsconfig.app.json",
+		"test:watch:desktop:tsc": "tsc --noEmit --project test-tsconfigs/tsconfig.app.json --watch",
 		"test:desktop:esbuild": "node ./scripts/esbuild.mjs --mode desktop --test",
+		"test:watch:desktop:esbuild": "node ./scripts/esbuild.mjs --mode desktop --test --watch",
 		"test:desktop:vscode": "vscode-test --label desktopUnitTest"
 	},
 	"devDependencies": {
@@ -846,22 +849,21 @@
 		"@types/node": "^20",
 		"@types/vscode": "^1.95.0",
 		"@types/vscode-webview": "^1.57.5",
-		"@types/ws": "^8.18.0",
 		"@vsc-neuropilot/api-types": "workspace:*",
 		"@vscode/test-cli": "^0.0.12",
 		"@vscode/test-electron": "^2.5.2",
 		"@vscode/test-web": "^0.0.80",
 		"@vscode/vsce": "^3.9.1",
-		"baseline-browser-mapping": "^2.10.19",
+		"baseline-browser-mapping": "^2.10.25",
 		"chalk": "^5.6.2",
 		"cross-env": "^10.1.0",
 		"esbuild": "^0.28.0",
 		"esbuild-plugin-polyfill-node": "^0.3.0",
-		"eslint": "^10.2.1",
-		"eslint-plugin-jsdoc": "^62.8.0",
+		"eslint": "^10.3.0",
+		"eslint-plugin-jsdoc": "^62.9.0",
 		"eslint-plugin-unicorn": "^64.0.0",
 		"glob": "^13.0.6",
-		"globals": "^17.5.0",
+		"globals": "^17.6.0",
 		"husky": "^9.1.7",
 		"mocha": "^11.7.5",
 		"npm-run-all": "^4.1.5",
@@ -870,7 +872,7 @@
 		"ts-mockito": "^2.6.1",
 		"tsx": "^4.21.0",
 		"typescript": "^6.0.3",
-		"typescript-eslint": "^8.58.2",
+		"typescript-eslint": "^8.59.1",
 		"yaml": "^2.8.3"
 	},
 	"dependencies": {
@@ -879,7 +881,7 @@
 		"glob-to-regexp": "^0.4.1",
 		"ignore": "^7.0.5",
 		"jsonschema": "^1.5.0",
-		"neuro-game-sdk": "^1.0.10",
+		"neuro-game-sdk": "^1.1.0",
 		"preact": "^10.29.1"
 	}
 }

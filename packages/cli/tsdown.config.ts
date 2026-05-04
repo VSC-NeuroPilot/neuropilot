@@ -5,5 +5,6 @@ export default defineConfig({
     outputOptions: {
         file: './bin/index.js',
         codeSplitting: false,
+        minify: true,
     },
 });

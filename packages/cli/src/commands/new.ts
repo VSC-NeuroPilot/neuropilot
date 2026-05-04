@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import assert from 'assert';
-import { exec } from 'child_process';
+import { execSync } from 'child_process';
 
 export const newCommand = defineCommand({
     meta: {
@@ -92,6 +92,40 @@ export const newCommand = defineCommand({
 
         console.log('Template downloaded successfully!');
 
-        // Handle git init and npm install based on args...
+        // Initialize git repository if requested
+        if (ctx.args.git) {
+            console.log('\nInitializing git repository...');
+
+            try {
+                execSync('git init', { cwd: targetDir, stdio: 'inherit' });
+                console.log('✓ Git repository initialized');
+            } catch (erm) {
+                console.error('Failed to initialize git repository:', erm);
+                throw erm;
+            }
+        }
+
+        // Install dependencies if requested
+        if (ctx.args.install) {
+            const packageManager = ctx.args.install;
+            console.log(`\nInstalling dependencies with ${packageManager}...`);
+
+            const installCommand = `${packageManager} install`;
+
+            try {
+                execSync(installCommand, {
+                    cwd: targetDir,
+                    stdio: 'inherit',
+                    // Increase timeout for package installs
+                    timeout: 300000, // 5 minutes
+                });
+                console.log('✓ Dependencies installed successfully!');
+            } catch (erm) {
+                console.error('Failed to install dependencies:', erm);
+                throw erm;
+            }
+        }
+
+        console.log(`\n✓ Project created successfully in ${targetDir}`);
     },
 });
