@@ -69,7 +69,6 @@ import '../../unit-test/delete_text.simple.test';
 import '../../unit-test/file_actions.simple.test';
 import '../../unit-test/find_text.simple.test';
 import '../../unit-test/get_cursor.simple.test';
-import '../../unit-test/git.simple.test';
 import '../../unit-test/highlight_lines.simple.test';
 import '../../unit-test/insert_lines.simple.test';
 import '../../unit-test/insert_text.simple.test';
