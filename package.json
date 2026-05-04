@@ -832,9 +832,12 @@
 		"test:web:browser:open:firefox": "vscode-test-web --headless --browser=firefox --extensionDevelopmentPath=. --extensionTestsPath=out/web/test/browser.js test-playground",
 		"test:web:browser:open:webkit": "vscode-test-web --headless --browser=webkit --extensionDevelopmentPath=. --extensionTestsPath=out/web/test/browser.js test-playground",
 		"test:web:browser:open:vscode": "vscode-test-web --headless --extensionDevelopmentPath=. --extensionTestsPath=out/web/test/browser.js test-playground",
+		"test:watch:desktop": "npm run build:desktop && npm-run-all -p test:watch:desktop:*",
 		"test:desktop": "npm run build:desktop && npm-run-all -s test:desktop:*",
 		"test:desktop:tsc": "tsc --noEmit --project test-tsconfigs/tsconfig.app.json",
+		"test:watch:desktop:tsc": "tsc --noEmit --project test-tsconfigs/tsconfig.app.json --watch",
 		"test:desktop:esbuild": "node ./scripts/esbuild.mjs --mode desktop --test",
+		"test:watch:desktop:esbuild": "node ./scripts/esbuild.mjs --mode desktop --test --watch",
 		"test:desktop:vscode": "vscode-test --label desktopUnitTest"
 	},
 	"devDependencies": {

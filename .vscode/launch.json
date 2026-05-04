@@ -6,6 +6,14 @@
 	"version": "0.2.0",
 	"configurations": [
 		{
+			"name": "Watch Desktop Tests",
+			"type": "node",
+			"request": "launch",
+			"program": "${workspaceFolder}",
+			"preLaunchTask": "watch:test:desktop",
+			"console": "internalConsole"
+		},
+		{
 			"name": "Run Desktop Extension",
 			"type": "extensionHost",
 			"request": "launch",
@@ -46,14 +54,16 @@
 				"--extensionTestsPath=${workspaceFolder}/out/desktop/test.js",
 				"${workspaceFolder}/test-playground"
 			],
-			"outFiles": ["${workspaceFolder}/out/desktop/test.js"],
+			"outFiles": [
+				"${workspaceFolder}/out/desktop/test.js"
+			],
 			"preLaunchTask": "watch:desktop"
 		},
 		{
-      		"name": "Open in Browser",
-			"type":	"node-terminal",
+			"name": "Open in Browser",
+			"type": "node-terminal",
 			"request": "launch",
 			"command": "pnpm vscode-test-web --extensionDevelopmentPath=${workspaceFolder} ${workspaceFolder}/playground",
-    	}
+		}
 	]
 }
