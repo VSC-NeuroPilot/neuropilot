@@ -9,8 +9,6 @@ import { ACCESS, ACTIONS, checkDeprecatedSettings, CONFIG, CONNECTION, setPermis
 import { explainWithNeuro, fixWithNeuro, NeuroCodeActionsProvider, sendDiagnosticsDiff } from '@/lint_problems';
 import { editorChangeHandler, fileSaveListener, moveNeuroCursorHere, workspaceEditHandler } from '../../edit_files';
 import { emergencyDenyRequests, acceptRceRequest, denyRceRequest, revealRceNotification, clearRceRequest, getActions, reregisterAllActions } from '@/rce';
-import type { GitExtension } from '@typing/git';
-import { getGitExtension } from '@/git';
 import { openDocsOnTarget, registerDocsCommands, registerDocsLink } from './docs';
 import { sendChangelogOnDemand, loadAllChangelogs } from '@/changelog';
 import { moveCursorEmitterDiposable } from '@events/cursor';
@@ -294,16 +292,6 @@ function switchCurrentNeuroAPIUser() {
 export function obtainExtensionState(): void {
     const copilotChat = vscode.extensions.getExtension('github.copilot-chat')?.isActive;
     EXTENSIONS.copilotChat = copilotChat === true;
-
-    const git = vscode.extensions.getExtension<GitExtension>('vscode.git');
-    if (git?.isActive !== undefined) {
-        EXTENSIONS.git = git.isActive === true ? git.exports : null;
-    } else {
-        EXTENSIONS.git = null;
-    }
-    if (vscode.env.uiKind === vscode.UIKind.Desktop) {
-        getGitExtension();
-    }
 }
 
 export function deactivate() {

@@ -5,7 +5,6 @@ import assert from 'node:assert';
 import { CATEGORY_EDITING, editFileActions } from '@/edit_files';
 import { changelogActions } from '@/changelog';
 import { REQUEST_COOKIE_ACTION } from '@/functions/cookies';
-import { CATEGORY_GIT, CATEGORY_GIT_CONFIG, CATEGORY_GIT_REMOTES, gitActions } from '@/git';
 import { chatAction } from '@/chat';
 import { completeCodeAction } from '@/completions';
 import { CATEGORY_MISC } from '@/rce';
@@ -35,19 +34,6 @@ suite('Validate action metadata', async () => {
             if ('schema' in editFileActions[a] && editFileActions[a].schema) {
                 // editFileActions[a].schema is now safely accessible
                 const schema = editFileActions[a].schema;
-                assert.ok(validate(schema, metaschema).valid);
-            }
-        }
-    });
-
-    test('Git Actions', () => {
-        const actions = Object.keys(gitActions) as (keyof typeof gitActions)[];
-        for (const a of actions) {
-            assert.strictEqual(a, gitActions[a].name);
-            assert.ok([CATEGORY_GIT, CATEGORY_GIT_CONFIG, CATEGORY_GIT_REMOTES].includes(gitActions[a].category));
-            if ('schema' in gitActions[a] && gitActions[a].schema) {
-                // gitActions[a].schema is now safely accessible
-                const schema = gitActions[a].schema;
                 assert.ok(validate(schema, metaschema).valid);
             }
         }
