@@ -110,7 +110,7 @@ export const newCommand = defineCommand({
             const packageManager = ctx.args.install;
             console.log(`\nInstalling dependencies with ${packageManager}...`);
 
-            const installCommand = packageManager === 'yarn' ? 'yarn' : `${packageManager} install`;
+            const installCommand = `${packageManager} install`;
 
             try {
                 execSync(installCommand, {
