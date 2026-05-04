@@ -1,7 +1,7 @@
 import { Disposable, Event, Position, ExtensionContext, Extension, Uri, TextEditorDecorationType } from 'vscode';
 import { ActionForceParams, ActionsEventData, InjectionBaseData, RCEAction } from '../actions/types';
 import { Contributions } from './enum';
-import { RCECancelEvent } from '../actions';
+import { RCECancelEventConstructor } from '../actions';
 
 export interface CompanionAPI extends Disposable {
     /**
@@ -16,7 +16,7 @@ export interface CompanionAPI extends Disposable {
          * Make sure to properly dispose of them when you no longer need the cancel events.
          * If you are adding them to the cancel events array of an action, this should automatically be handled.
          */
-        CancelEvent: typeof RCECancelEvent;
+        CancelEvent: RCECancelEventConstructor;
     };
 
     /* Action registrations */

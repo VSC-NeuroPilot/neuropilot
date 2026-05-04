@@ -19,6 +19,12 @@ For prereleases:
 - Pre-release versions (x.x.x-pre.x) are unstable releases for the designated API version. These contain work-in-progress types and annotations. Pre-release versions are not meant to be used except for trying out new API interfaces and giving feedback, and may change without prior programmatic notice. Pre-release versions are meant to be used with new builds from the `dev` branch of the base extension repo.
 - Release candidates (x.x.x-rc.x) are stable previews for the designated API version. These contain types that are more or less finalized for the designated release. Breaking changes should not be expected, both in type signature and functionality, but will always be highlighted in the changelog if necessary. This is also meant for feedback, but only for more subtle feedback before releasing that version such that it simply just contains bug fixes and very minor changes.
 
+## 1.0.0-pre.6
+
+### Fixed
+
+- Fixed old `new RCECancelEvent` type that was incorrectly resolved to `any` because `RCECancelEvent` was changed to an interface.
+
 ## 1.0.0-pre.5
 
 ### Added
@@ -54,6 +60,7 @@ For prereleases:
           import { NeuroPilotSetting } from '@vsc-neuropilot/api-types'
 
           vscode.workspace.getConfiguration(`neuropilot.${NeuroPilotSetting.GameName}`)
+          ```
 
 ## 1.0.0-pre.2
 
