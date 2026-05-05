@@ -6,6 +6,11 @@
   "bin": {
     "np": "./bin/index.js"
   },
+  "files": [
+    "README.md",
+    "CHANGELOG.md",
+    "bin"
+  ],
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
