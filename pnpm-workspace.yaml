@@ -1,14 +1,14 @@
-onlyBuiltDependencies:
-  - '@playwright/browser-chromium'
-  - '@vscode/vsce-sign'
-  - esbuild
-  - keytar
-
 packages:
 - .
 - packages/*
 
 ignoreWorkspaceRootCheck: true
+
+allowBuilds:
+  '@playwright/browser-chromium': true
+  '@vscode/vsce-sign': true
+  esbuild: true
+  keytar: true
 
 overrides:
   diff@>=6.0.0 <8.0.3: '~8.0.3'
