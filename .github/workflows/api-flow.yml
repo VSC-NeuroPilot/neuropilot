@@ -94,7 +94,7 @@ jobs:
         run: |
           cd packages/types
 
-          if [ "${{ inputs.preid }}" != "" ]; then
+          if [ "${{ steps.input-validation.outputs.prerelease }}" == "true" ]; then
             pnpm publish --access public --no-git-checks --tag prerelease
           else
             pnpm publish --access public --no-git-checks --tag latest
