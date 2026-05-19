@@ -11,6 +11,15 @@
     "CHANGELOG.md",
     "bin"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/VSC-NeuroPilot/neuropilot",
+    "directory": "packages/cli"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
