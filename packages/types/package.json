@@ -11,8 +11,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/VSC-NeuroPilot/neuropilot",
+    "url": "git+https://github.com/VSC-NeuroPilot/neuropilot",
     "directory": "packages/types"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",

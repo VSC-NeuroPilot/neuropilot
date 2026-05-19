@@ -85,9 +85,10 @@ jobs:
           VERSION=$(pnpm show ./ version)
           git add package.json
           git commit -nm "bump api to v$VERSION"
-          git tag "$GIT_TAG"
+          git push
 
-          git push --follow-tags
+          git tag "$GIT_TAG"
+          git push --tags
 
       - name: Publish types package
         run: |
