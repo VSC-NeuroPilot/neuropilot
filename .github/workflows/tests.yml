@@ -34,7 +34,7 @@ jobs:
                   neuropilot-tests-vscode-${{ github.repository }}-${{ runner.os }}-
                 path: .vscode-test/
             - name: Setup pnpm
-              uses: pnpm/action-setup@v4
+              uses: pnpm/action-setup@v6
               with:
                   version: 10.14.0
             - name: Install Node.js
@@ -72,7 +72,7 @@ jobs:
                 key: neuropilot-playwright-v2-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
                 path: ~/.cache/ms-playwright
             - name: Setup pnpm
-              uses: pnpm/action-setup@v4
+              uses: pnpm/action-setup@v6
               with:
                   version: 10.14.0
             - name: Install Node.js
