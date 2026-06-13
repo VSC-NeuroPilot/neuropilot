@@ -5,7 +5,7 @@ cffi==2.0.0
 charset-normalizer==3.4.3
 Faker==37.5.3
 h11==0.16.0
-idna==3.10
+idna==3.15
 jsf==0.11.2
 jsonschema==4.25.1
 jsonschema-specifications==2025.9.1
@@ -27,7 +27,7 @@ trio-websocket==0.12.2
 typing-inspection==0.4.1
 typing_extensions==4.15.0
 tzdata==2025.2
-urllib3==2.6.3
+urllib3==2.7.0
 wrapt==1.17.3
 wsproto==1.2.0
 wxPython==4.2.3
