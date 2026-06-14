@@ -254,31 +254,6 @@
 						"default": 500,
 						"description": "The number of lines after the cursor position to include as context when editing a file or sending a completion request"
 					},
-					"neuropilot.maxCompletions": {
-						"type": "integer",
-						"default": 3,
-						"description": "The maximum number of completions to request"
-					},
-					"neuropilot.completionTrigger": {
-						"type": "string",
-						"default": "invokeOnly",
-						"description": "When to trigger completions",
-						"enum": [
-							"off",
-							"invokeOnly",
-							"automatic"
-						],
-						"enumDescriptions": [
-							"Disable inline completion suggestions",
-							"Only request completions when the user explicitly invokes the completion provider",
-							"Automatically request completions when the user stops typing"
-						]
-					},
-					"neuropilot.timeout": {
-						"type": "integer",
-						"default": 10000,
-						"description": "The timeout in milliseconds for completions and chat responses in ms"
-					},
 					"neuropilot.includePattern": {
 						"markdownDeprecationMessage": "This setting has been moved to `neuropilot.access.includePattern`."
 					},

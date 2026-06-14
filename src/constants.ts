@@ -58,7 +58,7 @@ interface Neuro {
     /** Stores the state of the status bar item. */
     statusBarItem: vscode.StatusBarItem | null;
     /** Whether or not to warn when requesting completions while the relevant permission is disabled. */
-    warnOnCompletionsOff: boolean;
+    warnOnCompletionsOff: boolean; // TODO: Remove
     /**
      * The current offset of the virtual cursor for each file.
      * The offset is null for files that are not Neuro-safe.
