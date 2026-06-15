@@ -16,8 +16,8 @@
 				// "--disable-extensions"
 			],
 			"outFiles": [
-				"${workspaceFolder}/out/**/*.js",
-				"!${workspaceFolder}/out/web/**"
+				"${workspaceFolder}/out/desktop/**",
+				"${workspaceFolder}/out/webview/**",
 			],
 			"preLaunchTask": "watch:desktop"
 		},
@@ -32,12 +32,13 @@
 				"--extensionDevelopmentKind=web"
 			],
 			"outFiles": [
-				"${workspaceFolder}/out/web/**/*.js"
+				"${workspaceFolder}/out/web/**/",
+				"${workspaceFolder}/out/webview/**",
 			],
 			"preLaunchTask": "watch:web"
 		},
 		{
-			"name": "Extension Tests",
+			"name": "Desktop Extension Tests",
 			"type": "extensionHost",
 			"request": "launch",
 			"runtimeExecutable": "${execPath}",

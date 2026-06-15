@@ -17,6 +17,7 @@ export default tseslint.config(
         files: ['**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
         ignores: [
             'out/**',
+            '**/bin/**',
             'playground/**',
             '**/vscode*.d.ts',
             'esbuild.{m,c,}js',

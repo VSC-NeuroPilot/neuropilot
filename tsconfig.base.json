@@ -4,12 +4,14 @@
 		"module": "preserve",
 		"moduleResolution": "bundler",
 		"esModuleInterop": true,
-		"target": "es2020",
+		"target": "es2024",
 		"outDir": "out",
 		"sourceMap": true,
 		"strict": true,
 		"skipLibCheck": true,
 		"skipDefaultLibCheck": true,
+		"tsBuildInfoFile": "build/types.tsbuildinfo",
+		"types": ["node"],
 		"paths": {
 			"@ctx/*": [
 				"./src/context/*"

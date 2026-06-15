@@ -19,7 +19,7 @@ import {
     startupCreateClient,
 } from './shared/extension';
 import { addCommonUnsupervisedActions, registerUnsupervisedHandlers } from '@entry/shared/unsupervised';
-import { registerSendSelectionToNeuro } from '@/editing';
+import { registerSendSelectionToNeuro } from '../edit_files';
 import { loadIgnoreFiles } from '@/utils/ignore_files';
 import { reregisterAllActions } from '../rce';
 

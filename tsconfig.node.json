@@ -1,8 +1,9 @@
 {
     "extends": "./tsconfig.base.json",
     "compilerOptions": {
-        "types": ["node"],
-        "target": "esnext"
+        "types": ["node", "./meta.d.ts"],
+        "allowJs": true,
+        "checkJs": true
     },
-    "include": ["scripts/**"]
+    "include": ["**/*.config.*"]
 }

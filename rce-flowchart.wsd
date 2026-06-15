@@ -3,32 +3,32 @@
 skinparam conditionStyle diamond
 <style>
 activityDiagram {
-    HorizontalAlignment center
-    MaximumWidth 200
+    legend {
+        MaximumWidth 400
+    }
+
+    activity {
+        HorizontalAlignment center
+        MaximumWidth 200
+    }
 
     diamond {
         Padding 100
     }
+
+    .procedure {
+        BackgroundColor LightSteelBlue
+    }
 }
 </style>
-
-!unquoted procedure $stopif($condition)
-    if ($condition) then (yes)
-        stop
-    else (no)
-    endif
-!endprocedure
-!unquoted procedure $stopunless($condition)
-    if ($condition) then (yes)
-    else (no)
-        stop
-    endif
-!endprocedure
 
 title RCE Action Handler (feat/rce-context-object)
 
 legend top left
-    **Note:** Any stop node before an action result also sends an action result.
+    For simplicity:
+    * Any stop node before an action result also sends an action result.
+    * Any action result after an action result has already been sent will send a context message instead.
+    * <back:PaleGreen>Green</back> action result = success, <back:Salmon>red</back> action result = failure
 endlegend
 
 start
@@ -39,24 +39,33 @@ if (Permission level?) then (OFF)
 endif
 :Context setup hooks (parallel);
 :Schema validation;
-if () then (invalid)
-    stop
+if () then (any failure)
+    :Failure handling; <<procedure>>
+    detach
 endif
 :Run sync validators;
 if () then (any failure)
-    stop
+    :Failure handling; <<procedure>>
+    detach
 endif
 :Build cancel events;
+if (Action has async validators?) then (yes)
+    #PaleGreen:Send action result; <<output>>
+    :Run async validators;
+    if () then (any failure)
+        :Failure handling; <<procedure>>
+        detach
+    endif
+else (no)
+endif
 if (Permission level?) then (AUTOPILOT)
     :Dispose cancel events;
     if (Action handler is?) then (sync)
         :Run action handler;
-        if (Failed and should retry?) then (yes)
-            #Salmon:Send action result
-            (success = false); <<output>>
-        else (no)
-            :Clear action force;
-            #PaleGreen:Send action result; <<output>>
+        if () then (success)
+        else (failure)
+            :Failure handling; <<procedure>>
+            detach
         endif
     else (async)
         :Clear action force;
@@ -89,6 +98,17 @@ else (COPILOT)
 endif
 
 stop
+
+partition #LightSteelBlue Failure handling {
+    start
+    if (Should retry?) then (yes)
+        #Salmon:Send action result; <<output>>
+    else (no)
+        :Clear action force;
+        #PaleGreen:Send action result; <<output>>
+    endif
+    stop
+}
 
 ' Current concerns:
 ' - Due to src/rce.ts:L505-515, every validator always fails.

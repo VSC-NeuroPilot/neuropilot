@@ -87,7 +87,7 @@ export const lintActions = {
             (context: RCEContext) => targetedFileLintingResolvedEvent(context.data.params?.file),
         ],
         validators: {
-            sync: [validateDirectoryAccess, async (context: RCEContext) => {
+            async: [validateDirectoryAccess, async (context: RCEContext) => {
                 const relativePath = context.data.params.file;
                 const workspaceUri = getWorkspaceUri()!;
                 const normalizedPath = normalizePath(workspaceUri.fsPath + '/' + relativePath);
@@ -135,7 +135,7 @@ export const lintActions = {
             (context: RCEContext) => targetedFolderLintingResolvedEvent(context.data.params?.folder),
         ],
         validators: {
-            sync: [validateDirectoryAccess, async (context: RCEContext) => {
+            async: [validateDirectoryAccess, async (context: RCEContext) => {
                 const relativeFolder = context.data?.params.folder;
                 const workspacePath = getWorkspacePath();
                 assert(workspacePath);

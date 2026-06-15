@@ -1,0 +1,15 @@
+rules:
+  use-trusted-publishing:
+    ignore:
+      - publish.yml
+  template-injection:
+    ignore:
+      - publish.yml
+  dependabot-cooldown:
+    config:
+      days: 1
+  dangerous-triggers:
+    ignore:
+      - autoclose.yml
+  unpinned-uses:
+    disable: true

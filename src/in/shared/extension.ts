@@ -5,7 +5,7 @@ import { completionsProvider } from '@/completions';
 import { giveCookie } from '@/functions/cookies';
 import { ACCESS, ACTIONS, checkDeprecatedSettings, CONFIG, CONNECTION, PermissionLevel, setPermissions } from '@/config';
 import { explainWithNeuro, fixWithNeuro, NeuroCodeActionsProvider, sendDiagnosticsDiff } from '@/lint_problems';
-import { editorChangeHandler, fileSaveListener, moveNeuroCursorHere, toggleSaveAction, workspaceEditHandler } from '@/editing';
+import { editorChangeHandler, fileSaveListener, moveNeuroCursorHere, workspaceEditHandler } from '../../edit_files';
 import { emergencyDenyRequests, acceptRceRequest, denyRceRequest, revealRceNotification, clearRceRequest, getActions, reregisterAllActions } from '@/rce';
 import type { GitExtension } from '@typing/git';
 import { getGitExtension } from '@/git';
@@ -66,7 +66,7 @@ export function setupCommonEventHandlers() {
         vscode.workspace.onDidChangeConfiguration(async (event) => {
             if (event.affectsConfiguration('files.autoSave')) {
                 NEURO.client?.sendContext('The Auto-Save setting has been modified.');
-                toggleSaveAction();
+                reregisterAllActions(true);
             }
             if (event.affectsConfiguration('neuropilot.docsURL')) {
                 logOutput('INFO', 'NeuroPilot Docs URL changed.');

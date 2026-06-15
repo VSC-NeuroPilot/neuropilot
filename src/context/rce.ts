@@ -12,6 +12,7 @@ export interface RCELifecycleMetadata {
     preview?: { dispose: () => unknown };
     validatorResults?: {
         sync?: ActionValidationResult[];
+        async?: ActionValidationResult[];
     };
     setupHooks?: boolean;
 }

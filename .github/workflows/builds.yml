@@ -26,26 +26,27 @@ on:
                 default: "0"
                 options: ["0", "1"]
 
+permissions: {}
+
 jobs:
     build:
         name: Build extension
         runs-on: ubuntu-latest
         steps:
             - name: Checkout source repository
-              uses: actions/checkout@v4
+              uses: actions/checkout@v6
               with:
                 ref: ${{ github.sha }}
                 submodules: true
+                persist-credentials: false
 
             - name: Setup pnpm
-              uses: pnpm/action-setup@v4
-              with:
-                version: 10.14.0
+              uses: pnpm/action-setup@v6
             
             - name: Setup Node.js
-              uses: actions/setup-node@v4.4.0
+              uses: actions/setup-node@v6
               with:
-                node-version: 22.x.x
+                node-version-file: ./package.json
                 cache: 'pnpm'
                 cache-dependency-path: './pnpm-lock.yaml'
 
@@ -58,7 +59,7 @@ jobs:
               run: pnpm vsce package --no-dependencies
             
             - name: Upload builds
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v7
               with:
                 path: neuropilot-*.vsix
                 name: NeuroPilot (Non-Production) Build ${{ github.sha }}

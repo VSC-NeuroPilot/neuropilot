@@ -1,7 +1,6 @@
 name: Publish Extension
 
-permissions:
-  contents: write
+permissions: {}
 
 on:
   workflow_dispatch:
@@ -21,24 +20,23 @@ jobs:
   build:
     name: Build VSIX file
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     outputs:
       VERSION: ${{ steps.build.outputs.VERSION }}
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         submodules: true
+        persist-credentials: true
 
     - name: Setup pnpm
-      uses: pnpm/action-setup@v4
-      with:
-        version: 10.14.0
+      uses: pnpm/action-setup@v6
 
     - name: Setup Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
-        node-version: 'latest'
-        cache: 'pnpm'
-        cache-dependency-path: './pnpm-lock.yaml'
+        node-version-file: ./package.json
 
     - name: Install deps
       run: pnpm install --frozen-lockfile
@@ -62,7 +60,7 @@ jobs:
         pnpm vsce package --no-dependencies
     
     - name: Upload VSIX file
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: NeuroPilot ${{ steps.build.outputs.VERSION }}
         path: neuropilot-base-${{ steps.build.outputs.VERSION }}.vsix
@@ -85,24 +83,27 @@ jobs:
       url: https://marketplace.visualstudio.com/item?itemName=vsc-neuropilot.neuropilot-base
     steps:
       - name: Checkout repo # why
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Download VSIX
         id: vsce-vsix-down
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
       
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.14.0
+        uses: pnpm/action-setup@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: 'latest'
+          node-version-file: ./package.json
       
       - name: Publish VSIX to VS Marketplace
-        run: ls && pnpm dlx @vscode/vsce publish -p ${{ secrets.MARKETPLACE_TOKEN }} --packagePath "${{ steps.vsce-vsix-down.outputs.download-path }}/NeuroPilot ${{ needs.build.outputs.VERSION }}/neuropilot-base-${{ needs.build.outputs.VERSION }}.vsix"
+        env:
+          VERSION: ${{ needs.build.outputs.VERSION }}
+          ARTIFACT_PATH: ${{ steps.vsce-vsix-down.outputs.download-path }}
+        run: ls && pnpm dlx @vscode/vsce publish -p ${{ secrets.MARKETPLACE_TOKEN }} --packagePath "${ARTIFACT_PATH}/neuropilot-base-${VERSION}.vsix"
   
   ovsx-publish:
     name: Publish to Open VSX
@@ -113,21 +114,24 @@ jobs:
       url: https://open-vsx.org/extension/vsc-neuropilot/neuropilot-base
     steps:
       - name: Checkout repo # why
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
       
       - name: Download VSIX
         id: ovsx-vsix-down
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
       
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.14.0
+        uses: pnpm/action-setup@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: 'latest'
+          node-version-file: ./package.json
       
       - name: Publish VSIX to Open VSX
-        run: ls && pnpm dlx ovsx publish -p ${{ secrets.REGISTRY_TOKEN }} --packagePath "${{ steps.ovsx-vsix-down.outputs.download-path }}/NeuroPilot ${{ needs.build.outputs.VERSION }}/neuropilot-base-${{ needs.build.outputs.VERSION }}.vsix"
+        env:
+          VERSION: ${{ needs.build.outputs.VERSION }}
+          ARTIFACT_PATH: ${{ steps.ovsx-vsix-down.outputs.download-path }}
+        run: ls && pnpm dlx ovsx publish -p ${{ secrets.REGISTRY_TOKEN }} --packagePath "${ARTIFACT_PATH}/neuropilot-base-${VERSION}.vsix"

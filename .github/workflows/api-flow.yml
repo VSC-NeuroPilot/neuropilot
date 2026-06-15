@@ -1,0 +1,67 @@
+name: API publish flow
+
+on:
+  workflow_dispatch:
+    inputs:
+      increment:
+        type: choice
+        description: The version increment. 'release' simply removes the prerelease mark, or increments the prerelease counter.
+        required: true
+        options:
+          - none
+          - release
+          - patch
+          - minor
+          - major
+      prerelease:
+        type: boolean
+        description: Whether or not this is a prerelease
+        default: false
+
+permissions: {}
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: npm registry (API types)
+      url: https://npmx.dev/package/@vsc-neuropilot/api-types
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: ./package.json
+          registry-url: https://registry.npmjs.org
+
+      - name: Install deps
+        run: |
+          pnpm install --frozen-lockfile
+          cd packages/types
+
+      - name: Version types
+        if: inputs.increment != 'none'
+        run: |
+          git config set user.name GitHub Actions
+          git config set user.email actions@github.com
+
+          if [ "${{ inputs.prerelease }}" = "true" ]; then
+            pnpm version pre${{ inputs.increment }} --tag next
+          else
+            pnpm version ${{ inputs.increment }} --tag latest
+          fi
+
+          git push --follow-tags
+        
+      - name: Publish types package
+        run: pnpm publish

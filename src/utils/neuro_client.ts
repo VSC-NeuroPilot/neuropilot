@@ -3,14 +3,14 @@
  */
 
 import { Action, ActionForcePriorityEnum } from 'neuro-game-sdk';
-import { ACTIONS, Permission, PermissionLevel } from '@/config';
+import { Permission, PermissionLevel } from '@/config';
 import { logOutput, OutputTag, turtleSafari } from '@/utils/misc';
 import { PromptGenerator } from '@/rce';
 import { RCECancelEvent } from '@events/utils';
 import type { RCEContext } from '@ctx/rce';
 
 import type { NeuroClient } from 'neuro-game-sdk';
-import type { reregisterAllActions } from '@/rce';
+import type { reregisterAllActions, registerAction, unregisterAction } from '@/rce';
 import type { JSONSchema7Object } from 'json-schema';
 
 //#region Action force utils
@@ -53,32 +53,11 @@ export interface RCEAction<T extends JSONSchema7Object | undefined = any, E = an
      * @example edit_file -> Edit File // if displayName isn't set
      */
     displayName?: string;
-    /** 
-     * The JSON schema for validating the action parameters if experimental schemas are disabled.
-     * Do not use this if you don't have an "experimental schema". Instead, simply specify {@link Action.schema the normal schema property}.
-     * @todo likely deprecating experimental schemas
-     */
-    schemaFallback?: Action['schema'];
     /**
      * An object that defines an array of functions to validate the action's "environment".
      * Validators run before requests/executions to ensure environment/input validity.
      */
-    validators?: {
-        /** 
-         * Synchronous validators that will block execution of the rest of the thread.
-         * As this delays the action result to Neuro, any promises must resolve quickly so as to be effectively synchronous speed-wise. 
-         * 
-         * Tip: If you supply validators that ensure certain items are not nullable, you may be able to assert that they are a non-nullable value for {@link RCEAction.promptGenerator generating the Copilot-mode prompt}, {@link RCEAction.preview preview effects} and/or {@link RCEAction.handler handling the action}.
-         */
-        sync?: ((context: RCEContext<T, E>) => ActionValidationResult | Promise<ActionValidationResult>)[],
-        /**
-         * Asynchronous validators that will be ran in parallel to each other.
-         * These will be executed after an action result, so it's perfect for long-running validators.
-         * 
-         * Async validators will time out (and consequently fail) after 1 second (1000ms). It is planned that this value will be adjustable in the future.
-         */
-        async?: ((context: RCEContext<T, E>) => Promise<ActionValidationResult>)[];
-    }
+    validators?: RCEValidators<T, E>
     /**
      * Cancellation events attached to the action that will be automatically set up.
      * Each cancellation event will be setup in parallel to each other.
@@ -125,8 +104,15 @@ export interface RCEAction<T extends JSONSchema7Object | undefined = any, E = an
     /**
      * Whether to automatically register the action with Neuro if all conditions are met.
      * Defaults to true.
-     * Note that this will not watch the conditions, so if the conditions change, the action will not be immediately registered or unregistered.
-     * You must call {@link reregisterAllActions} to update the registration.
+     * 
+     * If `false`, the RCE system will never automatically register the action, and only automatically unregister if the user disables permission.
+     * You need to call {@link registerAction} or {@link unregisterAction} manually.
+     * 
+     * If `true`, the action will be automatically registered and unregistered based on the {@link RCEAction.registerCondition registerCondition} and current permission settings.
+     * However, the conditions are not watched, so if the conditions change, the action may not be immediately registered or unregistered.
+     * Call {@link reregisterAllActions} to update the registration.
+     * 
+     * Note that certain events also call {@link reregisterAllActions}.
      */
     autoRegister?: boolean;
     /**
@@ -134,7 +120,12 @@ export interface RCEAction<T extends JSONSchema7Object | undefined = any, E = an
      * Usually meant for actions that are exclusively used in action forces.
      */
     hidden?: boolean;
-    /** A condition that must be true for the action to be registered. If not provided, the action is always registered. **This function must never throw.** */
+    /**
+     * A condition that must be true for the action to be registered.
+     * If not provided, the action is always registered.
+     * Should not be used if {@link RCEAction.autoRegister autoRegister} is `false`.
+     * **This function must never throw.**
+     */
     registerCondition?: () => boolean;
     /** 
      * Setup handlers that will be invoked to help setup the {@link RCEContext.storage} object.
@@ -143,6 +134,29 @@ export interface RCEAction<T extends JSONSchema7Object | undefined = any, E = an
      * These functions will be parallelised, so the same key should not be accessed from multiple functions.
      */
     contextSetupHook?: ((context: RCEContext<T, E>) => Thenable<void>)[];
+}
+
+// apparently this JSDoc is really hard when trying to link to RCEAction.validators.async
+interface RCEValidators<T extends JSONSchema7Object | undefined, E> {
+    /** 
+     * Synchronous validators that will block execution of the rest of the thread.
+     * As this delays the action result to Neuro, any thenables must resolve quickly so as to be effectively synchronous speed-wise.
+     * 
+     * Tip: If you supply validators that ensure certain items are not nullable, you may be able to assert that they are a non-nullable value for:
+     * 
+     * - {@link RCEValidators.async asynchronous validators},
+     * - {@link RCEAction.promptGenerator generating the Copilot-mode prompt},
+     * - {@link RCEAction.preview preview effects}, and/or
+     * - {@link RCEAction.handler handling the action}.
+     */
+    sync?: ((context: RCEContext<T, E>) => ActionValidationResult)[],
+    /**
+     * Asynchronous validators that will be ran in parallel to each other.
+     * These will be executed after an action result, so it's perfect for long-running validators.
+     * 
+     * Async validators will time out (and consequently fail) after 1 second (1000ms). It is planned that this value will be adjustable in the future.
+     */
+    async?: ((context: RCEContext<T, E>) => Thenable<ActionValidationResult>)[];
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -158,27 +172,11 @@ export type RCEHandlerReturns = ActionHandlerResult | Thenable<ActionHandlerResu
  * @returns The action stripped to its basic form, without the handler and permissions.
  */
 export function stripToAction(action: RCEAction): Action {
-    let schema: Action['schema'];
-    if (ACTIONS.experimentalSchemas && action.schemaFallback) {
-        schema = action.schema;
-    } else {
-        schema = action.schemaFallback ?? action.schema ?? undefined;
-    }
     return {
         name: action.name,
         description: turtleSafari(action.description),
-        schema,
+        schema: action.schema,
     };
-}
-
-/**
- * Strips an array of actions to the form expected by the API.
- * (Calls {@link stripToAction} for each action in the array.)
- * @param actions The actions to strip to their basic form.
- * @returns An array of actions stripped to their basic form, without the handler and permissions.
- */
-export function stripToActions(actions: RCEAction[]): Action[] {
-    return actions.map(stripToAction);
 }
 
 //#endregion
@@ -231,11 +229,12 @@ export function actionValidationAccept(message?: string, historyNote?: string): 
  */
 export function actionValidationFailure(message: string, historyNote?: string): ActionValidationResult {
     logOutput('WARNING', 'Action failed: ' + message);
+    historyNote ??= message;
     return {
         success: false,
         retry: false,
         message: message !== undefined ? `Action failed: ${message}` : 'Action failed.',
-        historyNote,
+        historyNote: `Validator failed: ${historyNote}`,
     };
 }
 
@@ -289,10 +288,11 @@ export function actionHandlerSuccess(message?: string, historyNote?: string): Ac
  */
 export function actionHandlerFailure(message: string, historyNote?: string): ActionHandlerResult {
     logOutput('WARNING', 'Action failed: ' + message);
+    historyNote ??= message;
     return {
         success: 'failure',
-        message,
-        historyNote,
+        message: message !== undefined ? `Action failed: ${message}` : 'Action failed.',
+        historyNote: `Action handler failed: ${historyNote}`,
     };
 }
 
@@ -304,10 +304,11 @@ export function actionHandlerFailure(message: string, historyNote?: string): Act
  */
 export function actionHandlerRetry(message: string, historyNote?: string): ActionHandlerResult {
     logOutput('WARNING', 'Action failed: ' + message + '\nRequesting retry.');
+    historyNote ??= message;
     return {
         success: 'retry',
-        message,
-        historyNote,
+        message: 'Action failed: ' + message + '\nPlease retry the action.',
+        historyNote: `Action handler failed: ${historyNote}\nRequesting retry.`,
     };
 }
 

@@ -4,7 +4,7 @@
 	"private": true,
 	"description": "Allows Neuro-sama to either act as a companion/copilot or control Visual Studio Code by herself.",
 	"icon": "assets/heart-xaendril.png",
-	"version": "2.4.4",
+	"version": "2.5.0",
 	"publisher": "VSC-NeuroPilot",
 	"repository": "https://github.com/VSC-NeuroPilot/neuropilot",
 	"homepage": "https://vsc-neuropilot.github.io/neuropilot",
@@ -12,6 +12,14 @@
 	"engines": {
 		"vscode": "^1.95.0"
 	},
+	"devEngines": {
+		"runtime": {
+			"name": "node",
+			"onFail": "warn",
+			"version": "^24.16.0"
+		}
+	},
+	"packageManager": "pnpm@11.5.0",
 	"categories": [
 		"AI",
 		"Programming Languages",
@@ -685,7 +693,8 @@
 					"neuropilot.actions.experimentalSchemas": {
 						"type": "boolean",
 						"default": true,
-						"markdownDescription": "Whether or not to toggle schemas that may use \"unsupported\" schema properties.\n\nRequires reloading permissions if changed."
+						"markdownDescription": "Whether or not to toggle schemas that may use \"unsupported\" schema properties.\n\nRequires reloading permissions if changed.",
+						"deprecationMessage": "Experimental schemas are no longer existent, each action only has 1 schema."
 					}
 				}
 			}
@@ -845,47 +854,47 @@
 		"@types/glob-to-regexp": "^0.4.4",
 		"@types/json-schema": "^7.0.15",
 		"@types/mocha": "^10.0.10",
-		"@types/node": "^20",
-		"@types/vscode": "^1.95.0",
+		"@types/node": "^25.9.3",
+		"@types/vscode": "^1.120.0",
 		"@types/vscode-webview": "^1.57.5",
-		"@types/ws": "^8.18.0",
-		"@typescript-eslint/eslint-plugin": "^8.58.2",
-		"@typescript/native-preview": "7.0.0-dev.20260417.1",
+		"@typescript-eslint/eslint-plugin": "^8.61.0",
+		"@typescript/native-preview": "7.0.0-dev.20260613.1",
 		"@vscode/test-cli": "^0.0.12",
-		"@vscode/test-electron": "^2.5.2",
+		"@vscode/test-electron": "^3.0.0",
 		"@vscode/test-web": "^0.0.80",
-		"@vscode/vsce": "^3.7.1",
-		"ansis": "^4.2.0",
-		"baseline-browser-mapping": "^2.10.0",
+		"@vscode/vsce": "^3.9.2",
+		"ansis": "^4.3.1",
+		"baseline-browser-mapping": "^2.10.37",
+		"chalk": "^5.6.2",
 		"cross-env": "^10.1.0",
-		"esbuild": "^0.27.4",
+		"esbuild": "^0.28.1",
 		"esbuild-plugin-polyfill-node": "^0.3.0",
-		"eslint": "^10.1.0",
-		"eslint-plugin-jsdoc": "^62.8.0",
-		"eslint-plugin-unicorn": "^63.0.0",
-		"globals": "^17.4.0",
+		"eslint": "^10.5.0",
+		"eslint-plugin-jsdoc": "^63.0.2",
+		"eslint-plugin-unicorn": "^65.0.1",
+		"globals": "^17.6.0",
 		"husky": "^9.1.7",
-		"mocha": "^11.7.5",
-		"npm-run-all2": "^8.0.4",
-		"ovsx": "^0.10.9",
-		"oxlint": "^1.60.0",
-		"oxlint-tsgolint": "^0.21.1",
-		"playwright": "^1.58.2",
-		"rolldown": "1.0.0-rc.16",
-		"tinyglobby": "^0.2.15",
+		"mocha": "^11.7.6",
+		"npm-run-all2": "^9.0.2",
+		"ovsx": "^1.0.1",
+		"oxlint": "^1.69.0",
+		"oxlint-tsgolint": "^0.23.0",
+		"playwright": "^1.60.0",
+		"rolldown": "1.1.1",
+		"tinyglobby": "^0.2.17",
 		"ts-mockito": "^2.6.1",
-		"tsx": "^4.21.0",
-		"typescript": "^5.9.3",
-		"typescript-eslint": "^8.57.1",
-		"yaml": "^2.8.2"
+		"tsx": "^4.22.4",
+		"typescript": "^6.0.3",
+		"typescript-eslint": "^8.61.0",
+		"yaml": "^2.9.0"
 	},
 	"dependencies": {
 		"@vscode/codicons": "^0.0.45",
-		"file-type": "^21.3.3",
+		"file-type": "^22.0.1",
 		"glob-to-regexp": "^0.4.1",
 		"ignore": "^7.0.5",
 		"jsonschema": "^1.5.0",
-		"neuro-game-sdk": "^1.0.10",
-		"preact": "^10.29.0"
+		"neuro-game-sdk": "^1.1.1",
+		"preact": "^10.29.2"
 	}
 }

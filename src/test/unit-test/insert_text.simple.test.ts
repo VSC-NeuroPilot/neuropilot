@@ -1,12 +1,12 @@
 import * as assert from 'assert';
-import { editingActions } from '@/editing';
+import { editFileActions } from '@/edit_files';
 import type { RCEContext } from '@/context/rce';
 
 // Tests for the insert_text action prompt generator using real logic
 suite('insert_text Action', () => {
     test('generates a prompt and reflects single line count', () => {
         // === Arrange & Act ===
-        const prompt = editingActions.insert_text.promptGenerator({
+        const prompt = editFileActions.insert_text.promptGenerator({
             data: { params: { text: 'hello world' } },
         } as RCEContext);
 
@@ -17,7 +17,7 @@ suite('insert_text Action', () => {
 
     test('generates a prompt and reflects multi-line count', () => {
         // === Arrange & Act ===
-        const prompt = editingActions.insert_text.promptGenerator({
+        const prompt = editFileActions.insert_text.promptGenerator({
             data: { params: { text: 'a\nb\nc' } },
         } as RCEContext);
 

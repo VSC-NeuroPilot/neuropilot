@@ -12,7 +12,7 @@ node_modules/
 media/codicons/.cache-hash.json
 
 # Source .ts files for webviews
-webview/**/*.ts
+webview/**/*.tsx
 
 # Project files
 project-files/
