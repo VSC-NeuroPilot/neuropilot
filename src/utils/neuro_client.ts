@@ -9,7 +9,9 @@ import { PromptGenerator } from '@/rce';
 import { RCECancelEvent } from '@events/utils';
 import type { RCEContext } from '@ctx/rce';
 
+// oxlint-disable-next-line no-unused-vars
 import type { NeuroClient } from 'neuro-game-sdk';
+// oxlint-disable-next-line no-unused-vars
 import type { reregisterAllActions, registerAction, unregisterAction } from '@/rce';
 import type { JSONSchema7Object } from 'json-schema';
 

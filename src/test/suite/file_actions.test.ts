@@ -334,6 +334,7 @@ suite('File Actions', () => {
         await checkNoErrorWithTimeout(() => { verify(mockedClient.sendContext(anything())).once(); }, 5000, 100);
         // Brief delay to ensure activeTextEditor is updated across platforms
         await new Promise(resolve => setTimeout(resolve, 200));
+        // oxlint-disable-next-line typescript/unbound-method
         const [context] = capture(mockedClient.sendContext).last();
 
         // === Assert ===
@@ -421,7 +422,7 @@ suite('File Actions', () => {
             if (tab.input instanceof vscode.TabInputText) {
                 return tab.input.uri;
             }
-            assert.fail(`Tab input is not a Text Document: ${tab.input}`);
+            assert.fail(`Tab input is not a Text Document: ${String(tab.input)}`);
         }));
 
         // === Assert ===
@@ -462,7 +463,7 @@ suite('File Actions', () => {
             if (tab.input instanceof vscode.TabInputText) {
                 return tab.input.uri;
             }
-            assert.fail(`Tab input is not a Text Document: ${tab.input}`);
+            assert.fail(`Tab input is not a Text Document: ${String(tab.input)}`);
         }));
 
         // === Assert ===
@@ -524,7 +525,7 @@ suite('File Actions', () => {
             if (tab.input instanceof vscode.TabInputText) {
                 return tab.input.uri;
             }
-            assert.fail(`Tab input is not a Text Document: ${tab.input}`);
+            assert.fail(`Tab input is not a Text Document: ${String(tab.input)}`);
         }));
 
         // === Assert ===

@@ -43,6 +43,7 @@ export function logOutput(tag: OutputTag, message: string) {
     }
 }
 
+// oxlint-disable-next-line typescript/no-redundant-type-constituents
 let retryTimeout: NodeJS.Timeout | null = null;
 let shouldAutoReconnect = true; // Flag to control auto-reconnection
 

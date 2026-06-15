@@ -282,7 +282,7 @@ export function handleGetFileLintProblems(context: RCEContext): ActionHandlerRes
         const formattedDiagnostics = getFormattedDiagnosticsForFile(relativePath, rawDiagnostics);
         return actionHandlerSuccess(`Linting problems for file ${relativePath}:${formattedDiagnostics}`, `${rawDiagnostics.length} linting issues sent`);
     } catch (erm) {
-        logOutput('ERROR', `Getting diagnostics for ${relativePath} failed: ${erm}`);
+        logOutput('ERROR', `Getting diagnostics for ${relativePath} failed: ${String(erm)}`);
         return actionHandlerFailure(`Failed to get linting diagnostics for "${relativePath}".`, EXCEPTION_THROWN_STRING);
     }
 }
@@ -316,7 +316,7 @@ export function handleGetFolderLintProblems(context: RCEContext): ActionHandlerR
 
         return actionHandlerSuccess(`Linting problems for folder "${relativeFolder}":\n${formattedDiagnostics}`, `${folderDiagnostics.length} linting issues sent`);
     } catch (erm) {
-        logOutput('ERROR', `Getting diagnostics for folder ${relativeFolder} failed: ${erm}`);
+        logOutput('ERROR', `Getting diagnostics for folder ${relativeFolder} failed: ${String(erm)}`);
         return actionHandlerFailure(`Failed to get linting diagnostics for folder "${relativeFolder}".`, EXCEPTION_THROWN_STRING);
     }
 }
@@ -346,7 +346,7 @@ export function handleGetWorkspaceLintProblems(): ActionHandlerResult {
 
         return actionHandlerSuccess(`Linting problems for the current workspace:\n${formattedDiagnostics}`, `${safeDiagnostics.length} linting issues found`);
     } catch (erm) {
-        logOutput('ERROR', `Failed to get diagnostics for workspace: ${erm}`);
+        logOutput('ERROR', `Failed to get diagnostics for workspace: ${String(erm)}`);
         return actionHandlerFailure("Couldn't get diagnostics for the workspace.", EXCEPTION_THROWN_STRING);
     }
 }

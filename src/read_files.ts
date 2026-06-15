@@ -366,7 +366,7 @@ export function handleReadFile(context: RCEContext): RCEHandlerReturns {
                 return actionHandlerSuccess(`Contents of the file ${file}:\n\n${fence}\n${decodedContent}\n${fence}`, 'File contents sent');
             },
             (erm: unknown) => {
-                logOutput('ERROR', `Couldn't read file ${absolute}: ${erm}`);
+                logOutput('ERROR', `Couldn't read file ${absolute}: ${String(erm)}`);
                 return actionHandlerFailure(`Couldn't read file ${file}`, PROMISE_REJECTION_STRING);
             },
         );

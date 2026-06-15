@@ -405,7 +405,7 @@ export function handleCreateFile(context: RCEContext): RCEHandlerReturns {
             await vscode.window.showTextDocument(document);
             return actionHandlerSuccess(`Created and opened file ${relativePath}`, 'File created and opened');
         } catch (erm: unknown) {
-            logOutput('ERROR', `Failed to open new file ${relativePath}: ${erm}`);
+            logOutput('ERROR', `Failed to open new file ${relativePath}: ${String(erm)}`);
             return actionHandlerSuccess(`Created file ${relativePath} but failed to open`, 'File created but failed to open');
         }
     }
@@ -555,7 +555,7 @@ export function handleDeleteFileOrFolder(context: RCEContext): RCEHandlerReturns
             updateStatus('pending', `Deleting targeted ${recursive ? 'folder' : 'file'}`);
             await vscode.workspace.fs.delete(uri, { recursive, useTrash });
         } catch (erm: unknown) {
-            logOutput('ERROR', `Failed to delete ${relativePath}: ${erm}`);
+            logOutput('ERROR', `Failed to delete ${relativePath}: ${String(erm)}`);
             return actionHandlerFailure(`Failed to delete ${relativePath}`, EXCEPTION_THROWN_STRING);
         }
 

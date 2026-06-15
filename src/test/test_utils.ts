@@ -17,7 +17,7 @@ export function assertProperties(actual: unknown, expected: unknown, message?: s
             assert.ok(key in actual, `Expected property "${key}" to exist in the actual object.`);
             const expectedValue: unknown = expected[key as keyof typeof expected];
             const actualValue: unknown = actual[key as keyof typeof actual];
-            assert.strictEqual(actualValue, expectedValue, `Expected property "${key}" to have value "${expectedValue}", but got "${actualValue}".`);
+            assert.strictEqual(actualValue, expectedValue, `Expected property "${key}" to have value "${String(expectedValue)}", but got "${String(actualValue)}".`);
         }
     } catch (erm) {
         if (erm instanceof assert.AssertionError && message) {
