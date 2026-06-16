@@ -2,6 +2,8 @@ import * as vscode from 'vscode';
 import assert from 'node:assert';
 import { JSONSchema7 } from 'json-schema';
 import { RCEAction, RCEContext, RCEHandlerReturns, PermissionLevel } from '@vsc-neuropilot/api-types';
+import assert from 'node:assert';
+import { z } from 'zod';
 
 import { NEURO } from '@/constants';
 import { filterFileContents, logOutput, simpleFileName } from '@/utils/misc';
@@ -49,19 +51,7 @@ export function addChatAction() {
     addActions([chatAction], false);
 }
 
-function handleChat(context: RCEContext): RCEHandlerReturns {
-    const answer = context.data.params!.answer;
-
-    if (requestCancelled) {
-        return actionHandlerFailure('Request was cancelled');
-    }
-
-    lastChatResponse = answer;
-    logOutput('INFO', 'Received chat response:\n' + answer);
-    return actionHandlerSuccess();
-}
-
-export const chatAction: RCEAction = {
+export const chatAction = defineAction({
     name: 'chat',
     description:
         `Provide an answer to ${CONNECTION.userName}'s request.` +
@@ -69,15 +59,20 @@ export const chatAction: RCEAction = {
         ' You may additionally include code blocks by using triple backticks.' +
         ' Be sure to use the correct language identifier after the first set of backticks.' +
         ' If you decide to include a code block, make sure to explain what it is doing.',
-    schema: {
-        type: 'object',
-        properties: {
-            answer: { type: 'string' },
-        },
-        required: ['answer'],
-        additionalProperties: false,
-    } satisfies JSONSchema7,
-    handler: handleChat,
+    schema: z.object({
+        answer: z.string(),
+    }),
+    handler(ctx) {
+        const answer = ctx.data.params.answer;
+
+        if (requestCancelled) {
+            return actionHandlerFailure('Request was cancelled');
+        }
+
+        lastChatResponse = answer;
+        logOutput('INFO', 'Received chat response:\n' + answer);
+        return actionHandlerSuccess();
+    },
     validators: {
         sync: [
             () => NEURO.currentActionForce // This is done before the action force is cleared
@@ -92,7 +87,7 @@ export const chatAction: RCEAction = {
     category: 'Chat',
     hidden: true,
     defaultPermission: PermissionLevel.OFF, // Used with overridePermissions in forceActions
-} as const;
+});
 
 export function registerChatParticipant() {
     const handler: vscode.ChatRequestHandler = async (

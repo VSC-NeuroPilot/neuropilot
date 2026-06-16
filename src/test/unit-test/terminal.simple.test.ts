@@ -1,12 +1,13 @@
 import * as assert from 'assert';
 import { terminalActions } from '@/pseudoterminal';
-import type { RCEContext } from '@/context/rce';
+import { fakeContext } from '@test/test_utils';
 
 // Tests for terminal-related prompt generators using real logic with loose checks
 suite('terminal Actions', () => {
     test('execute_in_terminal prompt formats command and shell', () => {
+        assert.ok(terminalActions.execute_in_terminal.promptGenerator && typeof terminalActions.execute_in_terminal.promptGenerator !== 'string');
         // === Arrange & Act ===
-        const prompt = terminalActions.execute_in_terminal.promptGenerator({ data: { params: { command: 'echo hi', shell: 'bash' } } } as RCEContext);
+        const prompt = terminalActions.execute_in_terminal.promptGenerator(fakeContext('execute_in_terminal', { command: 'echo hi', shell: 'bash' }));
 
         // === Assert ===
         assert.ok(typeof prompt === 'string' && prompt.length > 0);
@@ -15,8 +16,9 @@ suite('terminal Actions', () => {
     });
 
     test('kill_terminal_process prompt formats shell', () => {
+        assert.ok(terminalActions.kill_terminal_process.promptGenerator && typeof terminalActions.kill_terminal_process.promptGenerator !== 'string');
         // === Arrange & Act ===
-        const prompt = terminalActions.kill_terminal_process.promptGenerator({ data: { params: { shell: 'pwsh' } } } as RCEContext);
+        const prompt = terminalActions.kill_terminal_process.promptGenerator(fakeContext('kill_terminal_process', { shell: 'pwsh' }));
 
         // === Assert ===
         assert.ok(typeof prompt === 'string' && prompt.length > 0);

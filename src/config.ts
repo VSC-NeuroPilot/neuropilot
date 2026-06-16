@@ -1,9 +1,12 @@
 import * as vscode from 'vscode';
 import { PermissionLevel } from '@vsc-neuropilot/api-types';
 
+
 import { NEURO } from '@/constants';
 import { logOutput } from '@/utils/misc';
 import { getAction } from '@/rce';
+
+export { PermissionLevel }; // re-exporting for the sake of compat I'm done with this
 
 //#region Types
 

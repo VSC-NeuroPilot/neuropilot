@@ -1,6 +1,16 @@
-import * as assert from 'assert';
+import assert from 'assert';
 import * as vscode from 'vscode';
 import { setVirtualCursor } from '@/utils/misc';
+import { RCEContext } from '@ctx/rce';
+import { ActionData } from 'neuro-game-sdk';
+import crypto from 'node:crypto';
+import { ZodObject } from 'zod';
+
+export function fakeContext<const TParams extends ActionData['params']>(name: string, params: TParams): RCEContext<undefined, ZodObject, TParams> {
+    const ctx = new RCEContext({ id: crypto.randomUUID(), name, params });
+    ctx['_updateStatus'] = returnMockFunction();
+    return ctx;
+};
 
 /**
  * Asserts that an object has the same properties as the expected object,

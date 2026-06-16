@@ -24,6 +24,10 @@ Changes between each version before then will not be listed.
 - Replaced the `insert_turtle_here` placeholder in context with a format similar to JavaScript templates.
   - The new equivalent for `insert_turtle_here` is `${userName}`.
   - See the documentation for available placeholders. <!-- TODO: Link + actually add to documentation -->
+- Internally, NeuroPilot changed to use [Zod](https://zod.dev) for JSON schema generation and validation.
+  - This shouldn't mean that schemas are changed (except `rewrite_lines`, which is intentional). If any schemas have been changed as a result of this, it is considered a regression, and [is worth reporting](https://github.com/VSC-NeuroPilot/neuropilot/issues/new).
+  - NeuroPilot actually accepts any TypeScript schema library that conforms to the [Standard JSON Schema specification](https://standardschema.dev/json-schema), however this is only relevant for the public API where companion developers can choose between schema libraries listed as compatible in the above list.
+  - By default, NeuroPilot will attempt to convert these schemas to the `draft-07` JSON schema version. Failing that, it will try to convert to `draft-2020-12` instead, with a warning logged in console. NeuroPilot does *not* attempt conversion to `openapi-3.0`, as it uses keywords not in the official JSON schema specification.
 
 ## 2.5.0
 

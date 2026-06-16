@@ -4,6 +4,9 @@ import * as vscode from 'vscode';
 import { JSONSchema7 } from 'json-schema';
 import { RCEAction, RCEContext, RCEHandlerReturns, PermissionLevel, ActionForcePriorityEnum } from '@vsc-neuropilot/api-types';
 
+import { ActionForcePriorityEnum } from 'neuro-game-sdk';
+import { z } from 'zod';
+
 import { NEURO } from '@/constants';
 import { logOutput, simpleFileName, getPositionContext, formatContext, NeuroPositionContext } from '@/utils/misc';
 import { CONFIG, CONNECTION } from '@/config';
@@ -15,25 +18,25 @@ let requestCancelled = false;
 
 // TODO: Figure out how to do this with maxCount
 // export const completionAction = (maxCount: number) => ({
-export const completeCodeAction: RCEAction = {
+export const completeCodeAction = defineAction({
     name: 'complete_code',
     description: 'Suggest code to write.' +
         ' Only one suggestion you provide will be chosen.' +
         ' Your suggestions can be single lines or multi-line code snippets.',
-    schema: {
-        type: 'object',
-        properties: {
-            suggestions: {
-                type: 'array',
-                items: { type: 'string' },
-                maxItems: 3,
-            },
-        },
-        required: ['suggestions'],
-        additionalProperties: false,
-    } satisfies JSONSchema7,
+    schema: z.object({
+        suggestions: z.array(z.string()).max(3),
+    }),
     category: 'Completions',
-    handler: handleCompleteCode,
+    handler(ctx) {
+        if (requestCancelled)
+            return actionHandlerFailure('Request was cancelled');
+        if (!NEURO.currentActionForce)
+            return actionHandlerFailure('Not currently waiting for suggestions');
+
+        lastSuggestions = ctx.data.params.suggestions;
+        logOutput('INFO', 'Received suggestions:\n' + JSON.stringify(lastSuggestions));
+        return actionHandlerSuccess();
+    },
     validators: {
         sync: [
             () => NEURO.currentActionForce // This is done before the action force is cleared
@@ -53,18 +56,7 @@ export const completeCodeAction: RCEAction = {
     promptGenerator: null, // Only ever run in Autopilot mode
     defaultPermission: PermissionLevel.OFF, // Used with overridePermissions in forceActions
     hidden: true,
-} as const;
-
-function handleCompleteCode(context: RCEContext): RCEHandlerReturns {
-    if (requestCancelled)
-        return actionHandlerFailure('Request was cancelled');
-    if (!NEURO.currentActionForce)
-        return actionHandlerFailure('Not currently waiting for suggestions');
-
-    lastSuggestions = context.data.params.suggestions;
-    logOutput('INFO', 'Received suggestions:\n' + JSON.stringify(lastSuggestions));
-    return actionHandlerSuccess();
-}
+});
 
 export function addCompleteCodeAction() {
     addActions([completeCodeAction], false);

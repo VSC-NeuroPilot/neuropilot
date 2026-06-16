@@ -6,11 +6,12 @@
 
 import * as vscode from 'vscode';
 import { spawn, ChildProcessWithoutNullStreams } from 'node:child_process';
-import { RCEAction, RCEContext, ActionValidationResult, RCEHandlerReturns, ActionHandlerResult } from '@vsc-neuropilot/api-types';
+import { RCEContext, ActionValidationResult, RCEHandlerReturns, ActionHandlerResult } from '@vsc-neuropilot/api-types';
+import { z } from 'zod';
 
 import { NEURO } from '@/constants';
 import { checkWorkspaceTrust, checkVirtualWorkspace, logOutput, delayAsync, getFence } from '@/utils/misc';
-import { actionValidationAccept, actionValidationFailure, actionHandlerFailure, actionHandlerSuccess } from '@/utils/neuro_client';
+import { actionValidationAccept, actionValidationFailure, actionHandlerFailure, actionHandlerSuccess, defineAction } from '@/utils/neuro_client';
 import { CONFIG } from '@/config';
 import { notifyOnTerminalClose } from '@events/shells';
 import { addActions } from '@/rce';
@@ -32,63 +33,62 @@ export interface TerminalSession {
     shellType: string;
 }
 
-function checkLiveTerminals(context: RCEContext): ActionValidationResult {
-    const shellType: string = context.data.params.shell;
-    const session = NEURO.terminalRegistry.get(shellType);
+function checkLiveTerminals(shell: string): ActionValidationResult {
+    const session = NEURO.terminalRegistry.get(shell);
     if (!session)
-        return actionValidationFailure(`No terminal session found for shell type "${shellType}".`);
+        return actionValidationFailure(`No terminal session found for shell type "${shell}".`);
     return actionValidationAccept();
 }
 
 export const terminalActions = {
-    execute_in_terminal: {
+    execute_in_terminal: defineAction({
         name: 'execute_in_terminal',
         description: 'Run a command directly in the terminal',
         category: CATEGORY_TERMINAL,
-        schema: {
-            type: 'object',
-            properties: {
-                command: { type: 'string', description: 'The command to run in the terminal.', examples: ['echo Hello world!', 'node dist/index.js'] },
-                shell: { type: 'string', enum: getAvailableShellProfileNames(), description: 'The shell to run the command in.' },
-            },
-            required: ['command', 'shell'],
-            additionalProperties: false,
+        schema: z.object({
+            command: z.string().meta({
+                description: 'The command to run in the terminal.',
+                examples: ['echo Hello world!', 'node dist/index.js'],
+            }),
+            shell: z.enum(getAvailableShellProfileNames()).meta({
+                description: 'The shell to run the command in.',
+            }),
+        }),
+        handler(ctx) {
+            const { command, shell } = ctx.data.params;
+            return returnHandleRunCommand(command, shell);
         },
-        handler: handleRunCommand,
         // TODO: Auto-switch to targeted terminal (if already started) as preview effect
         cancelEvents: [
-            (context: RCEContext) => notifyOnTerminalClose(context.data.params?.shell),
+            (context) => notifyOnTerminalClose(context.data.params.shell),
         ],
         validators: {
             sync: [checkVirtualWorkspace, checkWorkspaceTrust],
         },
-        promptGenerator: (context: RCEContext) => `run "${context.data.params?.command}" in the "${context.data.params?.shell}" shell.`,
+        promptGenerator: (context) => `run "${context.data.params.command}" in the "${context.data.params.shell}" shell.`,
         registerCondition: () => checkVirtualWorkspace().success && checkWorkspaceTrust().success,
-    },
-    kill_terminal_process: {
+    }),
+    kill_terminal_process: defineAction({
         name: 'kill_terminal_process',
         description: 'Kill a terminal process that is running.',
         category: CATEGORY_TERMINAL,
-        schema: {
-            type: 'object',
-            properties: {
-                shell: { type: 'string', description: 'The shell to kill.', enum: getAvailableShellProfileNames() },
-            },
-            required: ['shell'],
-            additionalProperties: false,
-        },
-        handler: handleKillTerminal,
-        // TODO: Auto-switch to targeted terminal as preview effect
+        schema: z.object({
+            shell: z.enum(getAvailableShellProfileNames()).meta({
+                description: 'The shell to kill.',
+            }),
+        }),
+        handler: (ctx) => returnHandleKillTerminal(ctx.data.params.shell),
+        // TODO: Auto-focus to targeted terminal as preview effect
         cancelEvents: [
-            (context: RCEContext) => notifyOnTerminalClose(context.data.params?.shell),
+            (context) => notifyOnTerminalClose(context.data.params.shell),
         ],
         validators: {
-            sync: [checkLiveTerminals, checkVirtualWorkspace, checkWorkspaceTrust],
+            sync: [(ctx) => checkLiveTerminals(ctx.data.params.shell), checkVirtualWorkspace, checkWorkspaceTrust],
         },
-        promptGenerator: (context: RCEContext) => `kill the "${context.data.params?.shell}" shell.`,
+        promptGenerator: (context) => `kill the "${context.data.params.shell}" shell.`,
         registerCondition: () => checkVirtualWorkspace().success && checkWorkspaceTrust().success,
-    },
-    get_currently_running_shells: {
+    }),
+    get_currently_running_shells: defineAction({
         name: 'get_currently_running_shells',
         description: 'Get the list of terminal processes that are spawned.',
         category: CATEGORY_TERMINAL,
@@ -98,8 +98,8 @@ export const terminalActions = {
         },
         promptGenerator: 'get the list of currently running shells.',
         registerCondition: () => checkVirtualWorkspace().success && checkWorkspaceTrust().success,
-    },
-} satisfies Record<string, RCEAction>;
+    }),
+};
 
 export function addTerminalActions() {
     addActions([
@@ -213,20 +213,9 @@ function getOrCreateTerminal(shellType: string, terminalName: string): TerminalS
     return session;
 }
 
-/**
-* Run command handler.
-* Checks permissions, executes the command in the requested shell,
-* captures STDOUT and STDERR, logs the output, and sends it to nwero.
-*/
-export function handleRunCommand(context: RCEContext): RCEHandlerReturns {
-    const { data: actionData } = context;
-
-    // Get the command and shell.
-    const command: string = actionData.params?.command;
-    const shellType: string = actionData.params?.shell;
-
+function returnHandleRunCommand(command: string, shell: string) {
     // Get or create the terminal session for this shell.
-    const session = getOrCreateTerminal(shellType, `${NEURO.currentController}: ${shellType}`);
+    const session = getOrCreateTerminal(shell, `${NEURO.currentController}: ${shell}`);
     const outputDelay = CONFIG.terminalContextDelay;
 
     // Reset previous outputs.
@@ -239,7 +228,7 @@ export function handleRunCommand(context: RCEContext): RCEHandlerReturns {
         if (session.outputStdout === cachedOutput) {
             const fence = getFence(session.outputStdout!);
             NEURO.client?.sendContext(
-                `The ${shellType} terminal outputted the following to stdout:\n\n${fence}\n${session.outputStdout!.replace(/\x1b\[[\x30-\x3F]*[\x20-\x2F]*[\x40-\x7F]|\x1b\]0;.+\r?\n/g, '')}\n${fence}`,
+                `The ${shell} terminal outputted the following to stdout:\n\n${fence}\n${session.outputStdout!.replace(/\x1b\[[\x30-\x3F]*[\x20-\x2F]*[\x40-\x7F]|\x1b\]0;.+\r?\n/g, '')}\n${fence}`,
                 false,
             );
             session.outputStdout = '';
@@ -252,7 +241,7 @@ export function handleRunCommand(context: RCEContext): RCEHandlerReturns {
         if (session.outputStderr === cachedOutput) {
             const fence = getFence(session.outputStderr!);
             NEURO.client?.sendContext(
-                `The ${shellType} terminal outputted the following to stderr:\n\n${fence}\n${session.outputStderr!.replace(/\x1b\[[\x30-\x3F]*[\x20-\x2F]*[\x40-\x7F]|\x1b\]0;.+\r?\n/g, '')}\n${fence}`,
+                `The ${shell} terminal outputted the following to stderr:\n\n${fence}\n${session.outputStderr!.replace(/\x1b\[[\x30-\x3F]*[\x20-\x2F]*[\x40-\x7F]|\x1b\]0;.+\r?\n/g, '')}\n${fence}`,
                 false,
             );
             session.outputStderr = '';
@@ -260,18 +249,18 @@ export function handleRunCommand(context: RCEContext): RCEHandlerReturns {
     }
 
     function returnSuccess() {
-        return actionHandlerSuccess(`Wrote to ${shellType}`, 'Wrote command to shell stdin');
+        return actionHandlerSuccess(`Wrote to ${shell}`, 'Wrote command to shell stdin');
     }
 
     // If no process has been started, spawn it.
     if (!session.processStarted) {
         session.processStarted = true;
-        const { shellPath, shellArgs } = getShellProfileForType(shellType);
+        const { shellPath, shellArgs } = getShellProfileForType(shell);
 
         logOutput('DEBUG', `Shell: ${shellPath} ${shellArgs}`);
 
         if (!shellPath || typeof shellPath !== 'string')
-            return actionHandlerFailure(`Couldn't determine executable for shell profile ${shellType}`, 'Couldn\'t determine executable for provided shell');
+            return actionHandlerFailure(`Couldn't determine executable for shell profile ${shell}`, 'Couldn\'t determine executable for provided shell');
 
         const cwd = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
         session.shellProcess = spawn(shellPath, shellArgs || [], { cwd, env: process.env, stdio: ['pipe', 'pipe', 'pipe'] });
@@ -294,8 +283,8 @@ export function handleRunCommand(context: RCEContext): RCEHandlerReturns {
         });
 
         proc.on('exit', (code) => {
-            NEURO.client?.sendContext(code === null ? `The ${shellType} terminal closed with a null exit code. Someone did something to it.` : `Terminal ${shellType} exited with code ${code}.`);
-            logOutput('INFO', `${shellType} process exited with code ${code}`);
+            NEURO.client?.sendContext(code === null ? `The ${shell} terminal closed with a null exit code. Someone did something to it.` : `Terminal ${shell} exited with code ${code}.`);
+            logOutput('INFO', `${shell} process exited with code ${code}`);
         });
 
         proc.stdin.write(command + '\n');
@@ -309,27 +298,48 @@ export function handleRunCommand(context: RCEContext): RCEHandlerReturns {
             logOutput('DEBUG', `Sent command: ${command}`);
             return returnSuccess();
         } else {
-            return actionHandlerFailure('Unable to write to shell process.', `Couldn't write to ${shellType} stdin`);
+            return actionHandlerFailure('Unable to write to shell process.', `Couldn't write to ${shell} stdin`);
         }
     }
 }
 
 /**
- * Kill terminal handler.
- * Checks if the terminal registry contains the open shell and forcefully kills the shell if found.
- */
-export function handleKillTerminal(context: RCEContext): RCEHandlerReturns {
+* Run command handler.
+* Checks permissions, executes the command in the requested shell,
+* captures STDOUT and STDERR, logs the output, and sends it to nwero.
+* @deprecated Functions should now be inlined
+*/
+export function handleRunCommand(context: RCEContext<{ command: string, shell: string }>): RCEHandlerReturns {
     const { data: actionData } = context;
-    // Validate shell type parameter.
-    const shellType: string = actionData.params?.shell;
-    const session = NEURO.terminalRegistry.get(shellType)!;
+
+    // Get the command and shell.
+    const command: string = actionData.params!.command;
+    const shellType: string = actionData.params!.shell;
+
+    return returnHandleRunCommand(command, shellType);
+}
+
+function returnHandleKillTerminal(shell: string) {
+    const session = NEURO.terminalRegistry.get(shell)!;
 
     // Dispose of the terminal and remove it from the registry.
     session.terminal.dispose();
-    NEURO.terminalRegistry.delete(shellType);
+    NEURO.terminalRegistry.delete(shell);
 
     // Notify Neuro and the user.
-    return actionHandlerSuccess(`Terminal session for shell type "${shellType}" has been terminated.`, `Successfully killed ${shellType}`);
+    return actionHandlerSuccess(`Terminal session for shell type "${shell}" has been terminated.`, `Successfully killed ${shell}`);
+}
+
+/**
+ * Kill terminal handler.
+ * Checks if the terminal registry contains the open shell and forcefully kills the shell if found.
+ * @deprecated Functions should now be inlined
+ */
+export function handleKillTerminal(context: RCEContext<{ shell: string; }>): RCEHandlerReturns {
+    const { data: actionData } = context;
+    // Validate shell type parameter.
+    const shellType: string = actionData.params!.shell;
+    return returnHandleKillTerminal(shellType);
 }
 
 /**

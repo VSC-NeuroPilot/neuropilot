@@ -1,10 +1,7 @@
 import * as vscode from 'vscode';
 import { NEURO } from '../constants';
 import { formatString } from '@/utils/misc';
-
-export interface Message {
-    type: string;
-}
+import type { Message } from '@typing/views';
 
 export abstract class BaseWebviewViewProvider<TViewMessage extends Message, TProviderMessage extends Message> implements vscode.WebviewViewProvider {
     /** defaults to test view, override with its own dedicated view when extending this */

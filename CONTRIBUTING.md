@@ -5,9 +5,11 @@ Please refer to our [contributor docs](https://vsc-neuropilot.github.io/docs/met
 ## Contributing
 
 If you have an idea or want to contribute a feature, please first [create an issue](https://github.com/VSC-NeuroPilot/neuropilot/issues) or send a message to `@Pasu4` in the project's [post on the Neuro Discord](https://discord.com/channels/574720535888396288/1350968830230396938).
-If you make a pull request that contributes code, please run `npm run lint src` and resolve any errors that did not get auto-fixed, preferrably before each commit.
+If you make a pull request that contributes code, please run `pnpm run lint src` and resolve any errors that did not get auto-fixed, preferrably before each commit.
 
 PRs should generally target the `dev` branch (or another feature branch) unless there is a specific reason to do otherwise (if so, please explain it in your PR).
+
+New actions should use [Zod](https://zod.dev) for schema generation, instead of plain JSON schema objects.
 
 This repository accepts only TypeScript for the main code. Submissions in JavaScript to the core code will require a conversion to TypeScript first.
 

@@ -1,9 +1,10 @@
 import * as vscode from 'vscode';
-import { RCEAction, RCEContext, ActionHandlerResult, PermissionLevel } from '@vsc-neuropilot/api-types';
+import { RCEContext, ActionHandlerResult, PermissionLevel } from '@vsc-neuropilot/api-types';
+import { z } from 'zod';
 
 import { EXCEPTION_THROWN_STRING, NEURO } from '@/constants';
 import { getFence, logOutput } from '@/utils/misc';
-import { actionHandlerFailure, actionHandlerSuccess } from '@/utils/neuro_client';
+import { actionHandlerFailure, actionHandlerSuccess, defineAction } from '@/utils/neuro_client';
 import { CONNECTION } from '@/config';
 import { addActions, CATEGORY_MISC } from './rce';
 
@@ -47,25 +48,25 @@ export async function loadAllChangelogs(): Promise<void> {
 }
 
 export const changelogActions = {
-    read_changelog: {
+    read_changelog: defineAction({
         name: 'read_changelog',
         description: 'Get changelog entries starting from a specified version. If fromVersion is omitted, any new entries after the last read_changelog command are read.',
         category: CATEGORY_MISC,
-        schema: {
-            type: 'object',
-            properties: {
-                name: { type: 'string', description: 'Name of the companion to view changelogs for. Defaults to the normal NeuroPilot changelogs' },
-                fromVersion: { type: 'string', description: 'Version (e.g., 2.2.1) to start including entries from, inclusive.' },
-            },
-            additionalProperties: false,
-        },
+        schema: z.object({
+            name: z.string().optional().meta({
+                description: 'Name of the companion to view changelogs for. Defaults to the normal NeuroPilot changelogs',
+            }).optional(),
+            fromVersion: z.string().meta({
+                description: 'Version (e.g., 2.2.1) to start including entries from, inclusive.',
+            }).optional(),
+        }),
         defaultPermission: PermissionLevel.COPILOT,
-        handler: handleReadChangelog,
-        promptGenerator: (context: RCEContext) => context.data.params?.fromVersion
+        handler: (ctx) => handleReadChangelog(ctx.data.params.name, ctx.data.params.fromVersion),
+        promptGenerator: (context) => context.data.params.fromVersion
             ? `read all ${context.data.params?.name ?? 'NeuroPilot'} changelog entries starting from version ${context.data.params.fromVersion} (inclusive).`
             : `read the latest changelog entries for ${context.data.params?.name ?? 'NeuroPilot'}.`,
-    },
-} satisfies Record<string, RCEAction>;
+    }),
+};
 
 export function addChangelogActions(): void {
     addActions([changelogActions.read_changelog]);
@@ -127,9 +128,8 @@ export async function sendChangelogOnDemand() {
     }
 }
 
-function handleReadChangelog(context: RCEContext): Thenable<ActionHandlerResult> {
-    const name = context.data.params?.name ?? 'NeuroPilot';
-    return readAndStructureChangelog(name, context.data.params?.fromVersion);
+function handleReadChangelog(name = 'NeuroPilot', version?: string): Thenable<ActionHandlerResult> {
+    return readAndStructureChangelog(name, version);
 }
 
 /**

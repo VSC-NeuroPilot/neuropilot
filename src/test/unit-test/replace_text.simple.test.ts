@@ -1,14 +1,13 @@
 import * as assert from 'assert';
 import { editFileActions } from '@/edit_files';
-import type { RCEContext } from '@/context/rce';
+import { fakeContext } from '@test/test_utils';
 
 // Tests for the replace_text action prompt generator using real logic
 suite('replace_text Action', () => {
     test('generates a prompt and includes raw find when useRegex is true', () => {
+        assert.ok(editFileActions.replace_text.promptGenerator && typeof editFileActions.replace_text.promptGenerator !== 'string');
         // === Arrange & Act ===
-        const prompt = editFileActions.replace_text.promptGenerator({
-            data: { params: { find: 'a+b', replaceWith: 'x', useRegex: true } },
-        } as RCEContext);
+        const prompt = editFileActions.replace_text.promptGenerator(fakeContext('replace_text', { find: 'a+b', replaceWith: 'x', match: 'firstInFile', useRegex: true }));
 
         // === Assert ===
         assert.ok(typeof prompt === 'string' && prompt.length > 0);
@@ -17,10 +16,9 @@ suite('replace_text Action', () => {
     });
 
     test('generates a prompt and includes raw find and replacement when useRegex is false', () => {
+        assert.ok(editFileActions.replace_text.promptGenerator && typeof editFileActions.replace_text.promptGenerator !== 'string');
         // === Arrange & Act ===
-        const prompt = editFileActions.replace_text.promptGenerator({
-            data: { params: { find: 'hello', replaceWith: 'world', useRegex: false } },
-        } as RCEContext);
+        const prompt = editFileActions.replace_text.promptGenerator(fakeContext('replace_text', { find: 'hello', replaceWith: 'world', match: 'firstInFile', useRegex: false }));
 
         // === Assert ===
         assert.ok(typeof prompt === 'string' && prompt.length > 0);

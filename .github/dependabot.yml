@@ -1,6 +1,9 @@
 version: 2
 updates:
   - package-ecosystem: "npm"
+    cooldown:
+      default-days: 1
+      exclude: ['neuro-game-sdk']
     directory: "/"
     schedule:
       interval: "weekly"
@@ -32,6 +35,8 @@ updates:
         applies-to: security-updates
         dependency-type: development
   - package-ecosystem: "github-actions"
+    cooldown:
+      default-days: 2
     directory: /
     schedule:
       interval: monthly

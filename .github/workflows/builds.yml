@@ -26,6 +26,8 @@ on:
                 default: "0"
                 options: ["0", "1"]
 
+permissions: {}
+
 jobs:
     build:
         name: Build extension
@@ -36,16 +38,15 @@ jobs:
               with:
                 ref: ${{ github.sha }}
                 submodules: true
+                persist-credentials: false
 
             - name: Setup pnpm
               uses: pnpm/action-setup@v6
-              with:
-                version: 10.14.0
             
             - name: Setup Node.js
               uses: actions/setup-node@v6
               with:
-                node-version: 22.x.x
+                node-version-file: ./package.json
                 cache: 'pnpm'
                 cache-dependency-path: './pnpm-lock.yaml'
 

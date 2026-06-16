@@ -1,6 +1,6 @@
 import { render } from 'preact';
 import { useState, useEffect, useRef } from 'preact/hooks';
-import type { ImagesViewProviderMessage, ImagesViewMessage, ImageData, ImageSet } from '@/views/image';
+import type { ImagesViewProviderMessage, ImagesViewMessage, ImageData, ImageSet } from '@typing/views/images';
 
 interface State {
     currentImage: ImageData | null;

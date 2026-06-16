@@ -2,7 +2,7 @@ import { render } from 'preact';
 import { PermissionLevel } from '@vsc-neuropilot/api-types';
 
 import { useState, useEffect, useMemo, useId } from 'preact/hooks';
-import type { ActionNode, ActionsViewMessage, ActionsViewProviderMessage, SettingsContext } from '@/views/actions';
+import type { ActionNode, ActionsViewMessage, ActionsViewProviderMessage, SettingsContext } from '@typing/views/actions';
 
 interface State {
     actions: ActionNode[];
@@ -189,7 +189,7 @@ function ActionsView() {
                 <p><span class="disabled">Grayed out = Permission is not registered</span></p>
                 <p>Some actions may have secondary registration conditions and not be registered even if permission is granted.</p>
                 <p>
-                    {levels.map(({level, icon, title, description}) =>
+                    {levels.map(({ level, icon, title, description }) =>
                         <div class="permission-level-description">
                             <div class="permission-level-radio">
                                 <label data-show-checked data-permission-level={level}>

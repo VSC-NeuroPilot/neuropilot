@@ -6,12 +6,18 @@ import { PermissionLevel } from '@vsc-neuropilot/api-types';
 import * as fileActions from '@/file_operations';
 import * as readFiles from '@/read_files';
 import { assertProperties, checkNoErrorWithTimeout, createTestDirectory, createTestFile, returnMockFunction } from '@test/test_utils';
-import type { RCEContext } from '@/context/rce';
 import { getPermissionLevel } from '@/config';
 import { NEURO } from '@/constants';
 import { anything, capture, instance, mock, verify } from 'ts-mockito';
+import { RCEContext } from '@ctx/rce';
 
-const makeContext = (data: ActionData) => ({ data, updateStatus: returnMockFunction() } as unknown as RCEContext);
+const makeContext = (data: ActionData) => {
+    const ctx = new RCEContext(data);
+    ctx['_updateStatus'] = returnMockFunction();
+    return ctx;
+};
+
+const { readFileActions } = readFiles;
 
 suite('File Actions', () => {
     let originalClient: NeuroClient | null = null;
@@ -37,6 +43,10 @@ suite('File Actions', () => {
         originalClient = NEURO.client;
         mockedClient = mock(NeuroClient);
         NEURO.client = instance(mockedClient);
+
+        // Initialize decoration types expected by handlers
+        NEURO.cursorDecorationType = vscode.window.createTextEditorDecorationType({});
+        NEURO.highlightDecorationType = vscode.window.createTextEditorDecorationType({});
 
         // Close all open editors
         await withTimeout(vscode.commands.executeCommand('workbench.action.closeAllEditors'), 'closeAllEditors');
@@ -93,7 +103,7 @@ suite('File Actions', () => {
 
         // === Act & Assert ===
         assertProperties(await validateIsAFile(makeContext(baseAction)), { success: false, retry: true }, 'Missing filePath should be invalid');
-        assertProperties(await validateIsAFile(makeContext({ ...baseAction, params: {} })), { success: false, retry: true }, 'Undefined filePath should be invalid');
+        assertProperties(await validateIsAFile(makeContext(baseAction)), { success: false, retry: true }, 'Undefined filePath should be invalid');
         assertProperties(await validateIsAFile(makeContext({ ...baseAction, params: { filePath: '' } })), { success: false, retry: true }, 'Empty filePath should be invalid');
         assertProperties(await validateIsAFile(makeContext({ ...baseAction, params: { filePath: '/' } })), { success: false, retry: true }, 'Root-only path should be invalid');
 
@@ -190,68 +200,19 @@ suite('File Actions', () => {
         const nonexistentDirPath = 'nonexistent/dir';
 
         // === Act & Assert ===
-        assertProperties(await neuroSafeDeleteValidation(makeContext({
-            id: 'abc',
-            name: 'delete_file_or_folder',
-            params: {
-                path: filePath,
-                recursive: false,
-            },
-        } as ActionData)), { success: true }, 'Non-recursive delete should succeed for an existing file');
+        assertProperties(await neuroSafeDeleteValidation(filePath, false), { success: true }, 'Non-recursive delete should succeed for an existing file');
 
-        assertProperties(await neuroSafeDeleteValidation(makeContext({
-            id: 'abc',
-            name: 'delete_file_or_folder',
-            params: {
-                path: filePath,
-                recursive: true,
-            },
-        } as ActionData)), { success: false, retry: false }, 'Recursive delete should fail for an existing file');
+        assertProperties(await neuroSafeDeleteValidation(filePath, true), { success: false, retry: false }, 'Recursive delete should fail for an existing file');
 
-        assertProperties(await neuroSafeDeleteValidation(makeContext({
-            id: 'abc',
-            name: 'delete_file_or_folder',
-            params: {
-                path: dirPath,
-                recursive: false,
-            },
-        } as ActionData)), { success: false, retry: false }, 'Non-recursive delete should fail for an existing directory');
+        assertProperties(await neuroSafeDeleteValidation(dirPath, false), { success: false, retry: false }, 'Non-recursive delete should fail for an existing directory');
 
-        assertProperties(await neuroSafeDeleteValidation(makeContext({
-            id: 'abc',
-            name: 'delete_file_or_folder',
-            params: {
-                path: dirPath,
-                recursive: true,
-            },
-        } as ActionData)), { success: true }, 'Recursive delete should succeed for an existing directory');
+        assertProperties(await neuroSafeDeleteValidation(dirPath, true), { success: true }, 'Recursive delete should succeed for an existing directory');
 
-        assertProperties(await neuroSafeDeleteValidation(makeContext({
-            id: 'abc',
-            name: 'delete_file_or_folder',
-            params: {
-                path: unsafePath,
-                recursive: false,
-            },
-        } as ActionData)), { success: false, retry: false }, 'Delete should fail for an unsafe file');
+        assertProperties(await neuroSafeDeleteValidation(unsafePath, false), { success: false, retry: false }, 'Delete should fail for an unsafe file');
 
-        assertProperties(await neuroSafeDeleteValidation(makeContext({
-            id: 'abc',
-            name: 'delete_file_or_folder',
-            params: {
-                path: nonexistentFilePath,
-                recursive: false,
-            },
-        } as ActionData)), { success: false, retry: false }, 'Non-recursive delete should fail for a nonexistent file');
+        assertProperties(await neuroSafeDeleteValidation(nonexistentFilePath, false), { success: false, retry: false }, 'Non-recursive delete should fail for a nonexistent file');
 
-        assertProperties(await neuroSafeDeleteValidation(makeContext({
-            id: 'abc',
-            name: 'delete_file_or_folder',
-            params: {
-                path: nonexistentDirPath,
-                recursive: true,
-            },
-        } as ActionData)), { success: false, retry: false }, 'Recursive delete should fail for a nonexistent directory');
+        assertProperties(await neuroSafeDeleteValidation(nonexistentDirPath, true), { success: false, retry: false }, 'Recursive delete should fail for a nonexistent directory');
     });
 
     test('handleGetWorkspaceFiles', async function () {
@@ -330,7 +291,7 @@ suite('File Actions', () => {
         NEURO.client = instance(mockedClient);
 
         // === Act ===
-        readFiles.handleOpenFile(makeContext({ id: 'abc', name: 'open_file', params: { filePath: filePath } } as ActionData));
+        readFileActions.switch_files.handler(makeContext({ id: 'abc', name: 'switch_files', params: { filePath: filePath } }));
         // Allow VS Code to open and show the document before asserting
         await checkNoErrorWithTimeout(() => { verify(mockedClient.sendContext(anything())).once(); }, 5000, 100);
         // Brief delay to ensure activeTextEditor is updated across platforms

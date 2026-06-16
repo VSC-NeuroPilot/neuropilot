@@ -2,37 +2,11 @@ import * as vscode from 'vscode';
 import assert from 'assert';
 import type { ActionsEventData, ActionStatus } from '@vsc-neuropilot/api-types';
 
-import { BaseWebviewViewProvider, Message } from './base';
+import { BaseWebviewViewProvider } from './base';
 import { onDidAttemptAction } from '../events/actions';
 import { NEURO } from '@/constants';
-
-export interface ExecuteResult {
-    status: ActionStatus;
-    action: string;
-    message?: string;
-    executionId: string;
-    sessionId: string;
-}
-
-export interface ExecutionHistoryItem extends ExecuteResult {
-    timestamp: number;
-}
-
-export type ExecuteViewProviderMessage = {
-    type: 'executionResult';
-    result: ExecutionHistoryItem;
-} | {
-    type: 'updateStatus';
-    executionId: string;
-    status: ActionStatus;
-    message?: string;
-} | {
-    type: 'currentSession';
-    sessionId: string;
-} | {
-    type: 'addHistoryItem';
-    item: ExecutionHistoryItem;
-};
+import { Message } from '@typing/views';
+import type { ExecuteViewProviderMessage, ExecutionHistoryItem, ExecuteResult } from '@typing/views/execute';
 
 export class ExecuteViewProvider extends BaseWebviewViewProvider<Message, ExecuteViewProviderMessage> {
     private static readonly sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;

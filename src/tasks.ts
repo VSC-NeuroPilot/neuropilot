@@ -10,7 +10,7 @@ import { RCEAction, RCEContext, RCEHandlerReturns, ActionHandlerResult } from '@
 
 import { NEURO } from '@/constants';
 import { logOutput, formatActionID, getFence, checkWorkspaceTrust, checkVirtualWorkspace } from '@/utils/misc';
-import { actionHandlerFailure, actionHandlerSuccess, actionValidationAccept, actionValidationFailure } from '@/utils/neuro_client';
+import { actionHandlerFailure, actionHandlerSuccess, actionValidationAccept, actionValidationFailure, defineAction } from '@/utils/neuro_client';
 import { ACTIONS } from '@/config';
 import { notifyOnTaskFinish } from '@events/shells';
 import { addActions, getActions, removeActions } from './rce';
@@ -21,7 +21,7 @@ const CATEGORY_REGISTERED_TASKS = 'Registered Tasks';
 
 export const taskActions = {
     // handleRunTask is used separately and not on this list
-    terminate_task: {
+    terminate_task: defineAction({
         name: 'terminate_task',
         description: 'Terminate the currently running task',
         category: CATEGORY_TASKS,
@@ -38,7 +38,7 @@ export const taskActions = {
             ],
         },
         registerCondition: () => checkVirtualWorkspace().success && checkWorkspaceTrust().success,
-    },
+    }),
 } satisfies Record<string, RCEAction>;
 
 export function addTaskActions() {

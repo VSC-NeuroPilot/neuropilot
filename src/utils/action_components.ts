@@ -1,12 +1,14 @@
 import * as vscode from 'vscode';
+import { z } from 'zod';
 
-import { RCEContext, RCEAction, ActionValidationResult } from '@vsc-neuropilot/api-types';
+import { RCEContext, ActionValidationResult } from '@vsc-neuropilot/api-types';
 
 import { createCursorPositionChangedEvent } from '@events/cursor';
 import { RCECancelEvent } from '@events/utils';
 import { getProperty, isPathNeuroSafe, getVirtualCursor, indexFromPosition, getWorkspacePath, normalizePath, getWorkspaceUri, isBinary } from './misc';
 import { actionValidationAccept, actionValidationFailure, actionValidationRetry } from './neuro_client';
-import { JSONSchema7 } from 'json-schema';
+import { createPreviewHighlight } from '@previews/edits';
+import { NEURO } from '@/constants';
 
 export const CONTEXT_NO_ACCESS = 'You do not have permission to access this file.';
 export const CONTEXT_NO_ACTIVE_DOCUMENT = 'No active document to edit.';
@@ -20,27 +22,29 @@ export const STATUS_NO_MATCHES_FOUND = 'No matches found';
 
 export type MatchOptions = 'firstInFile' | 'lastInFile' | 'firstAfterCursor' | 'lastBeforeCursor' | 'allInFile';
 export const MATCH_OPTIONS: MatchOptions[] = ['firstInFile', 'lastInFile', 'firstAfterCursor', 'lastBeforeCursor', 'allInFile'] as const;
-export const POSITION_SCHEMA: (Omit<RCEAction, 'schema'> & { schema: Omit<JSONSchema7, 'type'> & { type: 'object' } })['schema'] = {
-    type: 'object',
+export const _POSITION_SCHEMA = z.object({
+    line: z.int().meta({
+        description: 'The line number for the position to target.',
+    }),
+    column: z.int().meta({
+        description: 'The column number for the position to target.',
+    }),
+    type: z.enum(['relative', 'absolute']).meta({
+        description: 'Whether or not to use the position relative to your cursor or the absolute position in the file. Additionally, if set to "relative", line & column numbers are zero-based, else if set to "absolute", they are one-based.',
+    }),
+}).meta({
     description: 'Position parameters if you want to move your cursor or use a location other than the current location.',
-    properties: {
-        line: { type: 'integer', description: 'The line number for the position to target.' },
-        column: { type: 'integer', description: 'The column number for the position to target.' },
-        type: { type: 'string', enum: ['relative', 'absolute'], description: 'Whether or not to use the position relative to your cursor or the absolute position in the file. Additionally, if set to "relative", line & column numbers are zero-based, else if set to "absolute", they are one-based.' },
-    },
-    additionalProperties: false,
-    required: ['line', 'column', 'type'],
-};
-export const LINE_RANGE_SCHEMA: (Omit<RCEAction, 'schema'> & { schema: Omit<JSONSchema7, 'type'> & { type: 'object' } })['schema'] = {
-    type: 'object',
+}); // If description is not needed, simply call .meta({ description: undefined }) on this const after importing
+export const _LINE_RANGE_SCHEMA = z.object({
+    startLine: z.int().min(1).meta({
+        description: 'The one-based line number to start from.',
+    }),
+    endLine: z.int().min(1).meta({
+        description: 'The one-based line number to end at.',
+    }),
+}).meta({
     description: 'The line range to target.',
-    properties: {
-        startLine: { type: 'integer', minimum: 1, description: 'The one-based line number to start from.' },
-        endLine: { type: 'integer', minimum: 1, description: 'The one-based line number to end at.' },
-    },
-    additionalProperties: false,
-    required: ['startLine', 'endLine'],
-};
+}); // If description is not needed, simply call .meta({ description: undefined }) on this const after importing
 export interface Position {
     line: number;
     column: number;
@@ -65,12 +69,14 @@ export const cancelOnDidChangeActiveTextEditor = () => new RCECancelEvent({
     ],
 });
 
-export const commonCancelEvents: ((context: RCEContext) => RCECancelEvent)[] = [
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const commonCancelEvents: ((context: RCEContext) => RCECancelEvent<any>)[] = [
     cancelOnDidChangeTextDocument,
     cancelOnDidChangeActiveTextEditor,
 ];
 
-export const commonCancelEventsWithCursor: ((context: RCEContext) => RCECancelEvent)[] = [
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const commonCancelEventsWithCursor: ((context: RCEContext) => RCECancelEvent<any>)[] = [
     ...commonCancelEvents,
     createCursorPositionChangedEvent,
 ];
@@ -353,7 +359,7 @@ export async function getUriExistence(uri: vscode.Uri): Promise<boolean> {
 }
 
 export function neuroSafeValidation(shouldExist = false) {
-    return async ({ data: actionData }: RCEContext): Promise<ActionValidationResult> => {
+    return async ({ data: actionData }: RCEContext<{ filePath?: string; folderPath?: string }>): Promise<ActionValidationResult> => {
         let result: ActionValidationResult = actionValidationAccept();
         if (actionData.params?.filePath) {
             result = await validatePath(actionData.params.filePath, shouldExist, 'file');
@@ -372,9 +378,9 @@ export function neuroSafeValidation(shouldExist = false) {
  * @param actionData The action data.
  * @returns The validation result.
  */
-export async function binaryFileValidation(context: RCEContext): Promise<ActionValidationResult> {
+export async function binaryFileValidation(context: RCEContext<{ filePath: string }>): Promise<ActionValidationResult> {
     const actionData = context.data;
-    const relativePath = actionData.params.filePath;
+    const relativePath = actionData.params!.filePath;
 
     const workspaceUri = getWorkspaceUri();
 
@@ -407,7 +413,7 @@ export async function binaryFileValidation(context: RCEContext): Promise<ActionV
  * Validates if the targeted file is a file.
  * @returns The validation result.
  */
-export async function validateIsAFile(context: RCEContext): Promise<ActionValidationResult> {
+export async function validateIsAFile(context: RCEContext<{ filePath: string; }>): Promise<ActionValidationResult> {
     const actionData = context.data;
     const filePath = actionData.params?.filePath;
     if (!filePath)
@@ -439,4 +445,40 @@ export async function validateIsAFile(context: RCEContext): Promise<ActionValida
     }
 
     return actionValidationAccept();
+}
+
+/**
+ * Common function used to show previews for finding-related actions.
+ */
+export function previewFindFunctions(actionData: ActionData, type: 'find' | 'delete' | 'replace'): { dispose: () => unknown } {
+    const lineRange = actionData.params?.lineRange;
+    const highlights: { dispose: () => unknown }[] = [];
+    if (lineRange) {
+        highlights.push(previewLineHighlights(lineRange, `${type} some text in this area. This does not mean all text here will be replaced.`));
+    }
+
+    // TODO: Implement highlighting on text matches? Not sure if this feasible at all.
+    return vscode.Disposable.from(...highlights);
+}
+
+/**
+ * Common function used to create highlighted lines for previews
+ */
+export function previewLineHighlights(lineRange: { startLine: number, endLine: number }, prompt: string) {
+    const editor = vscode.window.activeTextEditor!;
+    const lineRangeHighlight = createPreviewHighlight();
+
+    const startLineIndex = lineRange.startLine - 1;
+    const endLineIndex = lineRange.endLine - 1;
+
+    const startPosition = new vscode.Position(startLineIndex, 0);
+    const endPosition = new vscode.Position(endLineIndex, editor.document.lineAt(endLineIndex).text.length);
+    editor.setDecorations(lineRangeHighlight, [
+        {
+            range: new vscode.Range(startPosition, endPosition),
+            hoverMessage: `(Preview) ${NEURO.currentController} wants to ${prompt}`,
+        },
+    ]);
+
+    return lineRangeHighlight;
 }

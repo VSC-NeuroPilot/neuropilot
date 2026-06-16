@@ -8,7 +8,7 @@ import { getWorkspaceUri } from '@/utils/misc';
  * 
  * @param file An absolute path to the file.
  */
-export function targetedFileLintingResolvedEvent(file: string): RCECancelEvent {
+export function targetedFileLintingResolvedEvent(file: string): RCECancelEvent<vscode.DiagnosticChangeEvent> {
     const workspaceUri = getWorkspaceUri()!;
     const fileUri = workspaceUri.with({ path: workspaceUri.path + '/' + file });
 
@@ -40,7 +40,7 @@ export function targetedFileLintingResolvedEvent(file: string): RCECancelEvent {
  * 
  * @param folder An absolute path to the folder.
  */
-export function targetedFolderLintingResolvedEvent(folder: string): RCECancelEvent {
+export function targetedFolderLintingResolvedEvent(folder: string): RCECancelEvent<vscode.DiagnosticChangeEvent> {
     const workspaceUri = getWorkspaceUri()!;
     const folderUri = workspaceUri.with({ path: workspaceUri.path + '/' + folder });
 
@@ -103,7 +103,7 @@ export function targetedFolderLintingResolvedEvent(folder: string): RCECancelEve
  * Wrapper event to check if the current workspace no longer has any linting issues.
  * This creates the EventEmitter and returns the event, and will auto-fire if the workspace becomes clean.
  */
-export function workspaceLintingResolvedEvent(): RCECancelEvent {
+export function workspaceLintingResolvedEvent(): RCECancelEvent<vscode.DiagnosticChangeEvent> {
     let hadDiagnostics = vscode.languages.getDiagnostics().length > 0;
 
     return new RCECancelEvent({

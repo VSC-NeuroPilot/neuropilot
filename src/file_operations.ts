@@ -1,10 +1,11 @@
 import * as vscode from 'vscode';
-import { RCEAction, RCEContext, ActionValidationResult, RCEHandlerReturns, PermissionLevel } from '@vsc-neuropilot/api-types';
+import { RCEContext, ActionValidationResult, RCEHandlerReturns, PermissionLevel } from '@vsc-neuropilot/api-types';
 import assert from 'node:assert';
+import { z } from 'zod';
 
 import { EXCEPTION_THROWN_STRING, NEURO, PROMISE_REJECTION_STRING } from '@/constants';
-import {  getProperty, getWorkspacePath, getWorkspaceUri, isPathNeuroSafe, logOutput, normalizePath, notifyOnCaughtException, stripTailSlashes } from '@/utils/misc';
-import { actionValidationFailure, actionValidationAccept, actionValidationRetry, actionHandlerSuccess, actionHandlerFailure } from '@/utils/neuro_client';
+import { getProperty, getWorkspacePath, getWorkspaceUri, isPathNeuroSafe, logOutput, normalizePath, notifyOnCaughtException, stripTailSlashes } from '@/utils/misc';
+import { actionValidationFailure, actionValidationAccept, actionValidationRetry, actionHandlerSuccess, actionHandlerFailure, defineAction } from '@/utils/neuro_client';
 import { getPermissionLevel } from '@/config';
 import { targetedFileCreatedEvent, targetedFileDeletedEvent } from '@events/files';
 import { RCECancelEvent } from '@events/utils';
@@ -15,30 +16,29 @@ import { readFileActions } from '@/read_files';
 
 export const CATEGORY_FILE_ACTIONS = 'File System';
 
-async function neuroSafeDeleteValidation(context: RCEContext): Promise<ActionValidationResult> {
-    const actionData = context.data;
-    const check = await validatePath(actionData.params.path, true, actionData.params.recursive ? 'folder' : 'file');
+async function neuroSafeDeleteValidation(path: string, recursive?: boolean): Promise<ActionValidationResult> {
+    const check = await validatePath(path, true, recursive ? 'folder' : 'file');
     if (!check.success) return check;
 
     const base = vscode.workspace.workspaceFolders![0].uri;
-    const relative = normalizePath(actionData.params.path).replace(/^\/|\/$/g, '');
+    const relative = normalizePath(path).replace(/^\/|\/$/g, '');
     const stat = await vscode.workspace.fs.stat(vscode.Uri.joinPath(base, relative));
-    if (stat.type === vscode.FileType.File && actionData.params.recursive)
-        return actionValidationFailure(`Cannot delete file ${actionData.params.path} with recursive.`, ACTION_FAIL_NOTES.targetedFile + ', but recursive was true');
-    else if (stat.type === vscode.FileType.Directory && !actionData.params.recursive)
-        return actionValidationFailure(`Cannot delete directory ${actionData.params.path} without recursive.`, ACTION_FAIL_NOTES.targetedFolder + ', but recursive was false');
+    if (stat.type === vscode.FileType.File && recursive)
+        return actionValidationFailure(`Cannot delete file ${path} with recursive.`, ACTION_FAIL_NOTES.targetedFile + ', but recursive was true');
+    else if (stat.type === vscode.FileType.Directory && !recursive)
+        return actionValidationFailure(`Cannot delete directory ${path} without recursive.`, ACTION_FAIL_NOTES.targetedFolder + ', but recursive was false');
 
     return actionValidationAccept();
 }
 
-async function neuroSafeRenameValidation(context: RCEContext): Promise<ActionValidationResult> {
+async function neuroSafeRenameValidation(context: RCEContext<{ oldPath: string, newPath: string }>): Promise<ActionValidationResult> {
     const actionData = context.data;
-    let check = await validatePath(actionData.params.oldPath, true, 'directory');
+    let check = await validatePath(actionData.params!.oldPath, true, 'directory');
     if (!check.success) {
         check.historyNote = check.historyNote!.replace('Targeted', 'Old').replace('targeted', 'old');
         return check;
     };
-    check = await validatePath(actionData.params.newPath, false, 'directory');
+    check = await validatePath(actionData.params!.newPath, false, 'directory');
     if (!check.success) {
         check.historyNote = check.historyNote!.replace('Targeted', 'New').replace('targeted', 'new');
         return check;
@@ -102,33 +102,34 @@ function validateIllegalCharacters(key: string, illegalChars: string[]) {
     };
 }
 
-const commonFileEvents: ((context: RCEContext) => RCECancelEvent | null)[] = [
-    (context: RCEContext) => targetedFileCreatedEvent(context.data.params?.filePath),
-    (context: RCEContext) => targetedFileDeletedEvent(context.data.params?.filePath),
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const commonFileEvents: ((context: RCEContext<{ filePath: string }>) => RCECancelEvent<any> | null)[] = [
+    (context) => targetedFileCreatedEvent(context.data.params!.filePath),
+    (context) => targetedFileDeletedEvent(context.data.params!.filePath),
 ];
 
 export const fileActions = {
-    list_files_and_folders: {
+    list_files_and_folders: defineAction({
         name: 'list_files_and_folders',
         description: 'Get a list of files in the workspace. Will not return subdirectories by default, use `recursive` to do so.',
-        schema: {
-            type: 'object',
-            properties: {
-                folder: { type: 'string', description: 'If you want to view only a subfolder\'s contents, specify a subfolder in this property. If not specified, defaults to the workspace root.' },
-                recursive: { type: 'boolean', description: 'Set this to `true` if you want to view all subfolders\' contents as well.' },
-            },
-            additionalProperties: false,
-        },
+        schema: z.object({
+            folder: z.string().meta({
+                description: 'If you want to view only a subfolder\'s contents, specify a subfolder in this property. If not specified, defaults to the workspace root.',
+            }).optional(),
+            recursive: z.boolean().meta({
+                description: 'Set this to `true` if you want to view all subfolders\' contents as well.',
+            }).optional(),
+        }),
         category: CATEGORY_FILE_ACTIONS,
-        handler: handleGetWorkspaceFiles,
-        preview: (context: RCEContext) => {
+        handler: (ctx) => returnHandleGetWorkspaceFiles(ctx.updateStatus, ctx.data.params.folder, ctx.data.params.recursive),
+        preview: (context) => {
             const workspaceUri = getWorkspaceUri();
             if (!workspaceUri) {
                 return { dispose: () => { } };
             }
 
-            const folder = context.data.params?.folder;
-            const recursive = context.data.params?.recursive ?? false;
+            const folder = context.data.params.folder;
+            const recursive = context.data.params.recursive ?? false;
             const folderUri = folder
                 ? vscode.Uri.joinPath(workspaceUri, folder)
                 : workspaceUri;
@@ -169,11 +170,11 @@ export const fileActions = {
             };
         },
         validators: {
-            async: [async (context: RCEContext) => {
+            async: [async (context) => {
                 const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
                 if (workspaceFolder === undefined)
                     return actionValidationFailure('No open workspace to get files from.');
-                let folder = context.data.params?.folder as string;
+                let folder = context.data.params.folder as string;
                 if (folder) {
                     folder = stripTailSlashes(folder);
                     const relativeFolderPath = normalizePath(folder);
@@ -186,27 +187,25 @@ export const fileActions = {
             }],
         },
         cancelEvents: [
-            (context: RCEContext) => {
-                if (context.data.params?.folder) {
+            (context) => {
+                if (context.data.params.folder) {
                     return targetedFileDeletedEvent(stripTailSlashes(context.data.params.folder));
                 } else return null;
             },
         ],
-        promptGenerator: (context: RCEContext) => `${context.data.params?.recursive ? 'recursively get' : 'get'} a list of files in ${context.data.params?.folder ? `"${stripTailSlashes(context.data.params.folder)}"` : 'the workspace'}.`,
-    },
-    create_file: {
+        promptGenerator: (context) => `${context.data.params.recursive ? 'recursively get' : 'get'} a list of files in ${context.data.params?.folder ? `"${stripTailSlashes(context.data.params.folder)}"` : 'the workspace'}.`,
+    }),
+    create_file: defineAction({
         name: 'create_file',
         description: 'Create a new file at the specified path. The path should include the name of the new file.',
         category: CATEGORY_FILE_ACTIONS,
-        schema: {
-            type: 'object',
-            properties: {
-                filePath: { type: 'string', description: 'The relative path to the new file.', examples: ['./newfile.py', 'src/module.js'] },
-            },
-            required: ['filePath'],
-            additionalProperties: false,
-        },
-        handler: handleCreateFile,
+        schema: z.object({
+            filePath: z.string().meta({
+                description: 'The relative path to the new file.',
+                examples: ['./newfile.py', 'src/module.js'],
+            }),
+        }),
+        handler: (ctx) => returnHandleCreateFile(ctx.data.params.filePath, ctx.updateStatus),
         cancelEvents: commonFileEvents,
         validators: {
             sync: [validateIllegalCharacters('filePath', '<>:"|?*'.split(''))],
@@ -215,31 +214,29 @@ export const fileActions = {
                 validateNotTreatingFileAsFolder('filePath'),
             ],
         },
-        promptGenerator: (context: RCEContext) => `create the file "${context.data.params?.filePath}".`,
-        preview: (context: RCEContext) => {
+        promptGenerator: (context) => `create the file "${context.data.params.filePath}".`,
+        preview: (context) => {
             const workspaceUri = getWorkspaceUri();
-            if (!workspaceUri || !context.data.params?.filePath) {
+            if (!workspaceUri || !context.data.params.filePath) {
                 return { dispose: () => { } };
             }
             const fileUri = vscode.Uri.joinPath(workspaceUri, context.data.params.filePath);
             return filePreviewProvider.mark([fileUri], 'create this file');
         },
-    },
-    create_folder: {
+    }),
+    create_folder: defineAction({
         name: 'create_folder',
         description: 'Create a new folder at the specified path. The path should include the name of the new folder.',
         category: CATEGORY_FILE_ACTIONS,
-        schema: {
-            type: 'object',
-            properties: {
-                folderPath: { type: 'string', description: 'The relative path to the folder.', examples: ['./src', 'public'] },
-            },
-            required: ['folderPath'],
-            additionalProperties: false,
-        },
-        handler: handleCreateFolder,
+        schema: z.object({
+            folderPath: z.string().meta({
+                description: 'The relative path to the folder.',
+                examples: ['./src', 'public'],
+            }),
+        }),
+        handler: (ctx) => returnHandleCreateFolder(ctx.data.params.folderPath, ctx.updateStatus),
         cancelEvents: [
-            (context: RCEContext) => targetedFileCreatedEvent(context.data.params?.folderPath),
+            (context) => targetedFileCreatedEvent(context.data.params.folderPath!),
         ],
         validators: {
             sync: [validateIllegalCharacters('folderPath', '<>:"|?*'.split(''))],
@@ -248,33 +245,34 @@ export const fileActions = {
                 validateNotTreatingFileAsFolder('folderPath'),
             ],
         },
-        promptGenerator: (context: RCEContext) => `create the folder "${context.data.params?.folderPath}".`,
-        preview: (context: RCEContext) => {
+        promptGenerator: (context) => `create the folder "${context.data.params.folderPath}".`,
+        preview: (context) => {
             const workspaceUri = getWorkspaceUri();
-            if (!workspaceUri || !context.data.params?.folderPath) {
+            if (!workspaceUri || !context.data.params.folderPath) {
                 return { dispose: () => { } };
             }
             const folderUri = vscode.Uri.joinPath(workspaceUri, context.data.params.folderPath);
             return filePreviewProvider.mark([folderUri], 'create this folder');
         },
-    },
-    rename_file_or_folder: {
+    }),
+    rename_file_or_folder: defineAction({
         name: 'rename_file_or_folder',
         description: 'Rename a file or folder. Specify the full relative path for both the old and new names.',
         category: CATEGORY_FILE_ACTIONS,
-        schema: {
-            type: 'object',
-            properties: {
-                oldPath: { type: 'string', description: 'The relative path to the old directory.', examples: ['src', './main.py'] },
-                newPath: { type: 'string', description: 'The relative path to the new directory.', examples: ['wip', './new.py'] },
-            },
-            required: ['oldPath', 'newPath'],
-            additionalProperties: false,
-        },
-        handler: handleRenameFileOrFolder,
+        schema: z.object({
+            oldPath: z.string().meta({
+                description: 'The relative path to the old directory.',
+                examples: ['src', './main.py'],
+            }),
+            newPath: z.string().meta({
+                description: 'The relative path to the new directory.',
+                examples: ['wip', './new.py'],
+            }),
+        }),
+        handler: ({ updateStatus, data: { params } }) => returnHandleRenameFileOrFolder(params.oldPath, params.newPath, updateStatus),
         cancelEvents: [
-            (context: RCEContext) => targetedFileCreatedEvent(context.data.params?.newPath),
-            (context: RCEContext) => targetedFileDeletedEvent(context.data.params?.oldPath),
+            (context) => targetedFileCreatedEvent(context.data.params.newPath),
+            (context) => targetedFileDeletedEvent(context.data.params.oldPath),
         ],
         validators: {
             sync: [validateIllegalCharacters('newPath', '<>:"|?*'.split(''))],
@@ -283,48 +281,48 @@ export const fileActions = {
                 validateNotTreatingFileAsFolder('newPath'),
             ],
         },
-        promptGenerator: (context: RCEContext) => `rename "${context.data.params?.oldPath}" to "${context.data.params?.newPath}".`,
-        preview: (context: RCEContext) => {
+        promptGenerator: (context) => `rename "${context.data.params?.oldPath}" to "${context.data.params?.newPath}".`,
+        preview: (context) => {
             const workspaceUri = getWorkspaceUri();
-            if (!workspaceUri || !context.data.params?.oldPath || !context.data.params?.newPath) {
+            if (!workspaceUri || !context.data.params.oldPath || !context.data.params.newPath) {
                 return { dispose: () => { } };
             }
             const oldUri = vscode.Uri.joinPath(workspaceUri, context.data.params.oldPath);
             const newUri = vscode.Uri.joinPath(workspaceUri, context.data.params.newPath);
             return filePreviewProvider.mark([oldUri, newUri], 'rename this', true);
         },
-    },
-    delete_file_or_folder: {
+    }),
+    delete_file_or_folder: defineAction({
         name: 'delete_file_or_folder',
         description: 'Delete a file or folder. If you want to delete a folder, set the "recursive" parameter to true.',
         category: CATEGORY_FILE_ACTIONS,
-        schema: {
-            type: 'object',
-            properties: {
-                path: { type: 'string', description: 'The relative path to the file/folder to delete.', examples: ['src/index.ts', './utils'] },
-                recursive: { type: 'boolean', description: 'If set to true, enables you to delete a folder and all its sub-folders.' },
-            },
-            required: ['path'],
-            additionalProperties: false,
-        },
-        handler: handleDeleteFileOrFolder,
+        schema: z.object({
+            path: z.string().meta({
+                description: 'The relative path to the file/folder to delete.',
+                examples: ['src/index.ts', './utils'],
+            }),
+            recursive: z.boolean().meta({
+                description: 'If set to true, enables you to delete a folder and all its sub-folders.',
+            }).optional(),
+        }),
+        handler: ({ updateStatus, data: { params } }) => returnHandleDeleteFileOrFolder(updateStatus, params.path, params.recursive),
         cancelEvents: [
-            (context: RCEContext) => targetedFileDeletedEvent(context.data.params?.path),
+            (context) => targetedFileDeletedEvent(context.data.params?.path),
         ],
         validators: {
-            async: [neuroSafeDeleteValidation],
+            async: [({ data: { params } }) => neuroSafeDeleteValidation(params.path, params.recursive)],
         },
-        promptGenerator: (context: RCEContext) => `delete "${context.data.params?.path}".`,
-        preview: (context: RCEContext) => {
+        promptGenerator: (context) => `delete "${context.data.params.path}".`,
+        preview: (context) => {
             const workspaceUri = getWorkspaceUri();
-            if (!workspaceUri || !context.data.params?.path) {
+            if (!workspaceUri || !context.data.params.path) {
                 return { dispose: () => { } };
             }
             const pathUri = vscode.Uri.joinPath(workspaceUri, context.data.params.path);
             return filePreviewProvider.mark([pathUri], 'delete this', true);
         },
-    },
-    save: {
+    }),
+    save: defineAction({
         name: 'save',
         description: 'Manually save the currently open document.',
         category: CATEGORY_FILE_ACTIONS,
@@ -343,8 +341,8 @@ export const fileActions = {
         },
         promptGenerator: 'save.',
         registerCondition: () => vscode.workspace.getConfiguration('files').get<string>('autoSave') !== 'afterDelay',
-    },
-} satisfies Record<string, RCEAction>;
+    }),
+};
 
 export function addFileActions() {
     addActions([
@@ -354,12 +352,11 @@ export function addFileActions() {
         fileActions.rename_file_or_folder,
         fileActions.delete_file_or_folder,
     ]);
+    addActions([fileActions.save]);
 }
 
-export function handleCreateFile(context: RCEContext): RCEHandlerReturns {
-    const { data: actionData, updateStatus } = context;
-    const relativePathParam = actionData.params.filePath;
-    const relativePath = normalizePath(relativePathParam).replace(/^\//, '');
+function returnHandleCreateFile(path: string, updateStatus: RCEContext['updateStatus']) {
+    const relativePath = normalizePath(path).replace(/^\//, '');
     const absolutePath = getWorkspacePath() + '/' + relativePath;
     if (!isPathNeuroSafe(absolutePath)) {
         return actionHandlerFailure(`You are not allowed to access ${relativePath}`, ACTION_FAIL_NOTES.noAccess.replace('directory', 'file'));
@@ -411,10 +408,14 @@ export function handleCreateFile(context: RCEContext): RCEHandlerReturns {
     }
 }
 
-export function handleCreateFolder(context: RCEContext): RCEHandlerReturns {
+/** @deprecated Functions should now be inlined */
+export function handleCreateFile(context: RCEContext<{ filePath: string }>): RCEHandlerReturns {
     const { data: actionData, updateStatus } = context;
-    const relativePathParam = actionData.params.folderPath;
-    const relativePath = normalizePath(relativePathParam).replace(/^\/|\/$/g, '');
+    return returnHandleCreateFile(actionData.params!.filePath, updateStatus);
+}
+
+function returnHandleCreateFolder(folderPath: string, updateStatus: RCEContext['updateStatus']) {
+    const relativePath = normalizePath(folderPath).replace(/^\/|\/$/g, '');
     const absolutePath = getWorkspacePath() + '/' + relativePath;
     if (!isPathNeuroSafe(absolutePath)) {
         return actionHandlerFailure(`You are not allowed to access ${relativePath}`, ACTION_FAIL_NOTES.noAccess.replace('directory', 'folder'));
@@ -453,18 +454,20 @@ export function handleCreateFolder(context: RCEContext): RCEHandlerReturns {
     }
 }
 
-export function handleRenameFileOrFolder(context: RCEContext): RCEHandlerReturns {
+/** @deprecated Functions should now be inlined */
+export function handleCreateFolder(context: RCEContext<{ folderPath: string; }>): RCEHandlerReturns {
     const { data: actionData, updateStatus } = context;
-    const oldRelativePathParam = actionData.params.oldPath;
-    const newRelativePathParam = actionData.params.newPath;
+    return returnHandleCreateFolder(actionData.params!.folderPath, updateStatus);
+}
 
+function returnHandleRenameFileOrFolder(oldPath: string, newPath: string, updateStatus: RCEContext['updateStatus']) {
     const base = vscode.workspace.workspaceFolders?.[0]?.uri;
     if (!base) {
         return actionHandlerFailure('No workspace folder open', 'No workspace folder open');
     }
 
-    const oldRelativePath = normalizePath(oldRelativePathParam).replace(/^\/|\/$/g, '');
-    const newRelativePath = normalizePath(newRelativePathParam).replace(/^\/|\/$/g, '');
+    const oldRelativePath = normalizePath(oldPath).replace(/^\/|\/$/g, '');
+    const newRelativePath = normalizePath(newPath).replace(/^\/|\/$/g, '');
     return checkAndRenameAsync(oldRelativePath, newRelativePath);
 
     // Function to avoid pyramid of doom
@@ -515,20 +518,25 @@ export function handleRenameFileOrFolder(context: RCEContext): RCEHandlerReturns
     }
 }
 
-export function handleDeleteFileOrFolder(context: RCEContext): RCEHandlerReturns {
+/** @deprecated Functions should now be inlined */
+export function handleRenameFileOrFolder(context: RCEContext<{ oldPath: string; newPath: string; }>): RCEHandlerReturns {
     const { data: actionData, updateStatus } = context;
-    const relativePathParam = actionData.params.path;
-    const recursive = actionData.params.recursive ?? false;
+    const oldRelativePathParam = actionData.params!.oldPath;
+    const newRelativePathParam = actionData.params!.newPath;
 
+    return returnHandleRenameFileOrFolder(oldRelativePathParam, newRelativePathParam, updateStatus);
+}
+
+function returnHandleDeleteFileOrFolder(updateStatus: RCEContext['updateStatus'], path: string, recursive?: boolean) {
     const base = vscode.workspace.workspaceFolders![0].uri;
 
-    const relativePath = normalizePath(relativePathParam).replace(/^\/|\/$/g, '');
+    const relativePath = normalizePath(path).replace(/^\/|\/$/g, '');
     const absolutePath = getWorkspacePath() + '/' + relativePath;
 
     return checkAndDeleteAsync(absolutePath, relativePath, recursive);
 
     // Function to avoid pyramid of doom
-    async function checkAndDeleteAsync(_absolutePath: string, relativePath: string, recursive: boolean) {
+    async function checkAndDeleteAsync(_absolutePath: string, relativePath: string, recursive?: boolean) {
         const uri = vscode.Uri.joinPath(base, relativePath);
         let stat: vscode.FileStat;
 
@@ -590,15 +598,21 @@ export function handleDeleteFileOrFolder(context: RCEContext): RCEHandlerReturns
     }
 }
 
-export function handleGetWorkspaceFiles(context: RCEContext): RCEHandlerReturns {
+/** @deprecated Functions should now be inlined */
+export function handleDeleteFileOrFolder(context: RCEContext<{ path: string; recursive?: boolean }>): RCEHandlerReturns {
     const { data: actionData, updateStatus } = context;
-    const workspaceFolder = vscode.workspace.workspaceFolders![0];
+    const relativePathParam = actionData.params!.path;
+    const recursive = actionData.params!.recursive;
 
+    return returnHandleDeleteFileOrFolder(updateStatus, relativePathParam, recursive);
+}
+
+function returnHandleGetWorkspaceFiles(updateStatus: RCEContext['updateStatus'], folder?: string, recursive?: boolean) {
     // Start tracking execution
     updateStatus('pending', 'Listing workspace files...');
 
+    const workspaceFolder = vscode.workspace.workspaceFolders![0];
     let folderUri = workspaceFolder.uri;
-    const folder = actionData.params?.folder;
     if (folder) {
         const relativeFolderPath = normalizePath(stripTailSlashes(folder)).replace(/^\/|\/$/g, '');
         folderUri = vscode.Uri.joinPath(folderUri, ...relativeFolderPath.split('/').filter(Boolean));
@@ -644,7 +658,7 @@ export function handleGetWorkspaceFiles(context: RCEContext): RCEHandlerReturns 
             if (isPathNeuroSafe(childUri.fsPath)) {
                 if (fileType === vscode.FileType.File) result.push([childUri, fileType]);
                 else if (fileType === vscode.FileType.Directory) {
-                    if (actionData.params?.recursive) {
+                    if (recursive) {
                         result.push(...await listWorkspace(childUri));
                     } else {
                         result.push([childUri, fileType]);
@@ -655,6 +669,13 @@ export function handleGetWorkspaceFiles(context: RCEContext): RCEHandlerReturns 
 
         return result;
     }
+}
+
+/** @deprecated Functions should now be inlined */
+export function handleGetWorkspaceFiles(context: RCEContext<{ folder?: string, recursive?: boolean }>): RCEHandlerReturns {
+    const { data: actionData, updateStatus } = context;
+    const { folder, recursive } = actionData.params!;
+    return returnHandleGetWorkspaceFiles(updateStatus, folder, recursive);
 }
 
 export function handleSave(): RCEHandlerReturns {

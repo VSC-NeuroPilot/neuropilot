@@ -1,12 +1,13 @@
 import * as assert from 'assert';
 import { lintActions } from '@/lint_problems';
-import type { RCEContext } from '@/context/rce';
+import { fakeContext } from '@test/test_utils';
 
 // Tests for lint action prompt generators using real logic with loose checks
 suite('lint Actions', () => {
     test('get_file_lint_problems formats file', () => {
+        assert.ok(lintActions.get_file_lint_problems.promptGenerator && typeof lintActions.get_file_lint_problems.promptGenerator !== 'string');
         // === Arrange & Act ===
-        const prompt = lintActions.get_file_lint_problems.promptGenerator({ data: { params: { file: 'src/a.ts' } } } as RCEContext);
+        const prompt = lintActions.get_file_lint_problems.promptGenerator(fakeContext('get_file_lint_problems', { file: 'src/a.ts' }));
 
         // === Assert ===
         assert.ok(typeof prompt === 'string' && prompt.length > 0);
@@ -14,8 +15,9 @@ suite('lint Actions', () => {
     });
 
     test('get_folder_lint_problems formats folder', () => {
+        assert.ok(lintActions.get_folder_lint_problems.promptGenerator && typeof lintActions.get_folder_lint_problems.promptGenerator !== 'string');
         // === Arrange & Act ===
-        const prompt = lintActions.get_folder_lint_problems.promptGenerator({ data: { params: { folder: 'src' } } } as RCEContext);
+        const prompt = lintActions.get_folder_lint_problems.promptGenerator(fakeContext('get_folder_lint_problems', { folder: 'src' }));
 
         // === Assert ===
         assert.ok(typeof prompt === 'string' && prompt.length > 0);

@@ -4,22 +4,24 @@ on:
     push:
     pull_request:
 
+permissions: {}
+
 jobs:
     type-check:
       name: Type checker
       runs-on: ubuntu-latest
       steps:
         - uses: actions/checkout@v6
+          with:
+            persist-credentials: false
         
         - name: Setup pnpm
           uses: pnpm/action-setup@v6
-          with:
-            version: 10.33.0
         
         - name: Setup Node.js
           uses: actions/setup-node@v6
           with:
-            node-version: 22.14.0
+            node-version-file: ./package.json
             cache: 'pnpm'
             cache-dependency-path: './pnpm-lock.yaml'
         
@@ -28,21 +30,22 @@ jobs:
 
         - name: type check
           run: pnpm types
+
     lint-check:
       name: Lint checker
       runs-on: ubuntu-latest
       steps:
           - uses: actions/checkout@v6
+            with:
+              persist-credentials: false
 
           - name: Setup pnpm
             uses: pnpm/action-setup@v6
-            with:
-              version: 10.33.0
 
           - name: Setup Node.js
             uses: actions/setup-node@v6
             with:
-              node-version: 22.14.0
+              node-version-file: ./package.json
               cache: 'pnpm'
               cache-dependency-path: './pnpm-lock.yaml'
 
@@ -51,3 +54,17 @@ jobs:
 
           - name: lint check
             run: pnpm eslint src/
+    
+    zizmor:
+      name: Zizmor checks
+      runs-on: ubuntu-latest
+      permissions:
+        security-events: write
+        contents: read
+        actions: read
+      steps:
+        - uses: actions/checkout@v6
+          with:
+            persist-credentials: false
+        
+        - uses: zizmorcore/zizmor-action@v0.5.6

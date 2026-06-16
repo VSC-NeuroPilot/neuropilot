@@ -2,13 +2,13 @@ import * as vscode from 'vscode';
 import { RCECancelEvent } from './utils';
 import { NEURO } from '../constants';
 
-export function notifyOnTerminalClose(terminal: string): RCECancelEvent | null {
+export function notifyOnTerminalClose(terminal: string): RCECancelEvent<void> | null {
     const shell = NEURO.terminalRegistry.get(terminal);
     if (!shell) return null;
 
     let closeListener: (() => void) | null = null;
 
-    const event = new RCECancelEvent({
+    const event = new RCECancelEvent<void>({
         reason: `the terminal ${terminal} was closed.`,
     });
 
@@ -25,7 +25,7 @@ export function notifyOnTerminalClose(terminal: string): RCECancelEvent | null {
     };
 
     // Create and add the listener
-    closeListener = () => event.fire(undefined);
+    closeListener = () => event.fire(undefined as void);
     shell.shellProcess!.on('close', closeListener);
 
     // Also override the disposable to clean up if disposed without firing
@@ -46,7 +46,7 @@ export function notifyOnTerminalClose(terminal: string): RCECancelEvent | null {
     return event;
 }
 
-export function notifyOnTaskFinish(): RCECancelEvent {
+export function notifyOnTaskFinish(): RCECancelEvent<vscode.TaskEndEvent> {
     return new RCECancelEvent({
         reason: 'the task finished.',
         events: [

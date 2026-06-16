@@ -24,7 +24,8 @@ import {
 } from '@/read_files';
 import { createTestFile, checkNoErrorWithTimeout, setupDocument, returnMockFunction } from '@test/test_utils';
 
-const makeContext = (data: ActionData) => ({ data, updateStatus: returnMockFunction() } as unknown as RCEContext);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const makeContext = (data: ActionData) => ({ data, updateStatus: returnMockFunction() } as unknown as RCEContext<any>);
 
 import { NeuroClient } from 'neuro-game-sdk';
 
@@ -372,7 +373,7 @@ suite('Integration: Editing actions', () => {
         await setupDocument('L1\nL2\nL3\nL4\nL5');
 
         // === Act ===
-        await handleRewriteLines(makeContext({ id: 't', name: 'rewrite_lines', params: { startLine: 2, endLine: 3, content: 'X\nY' } } as ActionData));
+        await handleRewriteLines(makeContext({ id: 't', name: 'rewrite_lines', params: { lineRange: { startLine: 2, endLine: 3 }, content: 'X\nY' } } as ActionData));
 
         // === Assert ===
         let text = (await vscode.workspace.openTextDocument(docUri)).getText();
@@ -393,7 +394,7 @@ suite('Integration: Editing actions', () => {
     test('rewrite_lines cursor position depends on trailing newline', async () => {
         // With trailing newline: logicalLines = 1, cursor ends on line 2
         // === Act ===
-        await handleRewriteLines(makeContext({ id: 't', name: 'rewrite_lines', params: { startLine: 2, endLine: 3, content: 'X\n' } } as ActionData));
+        await handleRewriteLines(makeContext({ id: 't', name: 'rewrite_lines', params: { lineRange: { startLine: 2, endLine: 3 }, content: 'X\n' } } as ActionData));
 
         // === Assert ===
         let info = handleGetCursor()! as ActionHandlerResult;
@@ -404,7 +405,7 @@ suite('Integration: Editing actions', () => {
         reset(mockedClient);
 
         // === Act ===
-        await handleRewriteLines(makeContext({ id: 't', name: 'rewrite_lines', params: { startLine: 2, endLine: 3, content: 'Y\nZ' } } as ActionData));
+        await handleRewriteLines(makeContext({ id: 't', name: 'rewrite_lines', params: { lineRange: { startLine: 2, endLine: 3 }, content: 'Y\nZ' } } as ActionData));
 
         // === Assert ===
         info = handleGetCursor()! as ActionHandlerResult;

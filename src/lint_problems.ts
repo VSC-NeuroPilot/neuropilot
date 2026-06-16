@@ -1,12 +1,13 @@
 import * as vscode from 'vscode';
 import assert from 'node:assert';
-import { RCEAction, RCEContext, ActionValidationResult, ActionHandlerResult } from '@vsc-neuropilot/api-types';
+import { RCEContext, ActionValidationResult, ActionHandlerResult } from '@vsc-neuropilot/api-types';
+import { z } from 'zod';
 
 import { EXCEPTION_THROWN_STRING, NEURO } from '@/constants';
 import { normalizePath, getWorkspacePath, logOutput, isPathNeuroSafe, getWorkspaceUri } from '@/utils/misc';
 import { CONFIG } from '@/config';
 import { filePreviewProvider } from '@/previews/files';
-import { actionValidationAccept, actionValidationFailure, actionValidationRetry, actionHandlerSuccess, actionHandlerFailure } from '@/utils/neuro_client';
+import { actionValidationAccept, actionValidationFailure, actionValidationRetry, actionHandlerSuccess, actionHandlerFailure, defineAction } from '@/utils/neuro_client';
 import { targetedFileLintingResolvedEvent, targetedFolderLintingResolvedEvent, workspaceLintingResolvedEvent } from '@events/linting';
 import { addActions } from '@/rce';
 
@@ -49,7 +50,7 @@ async function getUriExistence(uri: vscode.Uri): Promise<boolean> {
     }
 }
 
-async function validateDirectoryAccess(context: RCEContext): Promise<ActionValidationResult> {
+async function validateDirectoryAccess(context: RCEContext<{ file?: string, folder?: string }>): Promise<ActionValidationResult> {
     const actionData = context.data;
     const workspacePath = getWorkspacePath();
     if (!workspacePath) {
@@ -71,24 +72,22 @@ async function validateDirectoryAccess(context: RCEContext): Promise<ActionValid
 }
 
 export const lintActions = {
-    get_file_lint_problems: {
+    get_file_lint_problems: defineAction({
         name: 'get_file_lint_problems',
         description: 'Gets linting diagnostics for a file.',
         category: CATEGORY_LINTING,
-        schema: {
-            type: 'object',
-            properties: {
-                file: { type: 'string', description: 'The relative file path to scan for diagnostics.', examples: ['src/index.ts', './main.py'] },
-            },
-            required: ['file'],
-            additionalProperties: false,
-        },
-        handler: handleGetFileLintProblems,
+        schema: z.object({
+            file: z.string().meta({
+                description: 'The relative file path to scan for diagnostics.',
+                examples: ['src/index.ts', './main.py'],
+            }),
+        }),
+        handler: (ctx) => returnHandleGetFileLintProblems(ctx.data.params.file),
         cancelEvents: [
-            (context: RCEContext) => targetedFileLintingResolvedEvent(context.data.params?.file),
+            (context) => targetedFileLintingResolvedEvent(context.data.params.file),
         ],
         validators: {
-            async: [validateDirectoryAccess, async (context: RCEContext) => {
+            async: [validateDirectoryAccess, async (context) => {
                 const relativePath = context.data.params.file;
                 const workspaceUri = getWorkspaceUri()!;
                 const normalizedPath = normalizePath(workspaceUri.fsPath + '/' + relativePath);
@@ -109,35 +108,33 @@ export const lintActions = {
                 else return actionValidationAccept();
             }],
         },
-        promptGenerator: (context: RCEContext) => `get linting diagnostics for "${context.data.params.file}".`,
-        preview: (context: RCEContext) => {
+        promptGenerator: (context) => `get linting diagnostics for "${context.data.params.file}".`,
+        preview: (context) => {
             const workspaceUri = getWorkspaceUri();
-            if (!workspaceUri || !context.data.params?.file) {
+            if (!workspaceUri || !context.data.params.file) {
                 return { dispose: () => { } };
             }
             const fileUri = vscode.Uri.joinPath(workspaceUri, context.data.params.file);
             return filePreviewProvider.mark([fileUri], 'get linting problems for this file');
         },
-    },
-    get_folder_lint_problems: {
+    }),
+    get_folder_lint_problems: defineAction({
         name: 'get_folder_lint_problems',
         description: 'Gets linting diagnostics for a folder.',
         category: CATEGORY_LINTING,
-        schema: {
-            type: 'object',
-            properties: {
-                folder: { type: 'string', description: 'The relative folder path to scan for diagnostics.', examples: ['./src', 'test'] },
-            },
-            required: ['folder'],
-            additionalProperties: false,
-        },
-        handler: handleGetFolderLintProblems,
+        schema: z.object({
+            folder: z.string().meta({
+                description: 'The relative folder path to scan for diagnostics.',
+                examples: ['./src', 'test'],
+            }),
+        }),
+        handler: (ctx) => returnHandleGetFolderLintProblems(ctx.data.params.folder),
         cancelEvents: [
-            (context: RCEContext) => targetedFolderLintingResolvedEvent(context.data.params?.folder),
+            (context) => targetedFolderLintingResolvedEvent(context.data.params.folder),
         ],
         validators: {
-            async: [validateDirectoryAccess, async (context: RCEContext) => {
-                const relativeFolder = context.data?.params.folder;
+            async: [validateDirectoryAccess, async (context) => {
+                const relativeFolder = context.data.params.folder;
                 const workspacePath = getWorkspacePath();
                 assert(workspacePath);
                 const normalizedFolderPath = normalizePath(workspacePath + '/' + relativeFolder);
@@ -163,17 +160,17 @@ export const lintActions = {
                 else return actionValidationAccept();
             }],
         },
-        promptGenerator: (context: RCEContext) => `get linting diagnostics for "${context.data.params.folder}".`,
-        preview: (context: RCEContext) => {
+        promptGenerator: (context) => `get linting diagnostics for "${context.data.params.folder}".`,
+        preview: (context) => {
             const workspaceUri = getWorkspaceUri();
-            if (!workspaceUri || !context.data.params?.folder) {
+            if (!workspaceUri || !context.data.params.folder) {
                 return { dispose: () => { } };
             }
             const folderUri = vscode.Uri.joinPath(workspaceUri, context.data.params.folder);
             return filePreviewProvider.mark([folderUri], 'get linting problems in this folder', false, false);
         },
-    },
-    get_workspace_lint_problems: {
+    }),
+    get_workspace_lint_problems: defineAction({
         name: 'get_workspace_lint_problems',
         description: 'Gets linting diagnostics for the current workspace.',
         category: CATEGORY_LINTING,
@@ -207,8 +204,8 @@ export const lintActions = {
             }
             return filePreviewProvider.mark([workspaceUri], 'get linting problems in workspace', false, false);
         },
-    },
-} satisfies Record<string, RCEAction>;
+    }),
+};
 
 export function addLintActions() {
     addActions([
@@ -265,12 +262,9 @@ export function getFormattedDiagnosticsForFile(filePath: string, diagnostics: vs
     return '\n' + formattedLines.join('\n');
 }
 
-
-// Handle diagnostics for a single file
-export function handleGetFileLintProblems(context: RCEContext): ActionHandlerResult {
-    const { data: actionData } = context;
-    const relativePath = actionData.params.file;
-    const workspaceUri = getWorkspaceUri()!;
+function returnHandleGetFileLintProblems(relativePath: string) {
+    const workspaceUri = getWorkspaceUri();
+    assert(workspaceUri);
 
     try {
         const normalizedPath = normalizePath(workspaceUri.fsPath + '/' + relativePath);
@@ -288,10 +282,16 @@ export function handleGetFileLintProblems(context: RCEContext): ActionHandlerRes
     }
 }
 
-export function handleGetFolderLintProblems(context: RCEContext): ActionHandlerResult {
+/** @deprecated Functions should now be inlined */
+// Handle diagnostics for a single file
+export function handleGetFileLintProblems(context: RCEContext<{ file: string; }>): ActionHandlerResult {
     const { data: actionData } = context;
-    const relativeFolder = actionData?.params.folder;
+    const relativePath = actionData.params!.file;
 
+    return returnHandleGetFileLintProblems(relativePath);
+}
+
+function returnHandleGetFolderLintProblems(relativeFolder: string) {
     const workspacePath = getWorkspacePath();
     assert(workspacePath);
 
@@ -322,12 +322,18 @@ export function handleGetFolderLintProblems(context: RCEContext): ActionHandlerR
     }
 }
 
+/** @deprecated Functions should now be inlined */
+export function handleGetFolderLintProblems(context: RCEContext<{ folder: string; }>): ActionHandlerResult {
+    const { data: actionData } = context;
+    const relativeFolder = actionData.params!.folder;
+
+    return returnHandleGetFolderLintProblems(relativeFolder);
+}
+
 // Handle diagnostics for the entire workspace
 export function handleGetWorkspaceLintProblems(): ActionHandlerResult {
     const workspacePath = getWorkspacePath();
-    if (!workspacePath) {
-        return actionHandlerFailure('No workspace opened.', 'No workspace opened.');
-    }
+    assert(workspacePath);
 
     try {
         const diagnostics = vscode.languages.getDiagnostics();

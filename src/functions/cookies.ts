@@ -1,75 +1,63 @@
 import * as vscode from 'vscode';
-import { RCEAction, RCEContext, PermissionLevel, SimplifiedStatusUpdateHandler } from '@vsc-neuropilot/api-types';
+import { PermissionLevel, SimplifiedStatusUpdateHandler } from '@vsc-neuropilot/api-types';
+import z from 'zod';
 
 import { logOutput } from '@/utils/misc';
 import { NEURO } from '@/constants';
 import { CONNECTION, getPermissionLevel } from '@/config';
 import { addActions, CATEGORY_MISC } from '@/rce';
-import { actionHandlerFailure, actionHandlerSuccess } from '@/utils/neuro_client';
+import { actionHandlerFailure, actionHandlerSuccess, defineAction } from '@/utils/neuro_client';
 
-export const REQUEST_COOKIE_ACTION: RCEAction = {
+export const REQUEST_COOKIE_ACTION = defineAction({
     name: 'request_cookie',
     description: `Ask ${CONNECTION.userName} for a cookie. You can request a specific flavor, but it's up to ${CONNECTION.userName} to decide.`,
     category: CATEGORY_MISC,
-    schema: {
-        type: 'object',
-        properties: {
-            flavor: { type: 'string' },
-        },
-        additionalProperties: false,
+    schema: z.object({
+        flavor: z.string().optional(),
+    }),
+    handler(context) {
+        const { data: actionData, updateStatus } = context;
+        const permission = getPermissionLevel(actionData.name);
+
+        switch (permission) {
+            case PermissionLevel.COPILOT: {
+                giveCookie(true, actionData.params.flavor, updateStatus);
+                return actionHandlerSuccess(`Waiting on ${CONNECTION.userName} to decide on the flavor.`, 'Waiting for cookie flavor...');
+            }
+            case PermissionLevel.AUTOPILOT: {
+                logOutput('INFO', `Neuro grabbed a ${actionData.params.flavor} cookie.`);
+                if (actionData.params?.flavor) {
+                    // Return flavor as requested
+                    return actionHandlerSuccess(`You grabbed a ${actionData.params.flavor} cookie!`, `${actionData.params.flavor} cookie grabbed`);
+                }
+                // Funny quotes if no flavor specified
+                const base = 'You grabbed an undefined cookie. ';
+                const quotes = [
+                    'Wait a second...',
+                    `Unfortunately, ${CONNECTION.userName} wasn't around to decide the flavor for you.`,
+                    'Maybe you should have defined it.',
+                    'You could maybe write the Cookie class to define it.',
+                    'Probably undefined taste as well.',
+                    'It\'s still a cookie. Probably.',
+                    'Isn\'t that just stale cookies?',
+                    'You should probably #define it.',
+                    'NullReferenceException: Flavor reference not set to an instance of a Cookie.',
+                    'TypeError: Cannot read property \'flavor\' of undefined cookie.',
+                    'Segmentation fault (core dumped).',
+                ];
+                const randomIndex = Math.floor(Math.random() * quotes.length);
+                return actionHandlerFailure(base + quotes[randomIndex], `${base.replace('You', CONNECTION.nameOfAPI)}${quotes[randomIndex].replace(/you|You/g, CONNECTION.nameOfAPI)} (undefined flavor)`);
+            }
+            default:
+                return actionHandlerFailure('Uhhhh, something went wrong', 'Somehow, this action\'s permission wasn\'t set to Copilot or Autopilot, huh???'); // Added for type-safety I guess
+        }
     },
-    handler: handleRequestCookie,
-    promptGenerator: (context: RCEContext) => `have a${context.data.params?.flavor ? ' ' + context.data.params.flavor : ''} cookie.`,
+    promptGenerator: (context) => `have a${context.data.params?.flavor ? ' ' + context.data.params.flavor : ''} cookie.`,
     defaultPermission: PermissionLevel.COPILOT,
-};
+});
 
 export function addRequestCookieAction() {
     addActions([REQUEST_COOKIE_ACTION]);
-}
-
-function handleRequestCookie(context: RCEContext) {
-    const { data: actionData, updateStatus } = context;
-    const permission = getPermissionLevel(actionData.name);
-
-    switch (permission) {
-        case PermissionLevel.COPILOT: {
-            giveCookie(true, actionData.params.flavor, updateStatus);
-            return actionHandlerSuccess(`Waiting on ${CONNECTION.userName} to decide on the flavor.`, 'Waiting for cookie flavor...');
-        }
-        case PermissionLevel.AUTOPILOT: {
-            logOutput('INFO', `Neuro grabbed a ${actionData.params.flavor} cookie.`);
-            if (actionData.params?.flavor) {
-                // Return flavor as requested
-                return actionHandlerSuccess(`You grabbed a ${actionData.params.flavor} cookie!`, `${actionData.params.flavor} cookie grabbed`);
-            }
-            // Funny quotes if no flavor specified
-            const base = 'You grabbed an undefined cookie. ';
-            const quotes = [
-                'Wait a second...',
-                `Unfortunately, ${CONNECTION.userName} wasn't around to decide the flavor for you.`,
-                'Maybe you should have defined it.',
-                'You could maybe write the Cookie class to define it.',
-                'Probably undefined taste as well.',
-                'It\'s still a cookie. Probably.',
-                'Isn\'t that just stale cookies?',
-                'You should probably #define it.',
-                'NullReferenceException: Flavor reference not set to an instance of a Cookie.',
-                'TypeError: Cannot read property \'flavor\' of undefined cookie.',
-                'Segmentation fault (core dumped).',
-            ];
-            const randomIndex = Math.floor(Math.random() * quotes.length);
-            return actionHandlerFailure(base + quotes[randomIndex], `${base.replace('You', CONNECTION.nameOfAPI)}${quotes[randomIndex].replace(/you|You/g, CONNECTION.nameOfAPI)} (undefined flavor)`);
-        }
-        default:
-            return actionHandlerFailure('Uhhhh, something went wrong', 'Somehow, this action\'s permission wasn\'t set to Copilot or Autopilot, huh???'); // Added for type-safety I guess
-    }
-    // Removed the try-catch because this shoud be handled by the RCE system now
-    // catch (erm) {
-    //     const actionName = actionData.name;
-    //     notifyOnCaughtException(actionName, erm);
-    //     NEURO.client?.sendActionResult(actionData.id, true, `An error occured while executing the action "${actionName}". You may retry if you like, but it may be better to ask Vedal to check what's up.`);
-    //     return;
-    // }
 }
 
 export function giveCookie(isRequested = false, defaultFlavor = 'Chocolate Chip', updateStatus?: SimplifiedStatusUpdateHandler) {

@@ -1,10 +1,10 @@
 import * as vscode from 'vscode';
-import { ActionData } from 'neuro-game-sdk';
-import { RCEAction, RCEHandlerReturns, ActionValidationResult, RCEContext, DiffRangeType } from '@vsc-neuropilot/api-types';
+import { z } from 'zod';
+import { RCEHandlerReturns, ActionValidationResult, RCEContext, DiffRangeType } from '@vsc-neuropilot/api-types';
 
 import { NEURO } from '@/constants';
 import { escapeRegExp, getDiffRanges, getFence, getPositionContext, getProperty, getVirtualCursor, showDiffRanges, isPathNeuroSafe, logOutput, setVirtualCursor, simpleFileName, substituteMatch, clearDecorations, formatContext, filterFileContents, positionFromIndex, indexFromPosition, NeuroPositionContext } from '@/utils/misc';
-import { actionValidationAccept, actionValidationFailure, actionValidationRetry, actionHandlerSuccess, actionHandlerFailure } from '@/utils/neuro_client';
+import { actionValidationAccept, actionValidationFailure, actionValidationRetry, actionHandlerSuccess, actionHandlerFailure, defineAction } from '@/utils/neuro_client';
 import { CONFIG, CONNECTION } from '@/config';
 import { createCursorPositionChangedEvent } from '@events/cursor';
 import { RCECancelEvent } from '@events/utils';
@@ -26,32 +26,11 @@ const STATUS_NO_MATCHES_FOUND = 'No matches found';
 
 type MatchOptions = 'firstInFile' | 'lastInFile' | 'firstAfterCursor' | 'lastBeforeCursor' | 'allInFile';
 const MATCH_OPTIONS: MatchOptions[] = ['firstInFile', 'lastInFile', 'firstAfterCursor', 'lastBeforeCursor', 'allInFile'] as const;
-const POSITION_SCHEMA: RCEAction['schema'] = {
-    type: 'object',
-    description: 'Position parameters if you want to move your cursor or use a location other than the current location.',
-    properties: {
-        line: { type: 'integer', description: 'The line number for the position to target.' },
-        column: { type: 'integer', description: 'The column number for the position to target.' },
-        type: { type: 'string', enum: ['relative', 'absolute'], description: 'Whether or not to use the position relative to your cursor or the absolute position in the file. Additionally, if set to "relative", line & column numbers are zero-based, else if set to "absolute", they are one-based.' },
-    },
-    additionalProperties: false,
-    required: ['line', 'column', 'type'],
-};
 interface Position {
     line: number;
     column: number;
     type: 'relative' | 'absolute';
 }
-const LINE_RANGE_SCHEMA: RCEAction['schema'] = {
-    type: 'object',
-    description: 'The line range to target.',
-    properties: {
-        startLine: { type: 'integer', minimum: 1, description: 'The one-based line number to start from.' },
-        endLine: { type: 'integer', minimum: 1, description: 'The one-based line number to end at.' },
-    },
-    additionalProperties: false,
-    required: ['startLine', 'endLine'],
-};
 interface LineRange {
     startLine: number;
     endLine: number;
@@ -279,7 +258,7 @@ export function previewCursorMovement(positionParam: { line: number, column: num
 }
 
 export const editFileActions = {
-    insert_text: {
+    insert_text: defineAction({
         name: 'insert_text',
         description: 'Insert code at the specified position.'
             + ' Line and column numbers are one-based for "absolute" and zero-based for "relative".'
@@ -288,16 +267,13 @@ export const editFileActions = {
             + ' After inserting, your cursor will be placed at the end of the inserted text.'
             + ' Also make sure you use new lines and indentation appropriately.',
         category: CATEGORY_EDITING,
-        schema: {
-            type: 'object',
-            properties: {
-                text: { type: 'string', description: 'The text to insert.' },
-                position: POSITION_SCHEMA,
-            },
-            required: ['text'],
-            additionalProperties: false,
-        },
-        handler: handleInsertText,
+        schema: z.object({
+            text: z.string().meta({
+                description: 'The text to insert.',
+            }),
+            position: _POSITION_SCHEMA.optional(),
+        }),
+        handler: ({ data: { params } }) => returnHandleInsertText(params.text, params.position),
         preview: (context) => {
             const positionParam = context.data.params.position;
             if (!positionParam) return { dispose: () => { } };
@@ -305,14 +281,14 @@ export const editFileActions = {
         },
         cancelEvents: [
             ...commonCancelEvents,
-            (context: RCEContext) => {
+            (context) => {
                 return context.data.params.position ? null : createCursorPositionChangedEvent();
             },
         ],
         validators: {
             sync: [checkCurrentFile, createPositionValidator('position'), createStringValidator(['text'])],
         },
-        promptGenerator: (context: RCEContext) => {
+        promptGenerator: (context) => {
             const actionData = context.data;
             const lineCount = actionData.params.text.trim().split('\n').length;
             let text = `insert ${lineCount} line${lineCount === 1 ? '' : 's'} of code`;
@@ -330,8 +306,8 @@ export const editFileActions = {
             text += '.';
             return text;
         },
-    },
-    insert_lines: {
+    }),
+    insert_lines: defineAction({
         name: 'insert_lines',
         description: 'Insert code below a certain line.'
             + ' Defaults to your current cursor\'s location'
@@ -339,26 +315,18 @@ export const editFileActions = {
             + ' Remember to add indents after newlines where appropriate.'
             + ' Your cursor will be moved to the end of the inserted line.', // TODO: Clarify cursor stuff again
         category: CATEGORY_EDITING,
-        schema: {
-            type: 'object',
-            properties: {
-                text: {
-                    type: 'string',
-                    description: 'The text to insert',
-                },
-                insertUnder: {
-                    type: 'integer',
-                    minimum: 1,
-                    description: 'The one-based line number to insert under.',
-                },
-            },
-            additionalProperties: false,
-            required: ['text'],
-        },
-        handler: handleInsertLines,
+        schema: z.object({
+            text: z.string().meta({
+                description: 'The text to insert',
+            }),
+            insertUnder: z.int({}).min(1).optional().meta({
+                description: 'The one-based line number to insert under.',
+            }),
+        }),
+        handler: (ctx) => returnHandleInsertLines(ctx.data.params.text, ctx.data.params.insertUnder),
         preview: (context) => {
             const length = (context.data.params.text as string).split('\n').length;
-            let line: number | undefined = context.data.params.insertUnder;
+            let line: number | undefined = context.data.params?.insertUnder;
             if (!line) {
                 line = getVirtualCursor()!.line;
             } else {
@@ -384,45 +352,48 @@ export const editFileActions = {
         },
         cancelEvents: [
             ...commonCancelEvents,
-            (context: RCEContext) => {
-                return context.data.params.position ? null : createCursorPositionChangedEvent();
+            (context) => {
+                return context.data.params.insertUnder ? null : createCursorPositionChangedEvent();
             },
         ],
         validators: {
             sync: [checkCurrentFile, createStringValidator(['lines'])],
         },
-        promptGenerator: (context: RCEContext) => {
+        promptGenerator: (context) => {
             const actionData = context.data;
             const lines = actionData.params.text.trim().split('\n').length;
             const insertUnder = actionData.params.insertUnder;
             return `insert ${lines} line${lines !== 1 ? 's' : ''} of code below ${insertUnder ? `line ${insertUnder}` : 'her cursor'}.`;
         },
-    },
-    replace_text: {
+    }),
+    replace_text: defineAction({
         name: 'replace_text',
         description: 'Replace text in the active document.'
             + ' If you set "useRegex" to true, you can use a Regex in the "find" parameter and a substitution pattern in the "replaceWith" parameter.'
             + ' This will place your cursor at the end of the replaced text, unless you replaced multiple instances.',
         category: CATEGORY_EDITING,
-        schema: {
-            type: 'object',
-            properties: {
-                find: { type: 'string', description: 'The search text or RegEx pattern to search for text to replace.' },
-                replaceWith: { type: 'string', description: 'The text to replace the search result(s) with. If using RegEx, you can use substitution patterns here.' },
-                useRegex: { type: 'boolean', description: 'Whether or not the pattern(s) are RegEx patterns.' },
-                match: { type: 'string', enum: MATCH_OPTIONS, description: 'The method to match text to replace.' },
-                lineRange: LINE_RANGE_SCHEMA,
-            },
-            additionalProperties: false,
-            required: ['find', 'replaceWith', 'match'],
-        },
-        handler: handleReplaceText,
+        schema: z.object({
+            find: z.string().meta({
+                description: 'The search text or RegEx pattern to search for text to replace.',
+            }),
+            replaceWith: z.string().meta({
+                description: 'The text to replace the search result(s) with. If using RegEx, you can use substitution patterns here.',
+            }),
+            useRegex: z.boolean().meta({
+                description: 'Whether or not the pattern(s) are RegEx patterns.',
+            }).optional(),
+            match: z.enum(MATCH_OPTIONS).meta({
+                description: 'The method to match text to delete.',
+            }),
+            lineRange: _LINE_RANGE_SCHEMA.optional(),
+        }),
+        handler: ({ data: { params } }) => returnHandleReplaceText(params.find, params.replaceWith, params.match, params.useRegex, params.lineRange),
         preview: (context) => previewFindFunctions(context.data, 'replace'),
         cancelEvents: [cancelOnDidChangeActiveTextEditor],
         validators: {
             sync: [checkCurrentFile, createStringValidator(['find', 'replaceWith']), createLineRangeValidator('lineRange'), validateRegex('find', 'useRegex')],
         },
-        promptGenerator: (context: RCEContext) => {
+        promptGenerator: (context) => {
             const actionData = context.data;
             let text = 'replace ';
             const target = actionData.params.find;
@@ -456,32 +427,33 @@ export const editFileActions = {
             text += '.';
             return text;
         },
-    },
-    delete_text: {
+    }),
+    delete_text: defineAction({
         name: 'delete_text',
         description: 'Delete text in the active document.'
             + ' If you set "useRegex" to true, you can use a Regex in the "find" parameter.'
             + ' This will place your cursor where the deleted text was, unless you deleted multiple instances.'
             + ' Line numbers are one-based.',
         category: CATEGORY_EDITING,
-        schema: {
-            type: 'object',
-            properties: {
-                find: { type: 'string', description: 'The glob/RegEx pattern to search for text to delete.' },
-                useRegex: { type: 'boolean', description: 'Whether or not the find pattern is a RegEx pattern.' },
-                match: { type: 'string', enum: MATCH_OPTIONS, description: 'The method to match text to delete.' },
-                lineRange: LINE_RANGE_SCHEMA,
-            },
-            required: ['find', 'match'],
-            additionalProperties: false,
-        },
-        handler: handleDeleteText,
+        schema: z.object({
+            find: z.string().meta({
+                description: 'The glob/RegEx pattern to search for text to delete.',
+            }),
+            useRegex: z.boolean().meta({
+                description: 'Whether or not the find pattern is a RegEx pattern.',
+            }).optional(),
+            match: z.enum(MATCH_OPTIONS).meta({
+                description: 'The method to match text to delete.',
+            }),
+            lineRange: _LINE_RANGE_SCHEMA.optional(),
+        }),
+        handler: ({ data: { params: { find, useRegex, match, lineRange } } }) => returnHandleDeleteText(find, match, useRegex, lineRange),
         preview: (context) => previewFindFunctions(context.data, 'delete'),
         cancelEvents: [cancelOnDidChangeActiveTextEditor],
         validators: {
             sync: [checkCurrentFile, createStringValidator(['find']), createLineRangeValidator('lineRange'), validateRegex('find', 'useRegex')],
         },
-        promptGenerator: (context: RCEContext) => {
+        promptGenerator: (context) => {
             const actionData = context.data;
             let text = 'delete ';
             const target = actionData.params.find;
@@ -518,8 +490,8 @@ export const editFileActions = {
             text += '.';
             return text;
         },
-    },
-    undo: {
+    }),
+    undo: defineAction({
         name: 'undo',
         description: 'Undo the last change made to the active document.'
             + ' Where your cursor will be moved cannot be determined.' // It will move to the real cursor but thats kinda useless for her to know
@@ -531,20 +503,17 @@ export const editFileActions = {
             sync: [checkCurrentFile],
         },
         promptGenerator: 'undo the last action.',
-    },
-    rewrite_all: {
+    }),
+    rewrite_all: defineAction({
         name: 'rewrite_all',
         description: 'Rewrite the entire contents of the file. Your cursor will be moved to the start of the file.',
         category: CATEGORY_EDITING,
-        schema: {
-            type: 'object',
-            properties: {
-                content: { type: 'string', description: 'The content to rewrite the file with.' },
-            },
-            required: ['content'],
-            additionalProperties: false,
-        },
-        handler: handleRewriteAll,
+        schema: z.object({
+            content: z.string().meta({
+                description: 'The content to rewrite the file with.',
+            }),
+        }),
+        handler: (ctx) => returnHandleRewriteAll(ctx.data.params.content),
         preview: () => {
             const editor = vscode.window.activeTextEditor!;
             const fullRange = new vscode.Range(
@@ -564,76 +533,75 @@ export const editFileActions = {
         validators: {
             sync: [checkCurrentFile, createStringValidator(['content'])],
         },
-        promptGenerator: (context: RCEContext) => {
+        promptGenerator: (context) => {
             const actionData = context.data;
             const lineCount = actionData.params.content.trim().split('\n').length;
             return `rewrite the entire file with ${lineCount} line${lineCount === 1 ? '' : 's'} of content.`;
         },
-    },
-    rewrite_lines: {
+    }),
+    rewrite_lines: defineAction({
         name: 'rewrite_lines',
         description: 'Rewrite everything in the specified line range.'
             + ' After rewriting, your cursor will be placed at the end of the last inserted line.'
             + ' Line numbers are one-based.',
         category: CATEGORY_EDITING,
-        schema: {
-            type: 'object',
-            properties: {
-                ...LINE_RANGE_SCHEMA.properties,
-                content: { type: 'string', description: 'The content to replace the selected range of lines with.' },
-            },
-            required: [...LINE_RANGE_SCHEMA.required!, 'content'],
-            additionalProperties: false,
-        },
-        handler: handleRewriteLines,
-        preview: (context) => previewLineHighlights(context.data.params, 'rewrite these lines.'),
+        schema: z.object({
+            lineRange: _LINE_RANGE_SCHEMA,
+            content: z.string().meta({
+                description: 'The content to replace the selected range of lines with.',
+            }),
+        }),
+        handler: ({ data: { params } }) => returnHandleRewriteLines(params.lineRange, params.content),
+        preview: (context) => previewLineHighlights(context.data.params.lineRange, 'rewrite these lines.'),
         cancelEvents: commonCancelEvents,
         validators: {
             sync: [checkCurrentFile, createLineRangeValidator(), createStringValidator(['content'])],
         },
-        promptGenerator: (context: RCEContext) => {
+        promptGenerator: (context) => {
             const actionData = context.data;
             const lineCount = actionData.params.content.trim().split('\n').length;
-            return `rewrite lines ${actionData.params.startLine}-${actionData.params.endLine} with ${lineCount} line${lineCount === 1 ? '' : 's'} of content.`;
+            return `rewrite lines ${actionData.params.lineRange.startLine}-${actionData.params.lineRange.endLine} with ${lineCount} line${lineCount === 1 ? '' : 's'} of content.`;
         },
-    },
-    delete_lines: {
+    }),
+    delete_lines: defineAction({
         name: 'delete_lines',
         description: 'Delete everything in the specified line range.'
             + ' After deleting, your cursor will be placed at the end of the line before the deleted lines, if possible.'
             + ' Line numbers are one-based.',
         category: CATEGORY_EDITING,
-        schema: LINE_RANGE_SCHEMA,
-        handler: handleDeleteLines,
+        schema: _LINE_RANGE_SCHEMA.meta({
+            description: undefined,
+        }),
+        handler: (ctx) => returnHandleDeleteLines(ctx.data.params.startLine, ctx.data.params.endLine),
         preview: (context) => previewLineHighlights(context.data.params, 'delete these lines.'),
         cancelEvents: commonCancelEvents,
         validators: {
             sync: [checkCurrentFile, createLineRangeValidator()],
         },
-        promptGenerator: (context: RCEContext) => {
+        promptGenerator: (context) => {
             return `delete lines ${context.data.params.startLine}-${context.data.params.endLine}.`;
         },
-    },
-    replace_user_selection: {
+    }),
+    replace_user_selection: defineAction({
         name: 'replace_user_selection',
         description: 'Replace ${userName}\'s current selection with the provided text.'
             + ' If ${userName} has no selection, this will insert the text at ${userName}\'s current cursor position.'
             + ' After replacing/inserting, your cursor will be placed at the end of the inserted text.'
             + ' If "requireSelectionUnchanged" is true, the action will be automatically cancelled if ${userName}\'s selection changes or has changed since it was last obtained.',
         category: CATEGORY_EDITING,
-        schema: {
-            type: 'object',
-            properties: {
-                content: { type: 'string', description: 'The content to replace ${userName}\'s selection with.' },
-                requireSelectionUnchanged: { type: 'boolean', description: 'Does your change require that ${userName} keeps the selection unchanged?' },
-            },
-            required: ['content', 'requireSelectionUnchanged'],
-        },
-        handler: handleReplaceUserSelection,
+        schema: z.object({
+            content: z.string().meta({
+                description: 'The content to replace ${userName}\'s selection with.',
+            }),
+            requireSelectionUnchanged: z.boolean().meta({
+                description: 'Does your change require that ${userName} keeps the selection unchanged?',
+            }),
+        }),
+        handler: ({ data: { params } }) => returnHandleReplaceUserSelection(params.content),
         // No preview effect needed, intended preview effect is the highlighted text
         cancelEvents: [
             ...commonCancelEvents,
-            (context: RCEContext) => {
+            (context) => {
                 if (context.data.params.requireSelectionUnchanged)
                     return new RCECancelEvent({
                         reason: `${CONNECTION.userName}'s selection changed.`,
@@ -647,7 +615,7 @@ export const editFileActions = {
             sync: [
                 checkCurrentFile,
                 createStringValidator(['content']),
-                (context: RCEContext) => { // Validate that the selection is known and unchanged if required
+                (context) => { // Validate that the selection is known and unchanged if required
                     if (!context.data.params.requireSelectionUnchanged)
                         return actionValidationAccept();
                     if (NEURO.lastKnownUserSelection === null || NEURO.lastKnownUserSelection !== vscode.window.activeTextEditor?.selection)
@@ -656,13 +624,13 @@ export const editFileActions = {
                 },
             ],
         },
-        promptGenerator: (context: RCEContext) => {
+        promptGenerator: (context) => {
             const actionData = context.data;
             const lineCount = actionData.params.content.trim().split('\n').length;
             return `replace your current selection with ${lineCount} line${lineCount === 1 ? '' : 's'} of content.`;
         },
-    },
-    edit_with_diff: {
+    }),
+    edit_with_diff: defineAction({
         name: 'edit_with_diff',
         description: 'Write a diff patch to apply to the file.' +
             ' The diff patch must be written in a pseudo-search-replace-diff format.' +
@@ -672,19 +640,19 @@ export const editFileActions = {
             ' You can only specify **one** search/replace pair per diff patch.*' +
             ' Read the schema for an example.',
         category: CATEGORY_EDITING,
-        schema: {
-            type: 'object',
-            properties: {
-                diff: { type: 'string', description: 'The diff patch to apply. Must follow a pseudo-search-replace-diff format.', examples: ['>>>>>> SEARCH\ndef turtle():\n    return "insert_turtle_here"\n======\ndef turtle():\n    return "Vedal"\n<<<<<< REPLACE'] },
-                moveCursor: { type: 'boolean', description: 'Whether or not to move the cursor to the end of the patch replacement.', default: false },
-            },
-            required: ['diff'],
-            additionalProperties: false,
-        },
-        handler: handleDiffPatch,
+        schema: z.object({
+            diff: z.string().meta({
+                description: 'The diff patch to apply. Must follow a pseudo-search-replace-diff format.',
+                examples: ['>>>>>> SEARCH\ndef turtle():\n    return "Vedal"\n======\ndef turtle():\n    return "insert_turtle_here"\n<<<<<< REPLACE'],
+            }),
+            moveCursor: z.boolean().meta({
+                description: 'Whether or not to move the cursor to the end of the patch replacement.',
+            }).optional(),
+        }),
+        handler: ({ data: { params } }) => returnHandleDiffPatch(params.diff, params.moveCursor),
         // TODO: I'm not sure if or how this action would have a preview effect, like would it work if a big highlight range was added to the targted text?
         validators: {
-            sync: [checkCurrentFile, (context: RCEContext) => {
+            sync: [checkCurrentFile, (context) => {
                 const patch = parseDiffPatch(context.data.params.diff);
                 if (!patch) {
                     return actionValidationFailure('Invalid diff format. Expected format:\n\n```\n>>>>>> SEARCH\n[code to find]\n======\n[replacement code]\n<<<<<< REPLACE\n```');
@@ -707,13 +675,13 @@ export const editFileActions = {
             }],
         },
         cancelEvents: commonCancelEvents,
-        promptGenerator: (context: RCEContext) => {
+        promptGenerator: (context) => {
             const patch = parseDiffPatch(context.data.params.diff)!;
             const { linesAdded, linesRemoved } = countLineDifferences(patch.search, patch.replace);
             return `apply a diff patch ( +${linesAdded} | -${linesRemoved} ).`;
         },
-    },
-} satisfies Record<string, RCEAction>;
+    }),
+};
 
 export function addEditingActions() {
     addActions([
@@ -730,12 +698,8 @@ export function addEditingActions() {
     ]);
 }
 
-export function handleInsertText(context: RCEContext): RCEHandlerReturns {
-    const { data: actionData } = context;
-    const text: string = actionData.params.text;
+function returnHandleInsertText(text: string, position?: { line: number, column: number, type: 'relative' | 'absolute' }) {
     const cursor = getVirtualCursor()!;
-    let position = actionData.params.position;
-
     let line: number;
     let column: number;
 
@@ -786,15 +750,22 @@ export function handleInsertText(context: RCEContext): RCEHandlerReturns {
     });
 }
 
-export function handleInsertLines(context: RCEContext): RCEHandlerReturns {
+/** @deprecated Functions should now be inlined */
+export function handleInsertText(context: RCEContext<{ text: string; position?: { line: number, column: number, type: 'relative' | 'absolute' } }>): RCEHandlerReturns {
     const { data: actionData } = context;
+    const text: string = actionData.params!.text;
+    const position = actionData.params!.position;
+    return returnHandleInsertText(text, position);
+}
+
+function returnHandleInsertLines(text: string, insertUnder?: number) {
     /**
      * The current implementation is a lazy one of just appending a newline and pasting the text in
      * We want to allow specification of the line to insert under, with the default set to the current cursor location
      */
     const cursor = getVirtualCursor()!;
-    let text: string = '\n' + actionData.params.text;
-    let insertLocation: number = actionData.params.insertUnder !== undefined ? actionData.params.insertUnder - 1 : cursor.line;
+    text = '\n' + text;
+    let insertLocation: number = insertUnder !== undefined ? insertUnder - 1 : cursor.line;
 
     const document = vscode.window.activeTextEditor?.document;
     if (document === undefined) {
@@ -835,14 +806,13 @@ export function handleInsertLines(context: RCEContext): RCEHandlerReturns {
     });
 }
 
-export function handleReplaceText(context: RCEContext): RCEHandlerReturns {
+/** @deprecated Functions should now be inlined */
+export function handleInsertLines(context: RCEContext<{ text: string; insertUnder: number; }>): RCEHandlerReturns {
     const { data: actionData } = context;
-    const find: string = actionData.params.find;
-    const replaceWith: string = actionData.params.replaceWith;
-    const match: string = actionData.params.match;
-    const useRegex: boolean = actionData.params.useRegex ?? false;
-    const lineRange: LineRange | undefined = actionData.params.lineRange;
+    return returnHandleInsertLines(actionData.params!.text, actionData.params!.insertUnder);
+}
 
+function returnHandleReplaceText(find: string, replaceWith: string, match: string, useRegex = false, lineRange?: LineRange) {
     const document = vscode.window.activeTextEditor?.document;
     if (document === undefined) {
         return actionHandlerFailure(CONTEXT_NO_ACTIVE_DOCUMENT, STATUS_NO_ACTIVE_DOCUMENT);
@@ -899,13 +869,19 @@ export function handleReplaceText(context: RCEContext): RCEHandlerReturns {
     });
 }
 
-export function handleDeleteText(context: RCEContext): RCEHandlerReturns {
+/** @deprecated Functions should now be inlined */
+export function handleReplaceText(context: RCEContext<{ find: string; replaceWith: string; match: string; useRegex?: boolean; lineRange?: LineRange }>): RCEHandlerReturns {
     const { data: actionData } = context;
-    const find: string = actionData.params.find;
-    const match: string = actionData.params.match;
-    const useRegex: boolean = actionData.params.useRegex ?? false;
-    const lineRange: LineRange | undefined = actionData.params.lineRange;
+    const find = actionData.params!.find;
+    const replaceWith = actionData.params!.replaceWith;
+    const match = actionData.params!.match;
+    const useRegex = actionData.params!.useRegex;
+    const lineRange = actionData.params!.lineRange;
 
+    return returnHandleReplaceText(find, replaceWith, match, useRegex, lineRange);
+}
+
+function returnHandleDeleteText(find: string, match: string, useRegex = false, lineRange?: LineRange) {
     const document = vscode.window.activeTextEditor?.document;
     if (document === undefined) {
         return actionHandlerFailure(CONTEXT_NO_ACTIVE_DOCUMENT, STATUS_NO_ACTIVE_DOCUMENT);
@@ -959,6 +935,17 @@ export function handleDeleteText(context: RCEContext): RCEHandlerReturns {
     });
 }
 
+/** @deprecated Functions should now be inlined */
+export function handleDeleteText(context: RCEContext<{ find: string; match: string; useRegex?: boolean; lineRange?: LineRange }>): RCEHandlerReturns {
+    const { data: actionData } = context;
+    const find = actionData.params!.find;
+    const match = actionData.params!.match;
+    const useRegex = actionData.params!.useRegex;
+    const lineRange = actionData.params!.lineRange;
+
+    return returnHandleDeleteText(find, match, useRegex, lineRange);
+}
+
 export function handleUndo(): RCEHandlerReturns {
     const document = vscode.window.activeTextEditor?.document;
     if (document === undefined) {
@@ -985,10 +972,7 @@ export function handleUndo(): RCEHandlerReturns {
     );
 }
 
-export function handleRewriteAll(context: RCEContext): RCEHandlerReturns {
-    const { data: actionData } = context;
-    const content: string = actionData.params.content;
-
+function returnHandleRewriteAll(content: string) {
     const document = vscode.window.activeTextEditor?.document;
     if (document === undefined) {
         return actionHandlerFailure(CONTEXT_NO_ACTIVE_DOCUMENT, STATUS_NO_ACTIVE_DOCUMENT);
@@ -1029,11 +1013,14 @@ export function handleRewriteAll(context: RCEContext): RCEHandlerReturns {
     });
 }
 
-export function handleDeleteLines(context: RCEContext): RCEHandlerReturns {
+/** @deprecated Functions should now be inlined */
+export function handleRewriteAll(context: RCEContext<{ content: string }>): RCEHandlerReturns {
     const { data: actionData } = context;
-    const startLine = actionData.params.startLine;
-    const endLine = actionData.params.endLine;
 
+    return returnHandleRewriteAll(actionData.params!.content);
+}
+
+function returnHandleDeleteLines(startLine: number, endLine: number) {
     const document = vscode.window.activeTextEditor?.document;
     if (document === undefined) {
         return actionHandlerFailure(CONTEXT_NO_ACTIVE_DOCUMENT, STATUS_NO_ACTIVE_DOCUMENT);
@@ -1099,11 +1086,18 @@ export function handleDeleteLines(context: RCEContext): RCEHandlerReturns {
     });
 }
 
-export function handleRewriteLines(context: RCEContext): RCEHandlerReturns {
+/** @deprecated Functions should now be inlined */
+export function handleDeleteLines(context: RCEContext<{ startLine: number; endLine: number; }>): RCEHandlerReturns {
     const { data: actionData } = context;
-    const startLine = actionData.params.startLine;
-    const endLine = actionData.params.endLine;
-    const content = actionData.params.content;
+    const startLine = actionData.params!.startLine;
+    const endLine = actionData.params!.endLine;
+
+    return returnHandleDeleteLines(startLine, endLine);
+}
+
+function returnHandleRewriteLines(lineRange: LineRange, content: string) {
+    const startLine = lineRange.startLine;
+    const endLine = lineRange.endLine;
 
     const document = vscode.window.activeTextEditor?.document;
     if (document === undefined) {
@@ -1148,10 +1142,15 @@ export function handleRewriteLines(context: RCEContext): RCEHandlerReturns {
     });
 }
 
-export function handleDiffPatch(context: RCEContext): RCEHandlerReturns {
+/** @deprecated Functions should now be inlined */
+export function handleRewriteLines(context: RCEContext<{ lineRange: LineRange, content: string }>): RCEHandlerReturns {
     const { data: actionData } = context;
-    const diff = actionData.params.diff;
+    const { lineRange, content } = actionData.params!;
 
+    return returnHandleRewriteLines(lineRange, content);
+}
+
+function returnHandleDiffPatch(diff: string, moveCursor = false) {
     const document = vscode.window.activeTextEditor?.document;
     if (document === undefined) {
         return actionHandlerFailure(CONTEXT_NO_ACTIVE_DOCUMENT, STATUS_NO_ACTIVE_DOCUMENT);
@@ -1194,7 +1193,7 @@ export function handleDiffPatch(context: RCEContext): RCEHandlerReturns {
             const newEndPosition = positionFromIndex(filteredText, searchIndex + replace.length);
             let cursorPosition: vscode.Position;
 
-            if (actionData.params.moveCursor === true) {
+            if (moveCursor === true) {
                 // Update cursor position to the end of the replaced text
                 cursorPosition = newEndPosition;
                 setVirtualCursor(cursorPosition);
@@ -1223,10 +1222,13 @@ export function handleDiffPatch(context: RCEContext): RCEHandlerReturns {
     });
 }
 
-export function handleReplaceUserSelection(context: RCEContext): RCEHandlerReturns {
+/** @deprecated Functions should now be inlined */
+export function handleDiffPatch(context: RCEContext<{ diff: string; moveCursor?: boolean }>): RCEHandlerReturns {
     const { data: actionData } = context;
-    const content: string = actionData.params.content;
+    return returnHandleDiffPatch(actionData.params!.diff, actionData.params!.moveCursor);
+}
 
+function returnHandleReplaceUserSelection(content: string) {
     const editor = vscode.window.activeTextEditor;
     const document = editor?.document;
     if (editor === undefined || document === undefined) {
@@ -1262,6 +1264,12 @@ export function handleReplaceUserSelection(context: RCEContext): RCEHandlerRetur
             return actionHandlerFailure('Failed to replace selection', 'Failed to replace selection');
         }
     });
+}
+
+/** @deprecated Functions should now be inlined */
+export function handleReplaceUserSelection(context: RCEContext<{ content: string; }>): RCEHandlerReturns {
+    const { data: actionData } = context;
+    return returnHandleReplaceUserSelection(actionData.params!.content);
 }
 
 export function fileSaveListener(e: vscode.TextDocument) {

@@ -14,7 +14,7 @@
     },
     "include": [
         "webview/**/*",
-        "src/**/*"
+        "src/types/**/*"
     ],
     "exclude": [
         "src/test/**/*"

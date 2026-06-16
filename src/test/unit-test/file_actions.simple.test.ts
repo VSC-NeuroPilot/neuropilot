@@ -1,21 +1,23 @@
 import * as assert from 'assert';
 import { fileActions } from '@/file_operations';
 import { readFileActions } from '@/read_files';
-import type { RCEContext } from '@/context/rce';
+import { fakeContext } from '@test/test_utils';
 
 // Tests for file action prompt generators using real logic with loose checks
 suite('file Actions', () => {
     test('get_workspace_files has a non-empty prompt', () => {
+        assert.ok(fileActions.list_files_and_folders.promptGenerator && typeof fileActions.list_files_and_folders.promptGenerator !== 'string');
         // === Arrange & Act ===
-        const prompt = fileActions.list_files_and_folders.promptGenerator({ data: { params: {} } } as RCEContext);
+        const prompt = fileActions.list_files_and_folders.promptGenerator(fakeContext('list_files_and_folders', {}));
 
         // === Assert ===
         assert.ok(typeof prompt === 'string' && prompt.length > 0);
     });
 
     test('get_workspace_files correctly includes the folder in prompt', () => {
+        assert.ok(fileActions.list_files_and_folders.promptGenerator && typeof fileActions.list_files_and_folders.promptGenerator !== 'string');
         // === Arrange & Act ===
-        const prompt = fileActions.list_files_and_folders.promptGenerator({ data: { params: { folder: 'src/' } } } as RCEContext);
+        const prompt = fileActions.list_files_and_folders.promptGenerator(fakeContext('list_files_and_folders', { folder: 'src/' }));
 
         // === Assert ===
         assert.ok(typeof prompt === 'string' && prompt.length > 0);
@@ -23,8 +25,9 @@ suite('file Actions', () => {
     });
 
     test('get_workspace_files correctly states if Neuro asked for recursive', () => {
+        assert.ok(fileActions.list_files_and_folders.promptGenerator && typeof fileActions.list_files_and_folders.promptGenerator !== 'string');
         // === Arrange & Act ===
-        const prompt = fileActions.list_files_and_folders.promptGenerator({ data: { params: { recursive: true } } } as RCEContext);
+        const prompt = fileActions.list_files_and_folders.promptGenerator(fakeContext('list_files_and_folders', { recursive: true }));
 
         // === Assert ===
         assert.ok(typeof prompt === 'string' && prompt.length > 0);
@@ -32,8 +35,9 @@ suite('file Actions', () => {
     });
 
     test('get_workspace_files correctly omits recursive if Neuro didn\'t ask', () => {
+        assert.ok(fileActions.list_files_and_folders.promptGenerator && typeof fileActions.list_files_and_folders.promptGenerator !== 'string');
         // === Arrange & Act ===
-        const prompt = fileActions.list_files_and_folders.promptGenerator({ data: { params: { recursive: false } } } as RCEContext);
+        const prompt = fileActions.list_files_and_folders.promptGenerator(fakeContext('list_files_and_folders', { recursive: false }));
 
         // === Assert ===
         assert.ok(typeof prompt === 'string' && prompt.length > 0);
@@ -41,8 +45,9 @@ suite('file Actions', () => {
     });
 
     test('open_file prompt formats path', () => {
+        assert.ok(readFileActions.switch_files.promptGenerator && typeof readFileActions.switch_files.promptGenerator !== 'string');
         // === Arrange & Act ===
-        const prompt = readFileActions.switch_files.promptGenerator({ data: { params: { filePath: 'src/index.ts' } } } as RCEContext);
+        const prompt = readFileActions.switch_files.promptGenerator(fakeContext('switch_files', { filePath: 'src/index.ts' }));
 
         // === Assert ===
         assert.ok(typeof prompt === 'string' && prompt.length > 0);
@@ -50,8 +55,9 @@ suite('file Actions', () => {
     });
 
     test('read_file prompt formats path', () => {
+        assert.ok(readFileActions.read_file.promptGenerator && typeof readFileActions.read_file.promptGenerator !== 'string');
         // === Arrange & Act ===
-        const prompt = readFileActions.read_file.promptGenerator({ data: { params: { filePath: 'README.md' } } } as RCEContext);
+        const prompt = readFileActions.read_file.promptGenerator(fakeContext('read_files', { filePath: 'README.md' }));
 
         // === Assert ===
         assert.ok(typeof prompt === 'string' && prompt.length > 0);
@@ -59,8 +65,9 @@ suite('file Actions', () => {
     });
 
     test('create_file prompt formats path', () => {
+        assert.ok(fileActions.create_file.promptGenerator && typeof fileActions.create_file.promptGenerator !== 'string');
         // === Arrange & Act ===
-        const prompt = fileActions.create_file.promptGenerator({ data: { params: { filePath: 'new/file.txt' } } } as RCEContext);
+        const prompt = fileActions.create_file.promptGenerator(fakeContext('create_file', { filePath: 'new/file.txt' }));
 
         // === Assert ===
         assert.ok(typeof prompt === 'string' && prompt.length > 0);
@@ -68,8 +75,9 @@ suite('file Actions', () => {
     });
 
     test('create_folder prompt formats path', () => {
+        assert.ok(fileActions.create_folder.promptGenerator && typeof fileActions.create_folder.promptGenerator !== 'string');
         // === Arrange & Act ===
-        const prompt = fileActions.create_folder.promptGenerator({ data: { params: { folderPath: 'new/folder' } } } as RCEContext);
+        const prompt = fileActions.create_folder.promptGenerator(fakeContext('create_folder', { folderPath: 'new/folder' }));
 
         // === Assert ===
         assert.ok(typeof prompt === 'string' && prompt.length > 0);
@@ -77,8 +85,9 @@ suite('file Actions', () => {
     });
 
     test('rename_file_or_folder prompt formats paths', () => {
+        assert.ok(fileActions.rename_file_or_folder.promptGenerator && typeof fileActions.rename_file_or_folder.promptGenerator !== 'string');
         // === Arrange & Act ===
-        const prompt = fileActions.rename_file_or_folder.promptGenerator({ data: { params: { oldPath: 'old/a.txt', newPath: 'new/a.txt' } } } as RCEContext);
+        const prompt = fileActions.rename_file_or_folder.promptGenerator(fakeContext('rename_file_or_folder', { oldPath: 'old/a.txt', newPath: 'new/a.txt' }));
 
         // === Assert ===
         assert.ok(typeof prompt === 'string' && prompt.length > 0);
@@ -87,8 +96,9 @@ suite('file Actions', () => {
     });
 
     test('delete_file_or_folder prompt formats path', () => {
+        assert.ok(fileActions.delete_file_or_folder.promptGenerator && typeof fileActions.delete_file_or_folder.promptGenerator !== 'string');
         // === Arrange & Act ===
-        const prompt = fileActions.delete_file_or_folder.promptGenerator({ data: { params: { path: 'old/file.txt' } } } as RCEContext);
+        const prompt = fileActions.delete_file_or_folder.promptGenerator(fakeContext('delete_file_or_folder', { path: 'old/file.txt' }));
 
         // === Assert ===
         assert.ok(typeof prompt === 'string' && prompt.length > 0);

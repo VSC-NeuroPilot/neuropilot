@@ -2,7 +2,7 @@ import type { ActionStatus } from '@vsc-neuropilot/api-types';
 
 import { render } from 'preact';
 import { useState, useEffect, useMemo } from 'preact/hooks';
-import type { ExecuteViewProviderMessage, ExecutionHistoryItem } from '@/views/execute';
+import type { ExecuteViewProviderMessage, ExecutionHistoryItem } from '@typing/views/execute';
 
 interface State {
     history: ExecutionHistoryItem[];

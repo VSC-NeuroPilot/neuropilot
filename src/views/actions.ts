@@ -5,43 +5,7 @@ import { setPermissions } from '@/config';
 import { BaseWebviewViewProvider } from './base';
 import { getExtendedActionsInfo } from '@/rce';
 import { toTitleCase } from '@/utils/misc';
-
-export type SettingsContext = 'user' | 'workspace';
-
-export interface ActionNode {
-    id: string;
-    label: string;
-    category: string;
-    description?: string;
-    permissionLevel: PermissionLevel;
-    modifiedInCurrentContext: boolean;
-    modifiedExternally: boolean;
-    isRegistered: boolean;
-}
-
-export type ActionsViewProviderMessage = {
-    type: 'providerToggledPermission';
-    actionId: string;
-    newPermissionLevel: PermissionLevel;
-} | {
-    type: 'refreshActions';
-    actions: ActionNode[];
-};
-
-export type ActionsViewMessage = {
-    type: 'viewToggledPermissions';
-    actionIds: string[];
-    newPermissionLevel: PermissionLevel;
-} | {
-    type: 'error';
-    message: string;
-} | {
-    type: 'requestInitialization';
-    currentContext: SettingsContext;
-} | {
-    type: 'changeContext';
-    newContext: SettingsContext;
-};
+import type { ActionsViewMessage, ActionsViewProviderMessage, SettingsContext, ActionNode } from '@typing/views/actions';
 
 export class ActionsViewProvider extends BaseWebviewViewProvider<ActionsViewMessage, ActionsViewProviderMessage> {
     public static readonly viewId = 'neuropilot.actionsView';
