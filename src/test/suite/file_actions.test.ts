@@ -11,13 +11,11 @@ import { NEURO } from '@/constants';
 import { anything, capture, instance, mock, verify } from 'ts-mockito';
 import { RCEContext } from '@ctx/rce';
 
-const makeContext = (data: ActionData) => {
+function makeContext(data: ActionData) {
     const ctx = new RCEContext(data);
     ctx['_updateStatus'] = returnMockFunction();
     return ctx;
 };
-
-const { readFileActions } = readFiles;
 
 suite('File Actions', () => {
     let originalClient: NeuroClient | null = null;
@@ -291,7 +289,7 @@ suite('File Actions', () => {
         NEURO.client = instance(mockedClient);
 
         // === Act ===
-        readFileActions.switch_files.handler(makeContext({ id: 'abc', name: 'switch_files', params: { filePath: filePath } }));
+        readFiles.handleOpenFile(makeContext({ id: 'abc', name: 'switch_files', params: { filePath: filePath } })); // TODO: Shouldn't use deprecated functions but the other one doesn't work, fix this when we rework integration tests
         // Allow VS Code to open and show the document before asserting
         await checkNoErrorWithTimeout(() => { verify(mockedClient.sendContext(anything())).once(); }, 5000, 100);
         // Brief delay to ensure activeTextEditor is updated across platforms
