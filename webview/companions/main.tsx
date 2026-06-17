@@ -1,6 +1,6 @@
 import { render } from 'preact';
 import { useState, useEffect, useMemo } from 'preact/hooks';
-import type { ViewProviderMessage } from '@/views/companions';
+import type { ViewProviderMessage } from '@typing/views/companions';
 import { Contributions } from '@vsc-neuropilot/api-types';
 import { CompanionMetaWithName } from '@/plugins/utility-types';
 

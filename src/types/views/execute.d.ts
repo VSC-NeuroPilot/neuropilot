@@ -1,4 +1,4 @@
-import type { ActionStatus } from '../actions';
+import type { ActionStatus } from '@vsc-neuropilot/api-types';
 
 export interface ExecuteResult {
     status: ActionStatus;

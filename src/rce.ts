@@ -586,7 +586,7 @@ export function getAction<
     const TData extends unknown | undefined,
     const TSchema extends SchemaTypes,
     const TDataShape extends unknown | undefined,
->(actionName: string): RCEAction<TData, TSchema, TDataShape> | undefined {
+>(actionName: string): RCEActionPlus<TData, TSchema, TDataShape> | undefined {
     return ACTIONS_ARRAY.find(a => a.name === actionName) as RCEActionPlus<TData, TSchema, TDataShape> | undefined;
 }
 

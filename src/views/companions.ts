@@ -1,22 +1,8 @@
-import { BaseWebviewViewProvider, Message } from './base';
+import { BaseWebviewViewProvider } from './base';
 import { onDidCompanionChange } from '@events/companions';
 import { registry } from '@/plugins';
 import { NEURO } from '@/constants';
-import { CompanionMetaWithName } from '@/plugins/utility-types';
-
-interface CompanionEnabledViewProviderMessage extends CompanionMetaWithName, Message {
-    type: 'enabled';
-}
-
-export type ViewProviderMessage = CompanionEnabledViewProviderMessage | {
-    type: 'disabled';
-    name: string;
-};
-
-export interface ViewMessage extends Message {
-    type: 'disconnect'
-    name: string;
-}
+import { ViewMessage, ViewProviderMessage } from '@typing/views/companions';
 
 export class CompanionsViewProvider extends BaseWebviewViewProvider<ViewMessage, ViewProviderMessage> {
     constructor() {

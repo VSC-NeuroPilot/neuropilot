@@ -1,6 +1,7 @@
 import { Disposable, Progress } from 'vscode';
+import type { ActionStatus } from '@vsc-neuropilot/api-types';
+
 import { updateActionStatus } from '@events/actions';
-import { ActionStatus } from '@typing/actions';
 import { SchemaTypes, ActionValidationResult, InferDataFromSchema, type RCEAction, RCEContext as _RCEContext, RCEActionData } from '@vsc-neuropilot/api-types';
 
 export type RCEStorage = Record<string | number | symbol, unknown>;
