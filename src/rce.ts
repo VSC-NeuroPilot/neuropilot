@@ -10,9 +10,9 @@ import { validate } from 'jsonschema';
 import type { StandardJSONSchemaV1 } from '@standard-schema/spec';
 import type { JSONSchema7 } from 'json-schema';
 
-import { RCEAction, type RCECancelEvent, ActionHandlerResult, PermissionLevel, ActionForceParams, InjectionBaseData } from '@vsc-neuropilot/api-types';
+import { RCEAction, type RCECancelEvent, ActionHandlerResult, PermissionLevel, ActionForceParams, InjectionBaseData, InferDataFromSchema, SchemaTypes } from '@vsc-neuropilot/api-types';
 
-import { actionHandlerFailure, actionHandlerSuccess, InferDataFromSchema, SchemaTypes, stripToAction, attemptConvertStandardJSONSchema } from '@/utils/neuro_client';
+import { actionHandlerFailure, actionHandlerSuccess, stripToAction, attemptConvertStandardJSONSchema } from '@/utils/neuro_client';
 import { NEURO } from '@/constants';
 import { isThenable, logOutput, notifyOnCaughtException } from '@/utils/misc';
 import { ACTIONS, CONFIG, CONNECTION, getAllPermissions, getPermissionLevel, stringToPermissionLevel } from '@/config';
@@ -52,7 +52,11 @@ export interface ExtendedActionInfo {
     configuredGlobalPermission?: PermissionLevel;
 }
 
-export interface RCEActionPlus extends RCEAction {
+export interface RCEActionPlus<
+    TData extends unknown | undefined = undefined,
+    TSchema extends SchemaTypes = SchemaTypes,
+    TDataShape extends unknown | undefined = TData extends undefined ? InferDataFromSchema<TSchema> : TData,
+> extends RCEAction<TData, TSchema, TDataShape> {
     /**
      * The source companion's token.
      * If omitted, can be safely assumed to come from NeuroPilot Base.

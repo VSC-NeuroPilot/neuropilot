@@ -1,7 +1,8 @@
-import type { ActionValidationResult, InferDataFromSchema, RCEAction, SchemaTypes } from '@/utils/neuro_client';
 import type { ActionData } from 'neuro-game-sdk';
 import { Disposable, Progress } from 'vscode';
-import { ActionStatus, updateActionStatus } from '@events/actions';
+import { updateActionStatus } from '@events/actions';
+import { ActionStatus } from '@typing/actions';
+import { SchemaTypes, ActionValidationResult, InferDataFromSchema, type RCEAction } from '@vsc-neuropilot/api-types';
 
 export type RCEStorage = Record<string | number | symbol, unknown>;
 
