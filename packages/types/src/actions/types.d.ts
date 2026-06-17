@@ -1,4 +1,5 @@
 import { ActionForcePriorityEnum, Action, type NeuroClient } from 'neuro-game-sdk';
+import type { JSONSchema7 } from 'json-schema';
 import { Range } from 'vscode';
 import type { StandardJSONSchemaV1 } from '@standard-schema/spec';
 

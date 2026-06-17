@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { RCEContext, ActionHandlerResult, PermissionLevel } from '@vsc-neuropilot/api-types';
+import { ActionHandlerResult, PermissionLevel } from '@vsc-neuropilot/api-types';
 import { z } from 'zod';
 
 import { EXCEPTION_THROWN_STRING, NEURO } from '@/constants';

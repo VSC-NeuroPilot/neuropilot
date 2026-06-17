@@ -69,11 +69,11 @@ export function defineAction<
  * @returns The action stripped to its basic form, without the handler and permissions.
  */
 export function stripToAction(action: RCEAction): Action {
-    let schema: Action['schema'] = action.schema;
+    let schema = action.schema;
 
     // Auto-convert Standard JSON Schema to JSON Schema
     if (schema && isStandardJSONSchema(schema)) {
-        schema = attemptConvertStandardJSONSchema(schema).schema as Action['schema'];
+        schema = attemptConvertStandardJSONSchema(schema).schema;
     }
 
     return {

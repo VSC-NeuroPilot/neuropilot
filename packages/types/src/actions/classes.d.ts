@@ -1,10 +1,20 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Disposable, Progress, Event } from 'vscode';
-import type { ActionValidationResult, RCEAction } from './types';
+import type { ActionValidationResult, InferDataFromSchema, RCEAction, SchemaTypes } from './types';
+import type { ActionData } from 'neuro-game-sdk';
 
 //#region RCE context
 
 export type RCEStorage = Record<string | number | symbol, unknown>;
+
+/**
+ * Conditional type for ActionData that makes params required when a schema exists,
+ * and optional/undefined when no schema is provided.
+ */
+export type RCEActionData<TDataShape, TSchema extends SchemaTypes> =
+    TSchema extends undefined
+        ? Omit<ActionData, 'params'> & { params?: undefined }
+        : Omit<ActionData, 'params'> & { params: TDataShape };
 
 export type ActionStatus = 'pending' | 'success' | 'failure' | 'denied' | 'exception' | 'timeout' | 'schema' | 'cancelled';
 
@@ -66,9 +76,9 @@ export interface RCERequestState {
  * 7. Handler
  */
 export interface RCEContext<
-    const TData extends unknown | undefined = undefined,
-    const TSchema extends SchemaTypes = SchemaTypes,
-    const TDataShape extends unknown | undefined = TData extends undefined ? InferDataFromSchema<TSchema> : TData,
+    TData extends unknown | undefined = undefined,
+    TSchema extends SchemaTypes = SchemaTypes,
+    TDataShape extends unknown | undefined = TData extends undefined ? InferDataFromSchema<TSchema> : TData,
 > extends Disposable {
     createdAt: string;
 

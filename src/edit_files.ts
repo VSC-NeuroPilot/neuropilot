@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { z } from 'zod';
+import type { ActionData } from 'neuro-game-sdk';
 import { RCEHandlerReturns, ActionValidationResult, RCEContext, DiffRangeType } from '@vsc-neuropilot/api-types';
 
 import { NEURO } from '@/constants';
@@ -10,7 +11,7 @@ import { createCursorPositionChangedEvent } from '@events/cursor';
 import { RCECancelEvent } from '@events/utils';
 import { addActions } from '@/rce';
 import { createPreviewCursor, createPreviewHighlight } from '@previews/edits';
-import { cancelOnDidChangeActiveTextEditor, commonCancelEvents, findAndFilter } from '@/utils/action_components';
+import { _LINE_RANGE_SCHEMA, _POSITION_SCHEMA, cancelOnDidChangeActiveTextEditor, commonCancelEvents, findAndFilter } from '@/utils/action_components';
 
 export const CATEGORY_EDITING = 'Editing';
 

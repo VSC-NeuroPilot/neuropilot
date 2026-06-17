@@ -1,19 +1,9 @@
-import type { ActionData } from 'neuro-game-sdk';
 import { Disposable, Progress } from 'vscode';
 import { updateActionStatus } from '@events/actions';
 import { ActionStatus } from '@typing/actions';
-import { SchemaTypes, ActionValidationResult, InferDataFromSchema, type RCEAction, RCEContext as _RCEContext } from '@vsc-neuropilot/api-types';
+import { SchemaTypes, ActionValidationResult, InferDataFromSchema, type RCEAction, RCEContext as _RCEContext, RCEActionData } from '@vsc-neuropilot/api-types';
 
 export type RCEStorage = Record<string | number | symbol, unknown>;
-
-/**
- * Conditional type for ActionData that makes params required when a schema exists,
- * and optional/undefined when no schema is provided.
- */
-export type RCEActionData<TDataShape, TSchema extends SchemaTypes> =
-    TSchema extends undefined
-        ? Omit<ActionData, 'params'> & { params?: undefined }
-        : Omit<ActionData, 'params'> & { params: TDataShape };
 
 export interface RCELifecycleMetadata {
     events?: Disposable[];

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { z } from 'zod';
-
+import type { ActionData } from 'neuro-game-sdk';
 import { RCEContext, ActionValidationResult } from '@vsc-neuropilot/api-types';
 
 import { createCursorPositionChangedEvent } from '@events/cursor';
