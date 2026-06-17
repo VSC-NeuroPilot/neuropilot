@@ -6,12 +6,12 @@
 
 import * as vscode from 'vscode';
 import { spawn, ChildProcessWithoutNullStreams } from 'node:child_process';
-import { RCEContext, ActionValidationResult, RCEHandlerReturns, ActionHandlerResult } from '@vsc-neuropilot/api-types';
+import { RCEContext, ActionValidationResult, RCEHandlerReturns, ActionHandlerResult, defineAction } from '@vsc-neuropilot/api-types';
 import { z } from 'zod';
 
 import { NEURO } from '@/constants';
 import { checkWorkspaceTrust, checkVirtualWorkspace, logOutput, delayAsync, getFence } from '@/utils/misc';
-import { actionValidationAccept, actionValidationFailure, actionHandlerFailure, actionHandlerSuccess, defineAction } from '@/utils/neuro_client';
+import { actionValidationAccept, actionValidationFailure, actionHandlerFailure, actionHandlerSuccess } from '@/utils/neuro_client';
 import { CONFIG } from '@/config';
 import { notifyOnTerminalClose } from '@events/shells';
 import { addActions } from '@/rce';

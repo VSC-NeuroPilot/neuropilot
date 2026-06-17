@@ -1,14 +1,14 @@
 import * as vscode from 'vscode';
 // this doesn't work because types or smth idk
 //import { ActionForcePriorityEnum } from 'neuro-game-sdk';
-import { PermissionLevel, ActionForcePriorityEnum } from '@vsc-neuropilot/api-types';
+import { PermissionLevel, ActionForcePriorityEnum, defineAction } from '@vsc-neuropilot/api-types';
 
 import { z } from 'zod';
 
 import { NEURO } from '@/constants';
 import { logOutput, simpleFileName, getPositionContext, formatContext, NeuroPositionContext } from '@/utils/misc';
 import { CONFIG, CONNECTION } from '@/config';
-import { actionHandlerFailure, actionHandlerSuccess, actionValidationAccept, actionValidationFailure, actionValidationRetry, defineAction } from '@/utils/neuro_client';
+import { actionHandlerFailure, actionHandlerSuccess, actionValidationAccept, actionValidationFailure, actionValidationRetry } from '@/utils/neuro_client';
 import { abortActionForce, addActions, canForceActions, tryForceActions } from '@/rce';
 
 let lastSuggestions: string[] = [];

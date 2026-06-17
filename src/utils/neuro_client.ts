@@ -3,7 +3,7 @@
  */
 
 import { Action } from 'neuro-game-sdk';
-import { RCEAction, ActionValidationResult, ActionHandlerResult, PermissionLevel, InferDataFromSchema, SchemaTypes } from '@vsc-neuropilot/api-types';
+import { RCEAction, ActionValidationResult, ActionHandlerResult, PermissionLevel } from '@vsc-neuropilot/api-types';
 
 import { Permission } from '@/config';
 import { logOutput, OutputTag, turtleSafari } from '@/utils/misc';
@@ -39,29 +39,6 @@ export interface ActionForceParams {
 //#endregion
 
 //#region Action metadata & helpers
-
-/**
- * Define an action with proper type inference for schema, input data, and event types.
- * @param action The action definition
- * @returns The same action with full type inference
- * @example
- * // Event type is inferred from cancelEvents
- * defineAction({
- *   name: 'my_action',
- *   schema: z.object({ file: z.string() }),
- *   handler: (ctx) => actionHandlerSuccess(),
- *   cancelEvents: [(ctx) => new RCECancelEvent<vscode.FileDeleteEvent>({ ... })],
- *   // ...
- * });
- */
-/* @__NO_SIDE_EFFECTS__ */
-export function defineAction<
-    const TData extends object | undefined,
-    const TSchema extends SchemaTypes,
-    const TInput extends InferDataFromSchema<TSchema>,
->(action: RCEAction<TData, TSchema, TInput>): RCEAction<TData, TSchema, TInput> {
-    return action;
-}
 
 /**
  * Strips an action to the form expected by the API.

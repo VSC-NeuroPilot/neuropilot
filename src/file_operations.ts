@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
-import { RCEContext, ActionValidationResult, RCEHandlerReturns, PermissionLevel } from '@vsc-neuropilot/api-types';
+import { RCEContext, ActionValidationResult, RCEHandlerReturns, PermissionLevel, defineAction } from '@vsc-neuropilot/api-types';
 import assert from 'node:assert';
 import { z } from 'zod';
 
 import { EXCEPTION_THROWN_STRING, NEURO, PROMISE_REJECTION_STRING } from '@/constants';
 import { getProperty, getWorkspacePath, getWorkspaceUri, isPathNeuroSafe, logOutput, normalizePath, notifyOnCaughtException, stripTailSlashes } from '@/utils/misc';
-import { actionValidationFailure, actionValidationAccept, actionValidationRetry, actionHandlerSuccess, actionHandlerFailure, defineAction } from '@/utils/neuro_client';
+import { actionValidationFailure, actionValidationAccept, actionValidationRetry, actionHandlerSuccess, actionHandlerFailure } from '@/utils/neuro_client';
 import { getPermissionLevel } from '@/config';
 import { targetedFileCreatedEvent, targetedFileDeletedEvent } from '@events/files';
 import { RCECancelEvent } from '@events/utils';

@@ -1,13 +1,13 @@
 import * as vscode from 'vscode';
 import assert from 'node:assert';
-import { RCEContext, ActionValidationResult, ActionHandlerResult } from '@vsc-neuropilot/api-types';
+import { RCEContext, ActionValidationResult, ActionHandlerResult, defineAction } from '@vsc-neuropilot/api-types';
 import { z } from 'zod';
 
 import { EXCEPTION_THROWN_STRING, NEURO } from '@/constants';
 import { normalizePath, getWorkspacePath, logOutput, isPathNeuroSafe, getWorkspaceUri } from '@/utils/misc';
 import { CONFIG } from '@/config';
 import { filePreviewProvider } from '@/previews/files';
-import { actionValidationAccept, actionValidationFailure, actionValidationRetry, actionHandlerSuccess, actionHandlerFailure, defineAction } from '@/utils/neuro_client';
+import { actionValidationAccept, actionValidationFailure, actionValidationRetry, actionHandlerSuccess, actionHandlerFailure } from '@/utils/neuro_client';
 import { targetedFileLintingResolvedEvent, targetedFolderLintingResolvedEvent, workspaceLintingResolvedEvent } from '@events/linting';
 import { addActions } from '@/rce';
 

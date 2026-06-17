@@ -1,10 +1,10 @@
 import * as vscode from 'vscode';
-import { ActionHandlerResult, PermissionLevel } from '@vsc-neuropilot/api-types';
+import { ActionHandlerResult, PermissionLevel, defineAction } from '@vsc-neuropilot/api-types';
 import { z } from 'zod';
 
 import { EXCEPTION_THROWN_STRING, NEURO } from '@/constants';
 import { getFence, logOutput } from '@/utils/misc';
-import { actionHandlerFailure, actionHandlerSuccess, defineAction } from '@/utils/neuro_client';
+import { actionHandlerFailure, actionHandlerSuccess } from '@/utils/neuro_client';
 import { CONNECTION } from '@/config';
 import { addActions, CATEGORY_MISC } from './rce';
 
