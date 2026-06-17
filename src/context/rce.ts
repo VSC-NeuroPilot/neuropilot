@@ -2,7 +2,7 @@ import type { ActionData } from 'neuro-game-sdk';
 import { Disposable, Progress } from 'vscode';
 import { updateActionStatus } from '@events/actions';
 import { ActionStatus } from '@typing/actions';
-import { SchemaTypes, ActionValidationResult, InferDataFromSchema, type RCEAction } from '@vsc-neuropilot/api-types';
+import { SchemaTypes, ActionValidationResult, InferDataFromSchema, type RCEAction, RCEContext as _RCEContext } from '@vsc-neuropilot/api-types';
 
 export type RCEStorage = Record<string | number | symbol, unknown>;
 
@@ -51,7 +51,7 @@ export class RCEContext<
     const TData extends unknown | undefined = undefined,
     const TSchema extends SchemaTypes = SchemaTypes,
     const TDataShape extends unknown | undefined = TData extends undefined ? InferDataFromSchema<TSchema> : TData,
-> extends Disposable {
+> extends Disposable implements _RCEContext {
     private success: boolean | null = null;
     createdAt: string = new Date().toLocaleTimeString();
 

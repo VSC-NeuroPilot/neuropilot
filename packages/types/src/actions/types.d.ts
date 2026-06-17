@@ -1,4 +1,3 @@
-import { JSONSchema7Object } from 'json-schema';
 import { ActionForcePriorityEnum, Action, type NeuroClient } from 'neuro-game-sdk';
 import { Range } from 'vscode';
 import type { StandardJSONSchemaV1 } from '@standard-schema/spec';
@@ -145,8 +144,14 @@ export interface RCEAction<TData extends unknown | undefined = undefined, TSchem
     contextSetupHook?: ((context: RCEContext<TData, TSchema, TDataShape>) => Thenable<void>)[];
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type PromptGenerator<T extends JSONSchema7Object | undefined, E = any> = string | ((context: RCEContext<T, E>) => string);
+/**
+ * A prompt parameter can either be a string or a function that converts an RCEContext into a prompt string.
+ */
+export type PromptGenerator<
+    TData extends unknown | undefined = unknown,
+    TSchema extends StandardJSONSchemaV1 | JSONSchema7 | undefined = JSONSchema7 | undefined,
+    TDataShape = InferDataFromSchema<TSchema>,
+> = string | ((context: RCEContext<TData, TSchema, TDataShape>) => string);
 
 
 // apparently this JSDoc is really hard when trying to link to RCEAction.validators.async

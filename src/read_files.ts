@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { RCEContext, RCEAction, RCEHandlerReturns } from '@vsc-neuropilot/api-types';
+import { RCEContext, RCEHandlerReturns } from '@vsc-neuropilot/api-types';
 import assert from 'node:assert';
 import { z } from 'zod';
 
@@ -7,7 +7,7 @@ import { EXCEPTION_THROWN_STRING, NEURO, PROMISE_REJECTION_STRING } from '@/cons
 import { previewCursorMovement, previewFindFunctions } from '@/edit_files';
 import { isPathNeuroSafe, getVirtualCursor, setVirtualCursor, getPositionContext, logOutput, formatContext, getFence, escapeRegExp, filterFileContents, indexFromPosition, positionFromIndex, getWorkspacePath, getWorkspaceUri, NeuroPositionContext, normalizePath, notifyOnCaughtException, simpleFileName } from './utils/misc';
 import { actionHandlerFailure, actionHandlerSuccess, actionValidationAccept, actionValidationFailure, defineAction } from '@/utils/neuro_client';
-import { ACTION_FAIL_NOTES, binaryFileValidation, cancelOnDidChangeActiveTextEditor, checkCurrentFile, commonCancelEvents, commonCancelEventsWithCursor, CONTEXT_NO_ACCESS, CONTEXT_NO_ACTIVE_DOCUMENT, createLineRangeValidator, createPositionValidator, createStringValidator, findAndFilter, LineRange, MATCH_OPTIONS, MatchOptions, neuroSafeValidation, STATUS_NO_ACCESS, STATUS_NO_ACTIVE_DOCUMENT, STATUS_NO_MATCHES_FOUND, validateIsAFile, validateRegex } from './utils/action_components';
+import { _LINE_RANGE_SCHEMA, _POSITION_SCHEMA, ACTION_FAIL_NOTES, binaryFileValidation, cancelOnDidChangeActiveTextEditor, checkCurrentFile, commonCancelEvents, commonCancelEventsWithCursor, CONTEXT_NO_ACCESS, CONTEXT_NO_ACTIVE_DOCUMENT, createLineRangeValidator, createPositionValidator, createStringValidator, findAndFilter, LineRange, MATCH_OPTIONS, MatchOptions, neuroSafeValidation, STATUS_NO_ACCESS, STATUS_NO_ACTIVE_DOCUMENT, STATUS_NO_MATCHES_FOUND, validateIsAFile, validateRegex } from './utils/action_components';
 import { CONFIG, CONNECTION } from '@/config';
 import { targetedFileDeletedEvent } from '@events/files';
 import { RCECancelEvent } from '@events/utils';

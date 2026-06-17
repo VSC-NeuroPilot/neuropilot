@@ -1,8 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { JSONSchema7Object } from 'json-schema';
 import { Disposable, Progress, Event } from 'vscode';
 import type { ActionValidationResult, RCEAction } from './types';
-import type { ActionData } from 'neuro-game-sdk';
 
 //#region RCE context
 
@@ -67,36 +65,19 @@ export interface RCERequestState {
  * 6. Some arbitrary time in between here, event listeners for cancel events may also be fired, and the predicate will receive the context object as well.
  * 7. Handler
  */
-export interface RCEContext<T extends JSONSchema7Object | undefined = any, K = any> extends Disposable {
-    /** The name of the action currently being executed  */
-    name: string;
-    /** When the execution context was created */
+export interface RCEContext<
+    const TData extends unknown | undefined = undefined,
+    const TSchema extends SchemaTypes = SchemaTypes,
+    const TDataShape extends unknown | undefined = TData extends undefined ? InferDataFromSchema<TSchema> : TData,
+> extends Disposable {
     createdAt: string;
 
-    /**
-     * The action data received from Neuro.
-     * @see {@link ActionData}
-     */
-    data: ActionData<T>;
-    /**
-     * The RCE action whose name corresponds to the action data Neuro sent in.
-     * @see {@link RCEAction}
-     */
-    action: RCEAction<T, K>;
-    /**
-     * Whether or not the action was forced from an action force.
-     */
+    data: RCEActionData<TDataShape, TSchema>;
     readonly forced: boolean;
 
-    /** 
-     * Metadata specific to this context lifecycle.
-     * @see {@link RCELifecycleMetadata lifecycle metadata interface}
-     */
+    /** Lifecycle-specific data */
     readonly lifecycle: RCELifecycleMetadata;
-    /** 
-     * Data pertaining to the request for the execution.
-     * Only populated in Copilot node.
-     */
+    /** Request-specific data (copilot mode only) */
     request?: RCERequestState;
     /**
      * Ephemeral storage.
@@ -123,7 +104,7 @@ export interface RCEContext<T extends JSONSchema7Object | undefined = any, K = a
     /**
      * Clears request timers and cancel events before handler execution.
      * This prevents timers/events from triggering during async handler execution.
-     * You usually shouldn't need to call this, but there is no harm in doing so one or more times.
+     * Should be called immediately before invoking the handler.
      */
     clearPreHandlerResources(): void;
 }

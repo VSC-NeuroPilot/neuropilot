@@ -7,7 +7,6 @@ import * as vscode from 'vscode';
 import assert from 'node:assert';
 import { ActionData, ActionForcePriorityEnum, type NeuroClient } from 'neuro-game-sdk';
 import { validate } from 'jsonschema';
-import type { StandardJSONSchemaV1 } from '@standard-schema/spec';
 import type { JSONSchema7 } from 'json-schema';
 
 import { RCEAction, type RCECancelEvent, ActionHandlerResult, PermissionLevel, ActionForceParams, InjectionBaseData, InferDataFromSchema, SchemaTypes } from '@vsc-neuropilot/api-types';
@@ -23,15 +22,6 @@ export const CATEGORY_MISC = 'Miscellaneous';
 
 const ACTIONS_ARRAY: RCEActionPlus[] = [];
 const REGISTERED_ACTIONS: Set<string> = /* @__PURE__ */ new Set<string>();
-
-/**
- * A prompt parameter can either be a string or a function that converts an RCEContext into a prompt string.
- */
-export type PromptGenerator<
-    TData extends unknown | undefined = unknown,
-    TSchema extends StandardJSONSchemaV1 | JSONSchema7 | undefined = JSONSchema7 | undefined,
-    TDataShape = InferDataFromSchema<TSchema>,
-> = string | ((context: RCEContext<TData, TSchema, TDataShape>) => string);
 
 let activeRequestContext: RCEContext | null = null;
 
