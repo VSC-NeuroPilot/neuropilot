@@ -53,8 +53,8 @@ export interface ActionForceParams {
  *   cancelEvents: [(ctx) => new RCECancelEvent<vscode.FileDeleteEvent>({ ... })],
  *   // ...
  * });
- * @pure
  */
+/* @__NO_SIDE_EFFECTS__ */
 export function defineAction<
     const TData extends object | undefined,
     const TSchema extends SchemaTypes,
