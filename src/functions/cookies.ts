@@ -1,12 +1,12 @@
 import * as vscode from 'vscode';
-import { PermissionLevel, SimplifiedStatusUpdateHandler } from '@vsc-neuropilot/api-types';
+import { PermissionLevel, SimplifiedStatusUpdateHandler, defineAction } from '@vsc-neuropilot/api-types';
 import z from 'zod';
 
 import { logOutput } from '@/utils/misc';
 import { NEURO } from '@/constants';
 import { CONNECTION, getPermissionLevel } from '@/config';
 import { addActions, CATEGORY_MISC } from '@/rce';
-import { actionHandlerFailure, actionHandlerSuccess, defineAction } from '@/utils/neuro_client';
+import { actionHandlerFailure, actionHandlerSuccess } from '@/utils/neuro_client';
 
 export const REQUEST_COOKIE_ACTION = defineAction({
     name: 'request_cookie',
