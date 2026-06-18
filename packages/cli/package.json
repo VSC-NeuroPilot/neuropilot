@@ -4,7 +4,7 @@
   "description": "VSC-NeuroPilot's dev CLI",
   "type": "module",
   "bin": {
-    "np": "./bin/index.js"
+    "np": "./bin/index.mjs"
   },
   "files": [
     "README.md",
@@ -39,6 +39,6 @@
     "@types/adm-zip": "^0.5.8",
     "@types/node": "24.12.0",
     "@typescript/native-preview": "7.0.0-dev.20260503.1",
-    "tsdown": "^0.21.7"
+    "tsdown": "^0.21.10"
   }
 }
