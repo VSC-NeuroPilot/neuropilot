@@ -16,8 +16,73 @@ Each higher version type can also inherit characteristics from the lower version
 
 For prereleases:
 
-- Pre-release versions (x.x.x-pre.x) are unstable releases for the designated API version. These contain work-in-progress types and annotations. Pre-release versions are not meant to be used except for trying out new API interfaces and giving feedback, and may change without prior programmatic notice. Pre-release versions are meant to be used with new builds from the `dev` branch of the base extension repo.
+- Pre-release versions (x.x.x-pre.x) are unstable releases for the designated API version. These contain work-in-progress types and annotations. Pre-release versions are not meant to be used except for trying out new API interfaces and giving feedback, and may change without prior programmatic or verbal notice. Pre-release versions are meant to be used with new builds from the `dev` branch of the base extension repo.
 - Release candidates (x.x.x-rc.x) are stable previews for the designated API version. These contain types that are more or less finalized for the designated release. Breaking changes should not be expected, both in type signature and functionality, but will always be highlighted in the changelog if necessary. This is also meant for feedback, but only for more subtle feedback before releasing that version such that it simply just contains bug fixes and very minor changes.
+
+## 1.0.0-pre.8
+
+### Breaking changes
+
+- The `RCEContext` interface no longer has the following properties: `name`, `action`.
+- You may now get some extra type errors on action definitions where you wouldn't previously. Read below for more information.
+
+### Added
+
+- You may now use a [Standard JSON Schema](https://standardschema.dev/json-schema) compliant validator library to construct your schemas, instead of a normal JSON schema.
+    - To allow for typing support with this, a new `defineAction` identity function has been added to the package. This function simply wraps an action, and provides type hints for action data in the context object.
+    - Schema validation is still done with the `jsonschema` library. Refinements and modifications by the validation library is not allowed and will not be performed. Types for the action data reflect this (they use the validation schema's input types, not output types).
+    - RCEContext will default to `unknown` for normal JSON schemas. This may now cause type errors in your code when it wouldn't previously.
+    - Some validation library examples:
+    
+    ```ts
+    // Zod
+    import { defineAction } from '@vsc-neuropilot/api-types';
+    import { z } from 'zod';
+
+    const zodAction = defineAction({
+        name: 'zod_action',
+        description: 'Zod action',
+        schema: z.object({
+            name: z.string().optional()
+        }),
+        handler: (ctx /* ctx.data is typed! */) => {
+            const name = ctx.data.params.name // should not cause errors even without null checking or assertions
+        }
+    })
+
+    // Valibot
+    import { defineAction } from '@vsc-neuropilot/api-types';
+    import { v } from 'valibot';
+    import { toStandardJsonSchema } from '@valibot/to-json-schema';
+
+    const valibotAction = defineAction({
+        name: 'valibot_action',
+        description: 'Valibot action',
+        schema: v.object({
+            name: v.optional(v.string())
+        }),
+        handler: (ctx /* ctx.data is typed! */) => {
+            const name = ctx.data.params.name // should not cause errors even without null checking or assertions
+        }
+    })
+
+    // ArkType
+    import { defineAction } from '@vsc-neuropilot/api-types';
+    import { type } from 'arktype';
+
+    const arktypeAction = defineAction({
+        name: 'arktype_action',
+        description: 'ArkType action',
+        schema: type({
+            "name?": "string"
+        }),
+        handler: (ctx /* ctx.data is typed! */) => {
+            const name = ctx.data.params.name // should not cause errors even without null checking or assertions
+        }
+    })
+    ```
+
+    Read the linked page about the Standard JSON Schema specification to determine if your library implements it, and how to use it.
 
 ## 1.0.0-pre.7
 
