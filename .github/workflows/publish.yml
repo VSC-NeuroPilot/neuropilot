@@ -56,7 +56,7 @@ jobs:
       env:
         NODE_ENV: 1
       run: |
-        echo VERSION=$(pnpm show ./ version) >> $GITHUB_OUTPUT
+        echo VERSION=$(pnpm pkg get version) >> $GITHUB_OUTPUT
         pnpm vsce package --no-dependencies
     
     - name: Upload VSIX file
@@ -67,7 +67,7 @@ jobs:
 
     - name: Commit and push version change
       run: |
-        git push --follow-tags https://VSC-NeuroPilot:${{secrets.GITHUB_TOKEN}}:@github.com/VSC-NeuroPilot/neuropilot
+        git push --follow-tags
     
     - name: Update docs
       env:

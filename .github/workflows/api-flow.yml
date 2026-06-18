@@ -51,7 +51,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          persist-credentials: false
+          persist-credentials: true
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
@@ -75,18 +75,12 @@ jobs:
           cd packages/types
 
           if [ "${{ steps.input-validation.outputs.prerelease }}" = "true" ]; then
-            GIT_TAG=$(pnpm version ${{ inputs.increment }} --no-git-tag-version --preid ${{ inputs.preid }})
+            pnpm version ${{ inputs.increment }} --tag-version-prefix "api-v" --preid ${{ inputs.preid }}
           else
-            GIT_TAG=$(pnpm version ${{ inputs.increment }} --no-git-tag-version)
+            pnpm version ${{ inputs.increment }} --tag-version-prefix "api-v"
           fi
 
-          VERSION=$(pnpm show ./ version)
-          git add package.json
-          git commit -nm "bump api to v$VERSION"
-          git push
-
-          git tag "$GIT_TAG"
-          git push --tags
+          git push --follow-tags
 
       - name: Publish types package
         run: |
