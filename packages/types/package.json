@@ -1,6 +1,6 @@
 {
   "name": "@vsc-neuropilot/api-types",
-  "version": "1.0.0-pre.9",
+  "version": "1.0.0-pre.8",
   "type": "module",
   "types": "./dist/index.d.mts",
   "files": [
@@ -22,7 +22,7 @@
     "build": "tsdown",
     "dev": "tsdown --watch",
     "types": "tsgo --noEmit",
-    "prepare": "pnpm build"
+    "prepack": "pnpm build"
   },
   "keywords": [],
   "author": "KTrain5369",

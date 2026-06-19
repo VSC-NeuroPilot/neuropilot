@@ -23,7 +23,7 @@
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
-    "prepare": "pnpm build",
+    "prepack": "pnpm build",
     "start": "node ./bin/index.js"
   },
   "keywords": [],
@@ -39,6 +39,6 @@
     "@types/adm-zip": "^0.5.8",
     "@types/node": "24.12.0",
     "@typescript/native-preview": "7.0.0-dev.20260503.1",
-    "tsdown": "^0.21.10"
+    "tsdown": "^0.22.3"
   }
 }
