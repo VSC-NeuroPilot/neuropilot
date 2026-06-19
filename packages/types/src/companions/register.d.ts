@@ -19,6 +19,11 @@ export interface CompanionAPI extends Disposable {
         CancelEvent: RCECancelEventConstructor;
     };
 
+    /**
+     * Whether or not Neuro is connected to NeuroPilot.
+     */
+    isNeuroConnected(): boolean;
+
     /* Action registrations */
     /**
      * Add an action to NeuroPilot's actions registry.
@@ -57,6 +62,12 @@ export interface CompanionAPI extends Disposable {
     reregisterAllActions(conservative?: boolean): void;
 
     /**
+     * Checks whether or not forcing an action from Neuro is possible right now.
+     * You must have specified the `actions:force` contribution point.
+     */
+    canForceActions(): boolean;
+
+    /**
      * Try to force an action from Neuro.
      * You must have specified the `actions:force` contribution point.
      * @param params An object describing the action force's parameters.
@@ -66,6 +77,22 @@ export interface CompanionAPI extends Disposable {
      * @return `true` if successfully forced an action, `false` otherwise.
      */
     tryForceActions(params: ActionForceParams, strict?: boolean): boolean;
+
+    /**
+     * Gets the status of the current action force.
+     * You must have specified the `actions:force` contribution point.
+     * 
+     * @returns `null` if there is no action force currently, otherwise returns the exact params sent by the action force.
+     */
+    getCurrentActionForce(): ActionForceParams | null;
+
+    /**
+     * Aborts the current action force.
+     * You must have specified the `actions:force` contribution point.
+     * 
+     * This temporarily unregisters all actions for 250ms before re-registering actions at their current permission level.
+     */
+    abortActionForce(): Promise<void>;
 
     /**
      * Inject into any registered action and modify most of its properties.

@@ -1,9 +1,9 @@
-import { type RCEAction, type CompanionAPI, CompanionMeta, PermissionError, InjectionBaseData, BaseCompanionError, Contributions } from '@vsc-neuropilot/api-types';
+import { type RCEAction, type CompanionAPI, CompanionMeta, PermissionError, InjectionBaseData, BaseCompanionError, Contributions, ActionForceParams } from '@vsc-neuropilot/api-types';
 import { Disposable, Position, Uri } from 'vscode';
 import crypto from 'node:crypto';
 import assert from 'node:assert';
 
-import { addActions, getAction, getActions, RCEActionPlus, registerAction, removeActions, reregisterAllActions, tryForceActions, unregisterAction } from '@/rce';
+import { abortActionForce, addActions, canForceActions, getAction, getActions, RCEActionPlus, registerAction, removeActions, reregisterAllActions, tryForceActions, unregisterAction } from '@/rce';
 import { addToRegistry, findByName, registry, removeFromRegistry } from '@/plugins';
 import { getVirtualCursor, setVirtualCursor } from '@/utils/misc';
 import { onDidMoveCursorEvent } from '@events/cursor';
@@ -40,6 +40,10 @@ export class Companion extends Disposable implements CompanionAPI {
         },
         CancelEvent: RCECancelEvent,
     };
+
+    isNeuroConnected(): boolean {
+        return NEURO.connected;
+    }
 
 
     @validateContributions(Contributions.ACTIONS_MANAGE)
@@ -84,7 +88,18 @@ export class Companion extends Disposable implements CompanionAPI {
     };
 
     @validateContributions(Contributions.ACTIONS_FORCE)
+    canForceActions = canForceActions;
+
+    @validateContributions(Contributions.ACTIONS_FORCE)
     tryForceActions = tryForceActions;
+
+    @validateContributions(Contributions.ACTIONS_FORCE)
+    getCurrentActionForce(): ActionForceParams | null {
+        return NEURO.currentActionForce;
+    }
+
+    @validateContributions(Contributions.ACTIONS_FORCE)
+    abortActionForce = abortActionForce;
 
     @validateContributions(Contributions.ACTIONS_INJECT)
     injectIntoAction(name: string, injects: Partial<InjectionBaseData>, force = false) {

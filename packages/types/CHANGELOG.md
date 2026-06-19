@@ -19,6 +19,16 @@ For prereleases:
 - Pre-release versions (x.x.x-pre.x) are unstable releases for the designated API version. These contain work-in-progress types and annotations. Pre-release versions are not meant to be used except for trying out new API interfaces and giving feedback, and may change without prior programmatic or verbal notice. Pre-release versions are meant to be used with new builds from the `dev` branch of the base extension repo.
 - Release candidates (x.x.x-rc.x) are stable previews for the designated API version. These contain types that are more or less finalized for the designated release. Breaking changes should not be expected, both in type signature and functionality, but will always be highlighted in the changelog if necessary. This is also meant for feedback, but only for more subtle feedback before releasing that version such that it simply just contains bug fixes and very minor changes.
 
+## 1.0.0-pre.9
+
+### Added
+
+- 4 new methods were added to the Companion API:
+    - `isNeuroConnected` - returns a boolean indicating if Neuro is currently connected
+    - `getCurrentActionForce` - returns the details of the current action force, or `null` if there isn't one (`actions:force` contribution point required)
+    - `canForceActions` - returns a boolean indicating if forcing an action is possible right now (`actions:force` contribution point required)
+    - `abortActionForce` - aborts the current action force (`actions:force` contribution point required)
+
 ## 1.0.0-pre.8
 
 ### Breaking changes
