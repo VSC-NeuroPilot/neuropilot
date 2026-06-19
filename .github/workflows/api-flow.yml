@@ -75,9 +75,9 @@ jobs:
           cd packages/types
 
           if [ "${{ steps.input-validation.outputs.prerelease }}" = "true" ]; then
-            pnpm version ${{ inputs.increment }} --tag-version-prefix "api-v" --preid ${{ inputs.preid }}
+            pnpm version ${{ inputs.increment }} --tag-version-prefix "api-v" --message "api prerelease %s" --preid ${{ inputs.preid }}
           else
-            pnpm version ${{ inputs.increment }} --tag-version-prefix "api-v"
+            pnpm version ${{ inputs.increment }} --tag-version-prefix "api-v" --message "api version %s"
           fi
 
           git push --follow-tags
