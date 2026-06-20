@@ -1,6 +1,6 @@
 import json
-from neuro_api_tony.api import NeuroAPI, ActionResultCommand
 import asyncio
+from neuro_api.server import TrioNeuroServerClient
 
 async def wait_for_startup(api: NeuroAPI):
     while not api.current_game:
