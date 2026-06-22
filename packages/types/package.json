@@ -22,7 +22,7 @@
     "build": "tsdown",
     "dev": "tsdown --watch",
     "types": "tsgo --noEmit",
-    "prepare": "pnpm build"
+    "prepare": "pnpm build || true"
   },
   "keywords": [],
   "author": "KTrain5369",

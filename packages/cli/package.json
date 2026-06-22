@@ -23,7 +23,7 @@
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
-    "prepack": "pnpm build",
+    "prepare": "pnpm build || true",
     "start": "node ./bin/index.js"
   },
   "keywords": [],
