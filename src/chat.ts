@@ -4,10 +4,11 @@ import { defineAction, PermissionLevel } from '@vsc-neuropilot/api-types';
 import { z } from 'zod';
 
 import { NEURO } from '@/constants';
-import { filterFileContents, logOutput, simpleFileName } from '@/utils/misc';
+import { logOutput } from '@/utils/misc';
 import { CONFIG, CONNECTION } from '@/config';
 import { actionHandlerFailure, actionHandlerSuccess, actionValidationAccept, actionValidationFailure } from './utils/neuro_client';
 import { abortActionForce, addActions, registerAction, tryForceActions } from '@/rce';
+import { contextFileContent, contextPath } from '@vsc-neuropilot/api-types/utils';
 
 let requestCancelled = false;
 
@@ -131,23 +132,23 @@ export function registerChatParticipant() {
             if (ref.value instanceof vscode.Location) {
                 const document = await vscode.workspace.openTextDocument(ref.value.uri);
                 assert(ref.value instanceof vscode.Location);
-                const text = filterFileContents(document.getText(ref.value.range));
+                const text = contextFileContent(document.getText(ref.value.range));
                 references.push({
-                    fileName: simpleFileName(ref.value.uri.fsPath),
+                    fileName: contextPath(ref.value.uri.fsPath),
                     range: ref.value.range,
                     text: text,
                 });
             } else if (ref.value instanceof vscode.Uri) {
                 const document = await vscode.workspace.openTextDocument(ref.value);
                 assert(ref.value instanceof vscode.Uri);
-                const text = filterFileContents(document.getText());
+                const text = contextFileContent(document.getText());
                 references.push({
-                    fileName: simpleFileName(ref.value.fsPath),
+                    fileName: contextPath(ref.value.fsPath),
                     text,
                 });
             } else if (typeof ref.value === 'string') {
                 references.push({
-                    text: filterFileContents(ref.value),
+                    text: contextFileContent(ref.value),
                 });
             } else {
                 logOutput('ERROR', 'Invalid reference type');

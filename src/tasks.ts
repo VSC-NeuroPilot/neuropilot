@@ -9,12 +9,13 @@ import * as vscode from 'vscode';
 import { RCEAction, RCEContext, RCEHandlerReturns, ActionHandlerResult, defineAction } from '@vsc-neuropilot/api-types';
 
 import { NEURO } from '@/constants';
-import { logOutput, formatActionID, getFence, checkWorkspaceTrust, checkVirtualWorkspace } from '@/utils/misc';
+import { logOutput, checkWorkspaceTrust, checkVirtualWorkspace } from '@/utils/misc';
 import { actionHandlerFailure, actionHandlerSuccess, actionValidationAccept, actionValidationFailure } from '@/utils/neuro_client';
 import { ACTIONS } from '@/config';
 import { notifyOnTaskFinish } from '@events/shells';
 import { addActions, getActions, removeActions } from './rce';
 import { updateActionStatus } from '@events/actions';
+import { formatActionName, getRequiredFence } from '@vsc-neuropilot/api-types/utils';
 
 export const CATEGORY_TASKS = 'Tasks';
 const CATEGORY_REGISTERED_TASKS = 'Registered Tasks';
@@ -92,7 +93,7 @@ export function taskEndedHandler(event: vscode.TaskEndEvent) {
                         _ => vscode.env.clipboard.readText(),
                     ).then(
                         text => {
-                            const fence = getFence(text);
+                            const fence = getRequiredFence(text);
                             NEURO.client?.sendContext(`Task finished! Output:\n\n${fence}\n${text}\n${fence}`);
                         },
                     );
@@ -117,7 +118,7 @@ export function reloadTasks() {
                 }
                 logOutput('INFO', `Adding task: ${task.name}`);
                 NEURO.tasks.push({
-                    id: formatActionID(task.name),
+                    id: formatActionName(task.name),
                     description: (task.detail?.length ?? 0) > 0 ? taskdesc : task.name,
                     task,
                 });
@@ -126,7 +127,7 @@ export function reloadTasks() {
                 const detail = task.detail?.substring(7).trim();
                 logOutput('INFO', `Adding Neuro task: ${task.name}`);
                 NEURO.tasks.push({
-                    id: formatActionID(task.name),
+                    id: formatActionName(task.name),
                     description: detail.length > 0 ? detail : task.name,
                     task,
                 });

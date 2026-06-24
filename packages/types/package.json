@@ -43,6 +43,7 @@
   },
   "exports": {
     ".": "./dist/index.mjs",
+    "./utils": "./dist/utils.mjs",
     "./package.json": "./package.json"
   },
   "sideEffects": false

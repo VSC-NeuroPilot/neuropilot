@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { PermissionLevel } from '@vsc-neuropilot/api-types';
+import { CursorPositionContextStyle, PermissionLevel } from '@vsc-neuropilot/api-types';
 
 
 import { NEURO } from '@/constants';
@@ -7,8 +7,6 @@ import { logOutput } from '@/utils/misc';
 import { getAction } from '@/rce';
 
 //#region Types
-
-export type CursorPositionContextStyle = 'off' | 'inline' | 'lineAndColumn' | 'both';
 
 export interface Permission {
     /** The ID of the permission in package.json, without the `neuropilot.permission.` prefix. */

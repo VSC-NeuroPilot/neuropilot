@@ -1,4 +1,4 @@
-import type { ActionHandlerResult, ActionValidationResult, Diff, DiffPlus, DiffRange, RCEAction, DiffPlusLine } from './actions/types';
+import type { ActionHandlerResult, ActionValidationResult, Diff, DiffPlus, DiffRange, RCEAction, DiffPlusLine, PositionContextOptions, PositionContext, CursorPositionContextStyle } from './actions/types';
 import type { CompanionAPI, CompanionAPIConstructor } from './companions/register';
 import type * as vscode from 'vscode';
 
@@ -66,6 +66,27 @@ interface ActionsListingUtils {
     }> | undefined;
 }
 
+interface ContextUtils {
+    /**
+     * Gets the context around a specified range in a document.
+     * If no range is specified, gets the entire document.
+     * Do not use the result of this for position calculations, as the file is filtered to remove Windows-style line endings.
+     * @param document The document to get the context from.
+     * @param options The options for getting the context. If passed a {@link vscode.Position}, it is used as `cursorPosition`, `position` and `position2`.
+     * @returns The context around the specified range. The amount of lines before and after the range is configurable in the settings.
+     */
+    getPositionContext(document: vscode.TextDocument, options: PositionContextOptions | vscode.Position): PositionContext;
+
+    /**
+     * Formats the context for sending to Neuro.
+     * Assumes the cursor is at the end of `contextBefore` + `contextBetween` and at the start of `contextAfter`.
+     * @param context The context to format.
+     * @param overrideCursorStyle If provided, overrides the cursor style setting for this context.
+     * @returns The formatted context.
+     */
+    formatContext(context: PositionContext, overrideCursorStyle?: CursorPositionContextStyle): string;
+}
+
 interface DiffUtils {
     /**
      * Calculate the diff between two sets of lines using the Patience diff algorithm.
@@ -120,35 +141,12 @@ interface DiffUtils {
 
 interface FilePathUtils {
     /**
-     * Simplifies the file path
-     * @param fileName The path of the file
-     */
-    simpleFileName(fileName: string): string;
-    /**
-     * Normalizes the path so it looks consistent when sending to Neuro.
-     * @param path The path to be normalized
-     */
-    normalizePath(path: string): string;
-    /**
      * Checks if a file is Neuro-safe, according to the rules the user has set in NeuroPilot's settings.
      *
      * It is recommended that you use this to check file paths if your actions are accessing a file for any reason.
      * @param path The path to the file. This utility expects an *absolute* path.
      */
     isPathNeuroSafe(path: string): boolean;
-}
-
-interface WorkspaceUtils {
-    /**
-     * Gets the full workspace uri that is normally targeted for operations.
-     * In multi-root workspaces this is the first open workspace.
-     */
-    getWorkspaceUri(): vscode.Uri | undefined;
-    /**
-     * Gets the full workspace path that is normally targeted for operations.
-     * (Same as calling {@link WorkspaceUtils.getWorkspaceUri getWorkspaceUri}.fsPath)
-     */
-    getWorkspacePath(): string | undefined;
 }
 
 interface Utils {
@@ -165,6 +163,10 @@ interface Utils {
      */
     actionsListing: ActionsListingUtils;
     /**
+     * Utilities for context messages
+     */
+    context: ContextUtils;
+    /**
      * Utilities for generating and applying diffs
      */
     diffs: DiffUtils;
@@ -172,10 +174,6 @@ interface Utils {
      * Utilities for working with file paths
      */
     filePaths: FilePathUtils;
-    /**
-     * Utilities for getting the current workspace
-     */
-    workspace: WorkspaceUtils;
 }
 
 export interface NeuroPilotAPI {

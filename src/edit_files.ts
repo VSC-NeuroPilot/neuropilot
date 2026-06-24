@@ -1,10 +1,10 @@
 import * as vscode from 'vscode';
 import { z } from 'zod';
 import type { ActionData } from 'neuro-game-sdk';
-import { RCEHandlerReturns, ActionValidationResult, RCEContext, DiffRangeType, defineAction } from '@vsc-neuropilot/api-types';
+import { RCEHandlerReturns, ActionValidationResult, RCEContext, DiffRangeType, defineAction, PositionContext } from '@vsc-neuropilot/api-types';
 
 import { NEURO } from '@/constants';
-import { escapeRegExp, getDiffRanges, getFence, getPositionContext, getProperty, getVirtualCursor, showDiffRanges, isPathNeuroSafe, logOutput, setVirtualCursor, simpleFileName, substituteMatch, clearDecorations, formatContext, filterFileContents, positionFromIndex, indexFromPosition, NeuroPositionContext } from '@/utils/misc';
+import { getDiffRanges, getPositionContext, getProperty, getVirtualCursor, showDiffRanges, isPathNeuroSafe, logOutput, setVirtualCursor, clearDecorations, formatContext, positionFromIndex, indexFromPosition } from '@/utils/misc';
 import { actionValidationAccept, actionValidationFailure, actionValidationRetry, actionHandlerSuccess, actionHandlerFailure } from '@/utils/neuro_client';
 import { CONFIG, CONNECTION } from '@/config';
 import { createCursorPositionChangedEvent } from '@events/cursor';
@@ -12,6 +12,7 @@ import { RCECancelEvent } from '@events/utils';
 import { addActions } from '@/rce';
 import { createPreviewCursor, createPreviewHighlight } from '@previews/edits';
 import { _LINE_RANGE_SCHEMA, _POSITION_SCHEMA, cancelOnDidChangeActiveTextEditor, commonCancelEvents, findAndFilter } from '@/utils/action_components';
+import { contextFileContent, contextPath, escapeRegExp, getRequiredFence, substituteMatch } from '@vsc-neuropilot/api-types/utils';
 
 export const CATEGORY_EDITING = 'Editing';
 
@@ -668,8 +669,8 @@ export const editFileActions = {
                 const document = vscode.window.activeTextEditor?.document;
                 if (document === undefined)
                     return actionValidationFailure(CONTEXT_NO_ACTIVE_DOCUMENT);
-                const fileContent = filterFileContents(document.getText());
-                if (!fileContent.includes(filterFileContents(search)))
+                const fileContent = contextFileContent(document.getText());
+                if (!fileContent.includes(contextFileContent(search)))
                     return actionValidationFailure('The search content was not found in the current document.');
 
                 return actionValidationAccept();
@@ -822,7 +823,7 @@ function returnHandleReplaceText(find: string, replaceWith: string, match: strin
         return actionHandlerFailure(CONTEXT_NO_ACCESS, STATUS_NO_ACCESS);
     }
 
-    const originalText = filterFileContents(document.getText());
+    const originalText = contextFileContent(document.getText());
     const regex = new RegExp(useRegex ? find : escapeRegExp(find), 'gm');
     const cursorOffset = indexFromPosition(originalText, getVirtualCursor()!);
 
@@ -845,13 +846,13 @@ function returnHandleReplaceText(find: string, replaceWith: string, match: strin
         if (success) {
             logOutput('INFO', 'Replacing text in document');
             const document = vscode.window.activeTextEditor!.document;
-            const newText = filterFileContents(document.getText());
+            const newText = contextFileContent(document.getText());
             if (matches.length === 1) {
                 // Single match
                 const startPosition = positionFromIndex(newText, matches[0].index);
                 const endPosition = positionFromIndex(newText, matches[0].index + substituteMatch(matches[0], replaceWith).length);
                 setVirtualCursor(endPosition);
-                const diffRanges = getDiffRanges(startPosition, matches[0][0], filterFileContents(document.getText(new vscode.Range(startPosition, endPosition))));
+                const diffRanges = getDiffRanges(startPosition, matches[0][0], contextFileContent(document.getText(new vscode.Range(startPosition, endPosition))));
                 showDiffRanges(vscode.window.activeTextEditor!, ...diffRanges);
                 const cursorContext = getPositionContext(document, { cursorPosition: endPosition, position: startPosition, position2: endPosition });
                 return actionHandlerSuccess(`Replaced text in document\n\n${formatContext(cursorContext)}`, `Replaced ${matches.length} occurrence`);
@@ -891,7 +892,7 @@ function returnHandleDeleteText(find: string, match: string, useRegex = false, l
         return actionHandlerFailure(CONTEXT_NO_ACCESS, STATUS_NO_ACCESS);
     }
 
-    const originalText = filterFileContents(document.getText());
+    const originalText = contextFileContent(document.getText());
 
     const regex = new RegExp(useRegex ? find : escapeRegExp(find), 'gm');
     const cursorOffset = indexFromPosition(originalText, getVirtualCursor()!);
@@ -909,7 +910,7 @@ function returnHandleDeleteText(find: string, match: string, useRegex = false, l
         if (success) {
             logOutput('INFO', 'Deleting text from document');
             const document = vscode.window.activeTextEditor!.document;
-            const newText = filterFileContents(document.getText());
+            const newText = contextFileContent(document.getText());
             if (matches.length === 1) {
                 // Single match
                 const position = positionFromIndex(newText, matches[0].index);
@@ -1045,7 +1046,7 @@ function returnHandleDeleteLines(startLine: number, endLine: number) {
             const relativePath = vscode.workspace.asRelativePath(vscode.window.activeTextEditor!.document.uri);
             // Defer cursor update until edits have fully settled
             const documentPost = vscode.window.activeTextEditor!.document;
-            let cursorContext: NeuroPositionContext;
+            let cursorContext: PositionContext;
             if (startLine <= 1) {
                 // If deleting from the first line, place cursor at start of new first line
                 const cursorPosition = new vscode.Position(0, 0);
@@ -1162,15 +1163,15 @@ function returnHandleDiffPatch(diff: string, moveCursor = false) {
 
     // Parse the diff patch
     const parsedDiff = parseDiffPatch(diff)!;
-    parsedDiff.search = filterFileContents(parsedDiff.search);
-    parsedDiff.replace = filterFileContents(parsedDiff.replace);
+    parsedDiff.search = contextFileContent(parsedDiff.search);
+    parsedDiff.replace = contextFileContent(parsedDiff.replace);
     const { search, replace } = parsedDiff;
 
     // Find the search text in the document
-    const filteredText = filterFileContents(document.getText());
+    const filteredText = contextFileContent(document.getText());
     const searchIndex = filteredText.indexOf(search);
     if (searchIndex === -1) {
-        return actionHandlerFailure(`Search text not found in the document:\n\n${getFence(search)}\n${search}\n${getFence(search)}`, 'Search text not found');
+        return actionHandlerFailure(`Search text not found in the document:\n\n${getRequiredFence(search)}\n${search}\n${getRequiredFence(search)}`, 'Search text not found');
     }
     const startPosition = positionFromIndex(filteredText, searchIndex);
     const endPosition = positionFromIndex(filteredText, searchIndex + search.length);
@@ -1178,7 +1179,7 @@ function returnHandleDiffPatch(diff: string, moveCursor = false) {
     // Check for multiple occurrences
     const secondOccurrence = filteredText.indexOf(search, searchIndex + 1);
     if (secondOccurrence !== -1) {
-        return actionHandlerFailure(`Multiple occurrences of search text found. Please use a longer search term for a unique match:\n\n${getFence(search)}\n${search}\n${getFence(search)}`, 'Multiple occurrences found');
+        return actionHandlerFailure(`Multiple occurrences of search text found. Please use a longer search term for a unique match:\n\n${getRequiredFence(search)}\n${search}\n${getRequiredFence(search)}`, 'Multiple occurrences found');
     }
 
     // Perform the replacement
@@ -1241,7 +1242,7 @@ function returnHandleReplaceUserSelection(content: string) {
 
     const edit = new vscode.WorkspaceEdit();
     const selection = editor.selection;
-    const originalText = filterFileContents(document.getText(selection));
+    const originalText = contextFileContent(document.getText(selection));
     edit.replace(document.uri, selection, content);
 
     setVirtualCursor(selection.end);
@@ -1314,7 +1315,7 @@ export function editorChangeHandler(editor: vscode.TextEditor | undefined) {
 
         // Tell Neuro that the editor changed
         if (isPathNeuroSafe(uri.fsPath)) {
-            const file = simpleFileName(editor.document.fileName);
+            const file = contextPath(editor.document.fileName);
             const cursor = getVirtualCursor()!;
             const context = getPositionContext(editor.document, cursor);
             let text = `Switched to file ${file}.`;
@@ -1421,7 +1422,7 @@ export async function handleSendSelectionToNeuro(): Promise<void> {
     }
     const relativePath = vscode.workspace.asRelativePath(document.uri);
     const selectedText = document.getText(selection);
-    const fence = getFence(selectedText);
+    const fence = getRequiredFence(selectedText);
     const startLine = selection.start.line + 1;
     const startCol = selection.start.character + 1;
     const endLine = selection.end.line + 1;
