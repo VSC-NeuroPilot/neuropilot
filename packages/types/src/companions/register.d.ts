@@ -1,5 +1,5 @@
 import { Disposable, Event, Position, ExtensionContext, Extension, Uri, TextEditorDecorationType } from 'vscode';
-import { ActionForceParams, ActionsEventData, InjectionBaseData, RCEAction } from '../actions/types';
+import { ActionForceParams, ActionsEventData, InjectionBaseData, RCEAction, SchemaTypes } from '../actions/types';
 import { Contributions } from './enum';
 import { RCECancelEventConstructor } from '../actions';
 
