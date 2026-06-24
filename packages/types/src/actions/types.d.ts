@@ -1,6 +1,6 @@
 import { ActionForcePriorityEnum, Action, type NeuroClient } from 'neuro-game-sdk';
 import type { JSONSchema7 } from 'json-schema';
-import { Range } from 'vscode';
+import { Range, Position } from 'vscode';
 import type { StandardJSONSchemaV1 } from '@standard-schema/spec';
 
 import type { PermissionLevel, DiffRangeType } from './enums';
@@ -326,11 +326,11 @@ export interface PositionContext {
 // Original name: NeuroPositionContextOptions
 export interface PositionContextOptions {
     /** The position of the cursor in the document. */
-    cursorPosition?: vscode.Position;
+    cursorPosition?: Position;
     /** The start of the range around which to get the context. Defaults to the start of the document if not provided. */
-    position?: vscode.Position;
+    position?: Position;
     /** The end of the range around which to get the context. If not provided, defaults to {@link PositionContextOptions.position position}, or the end of the document if {@link PositionContextOptions.position position} is not provided. */
-    position2?: vscode.Position;
+    position2?: Position;
 }
 
 export type CursorPositionContextStyle = 'off' | 'inline' | 'lineAndColumn' | 'both';
