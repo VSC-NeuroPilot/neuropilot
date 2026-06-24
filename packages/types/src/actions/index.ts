@@ -1,6 +1,6 @@
 import { SchemaTypes, InferDataFromSchema, RCEAction } from './types';
 
-export type * from './classes.d';
+export type * from './classes';
 export * from './enums';
 export type * from './types';
 
