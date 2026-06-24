@@ -5,6 +5,7 @@ import { NEURO } from '@/constants';
 import { ViewMessage, ViewProviderMessage } from '@typing/views/companions';
 
 export class CompanionsViewProvider extends BaseWebviewViewProvider<ViewMessage, ViewProviderMessage> {
+    static readonly viewId: string = 'neuropilot.companionsView';
     constructor() {
         super('companions/main.js', ['companions/style.css']);
         const event = onDidCompanionChange((c) => {
