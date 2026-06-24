@@ -31,7 +31,8 @@ export interface CompanionAPI extends Disposable {
      * @param actions An array of {@link RCEAction actions} that will be registered.
      * @param register Whether or not these actions should be immediately registered to Neuro. This does not effect your ability to register the action at any point, this simply acts as a shorthand.
      */
-    addActions(actions: RCEAction[], register?: boolean): void;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    addActions(actions: RCEAction<any, SchemaTypes, any>[], register?: boolean): void;
 
     /**
      * Remove an action from NeuroPilot's actions registry.

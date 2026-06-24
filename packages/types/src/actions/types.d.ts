@@ -49,7 +49,11 @@ export type InferDataFromSchema<TSchema extends SchemaTypes> =
  * 
  * You may optionally type the interface if you are sure the action will take a specific form.
  */
-export interface RCEAction<TData extends unknown | undefined = undefined, TSchema extends SchemaTypes = SchemaTypes, TDataShape extends unknown | undefined = TData extends undefined ? InferDataFromSchema<TSchema> : TData> extends Omit<Action, 'schema'> {
+export interface RCEAction<
+    TData extends unknown | undefined = undefined,
+    TSchema extends SchemaTypes = SchemaTypes,
+    TDataShape extends unknown | undefined = TData extends undefined ? InferDataFromSchema<TSchema> : TData,
+> extends Omit<Action, 'schema'> {
     /**
      * A valid JSON Schema or Standard JSON Schema that describes the action's parameters.
      * Standard JSON Schemas (like Zod v4+) will be automatically converted to JSON Schema before registration.
