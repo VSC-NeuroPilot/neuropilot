@@ -13,7 +13,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/VSC-NeuroPilot/neuropilot",
+    "url": "git+https://github.com/VSC-NeuroPilot/neuropilot.git",
     "directory": "packages/cli"
   },
   "publishConfig": {
@@ -23,7 +23,7 @@
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
-    "prepare": "pnpm build || true",
+    "prepare": "pnpm run build",
     "start": "node ./bin/index.js"
   },
   "keywords": [],

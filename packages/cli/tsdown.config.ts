@@ -6,4 +6,5 @@ export default defineConfig({
         dir: './bin',
         minify: true,
     },
+    publint: true,
 });

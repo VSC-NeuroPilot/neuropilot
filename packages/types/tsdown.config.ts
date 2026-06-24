@@ -5,6 +5,7 @@ export default defineConfig({
     outputOptions: {
         dir: 'dist',
     },
+    publint: true,
     attw: true,
     exports: true,
     tsconfig: './tsconfig.json',
