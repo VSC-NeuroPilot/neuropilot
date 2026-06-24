@@ -19,6 +19,13 @@ For prereleases:
 - Pre-release versions (x.x.x-pre.x) are unstable releases for the designated API version. These contain work-in-progress types and annotations. Pre-release versions are not meant to be used except for trying out new API interfaces and giving feedback, and may change without prior programmatic or verbal notice. Pre-release versions are meant to be used with new builds from the `dev` branch of the base extension repo.
 - Release candidates (x.x.x-rc.x) are stable previews for the designated API version. These contain types that are more or less finalized for the designated release. Breaking changes should not be expected, both in type signature and functionality, but will always be highlighted in the changelog if necessary. This is also meant for feedback, but only for more subtle feedback before releasing that version such that it simply just contains bug fixes and very minor changes.
 
+## 1.0.0-pre.11
+
+### Fixed
+
+- `CompanionAPI.addActions` was causing type errors due to being too strict with typing the array input. It now uses the `RCEAction<any, SchemaTypes, any>[]` type for its first input, since we don't need to really type-check on it or anything.
+    - There may be a way to tighten the allowed types, but for now this should unblock.
+
 ## 1.0.0-pre.10
 
 ### Added
