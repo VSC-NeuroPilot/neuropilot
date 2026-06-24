@@ -6,5 +6,6 @@ export default defineConfig({
         dir: './bin',
         minify: true,
     },
+    tsconfig: './tsconfig.json',
     publint: true,
 });
