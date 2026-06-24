@@ -4,7 +4,7 @@ import { NeuroClient } from 'neuro-game-sdk';
 import globToRegExp from 'glob-to-regexp';
 import { fileTypeFromBuffer } from 'file-type';
 import { ActionValidationResult, DiffRange, DiffRangeType, PermissionLevel, CursorPositionContextStyle, PositionContext, PositionContextOptions } from '@vsc-neuropilot/api-types';
-import { contextFileContent, getRequiredFence } from '@vsc-neuropilot/api-types/utils';
+import { contextFileContent, getRequiredFence, normalizePath } from '@vsc-neuropilot/api-types/utils';
 
 import { NEURO } from '@/constants';
 import { ACCESS, CONFIG, CONNECTION, getPermissionLevel, setPermissionLevel } from '@/config';
@@ -246,14 +246,6 @@ export function getPositionContext(document: vscode.TextDocument, options: Posit
         totalLines: document.lineCount,
         cursorDefined: false,
     };
-}
-
-export function normalizePath(path: string): string {
-    let result = path.replace(/\\/g, '/');
-    if (/^[A-Z]:/.test(result)) {
-        result = result.charAt(0).toLowerCase() + result.slice(1);
-    }
-    return result;
 }
 
 /**

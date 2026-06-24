@@ -13,7 +13,7 @@ import { openDocsOnTarget, registerDocsCommands, registerDocsLink } from './docs
 import { sendChangelogOnDemand, loadAllChangelogs } from '@/changelog';
 import { moveCursorEmitterDiposable } from '@events/cursor';
 import { loadIgnoreFiles } from '@/utils/ignore_files';
-import { getWorkspacePath, normalizePath } from '@/utils/misc';
+import { getWorkspacePath } from '@/utils/misc';
 import { ActionsViewProvider } from '@/views/actions';
 import { ImagesViewProvider } from '@/views/image';
 import { ExecuteViewProvider, addCustomExecutionHistoryItem } from '@/views/execute';
@@ -21,7 +21,7 @@ import { actionsEventEmitterDisposable } from '@events/actions';
 import { filePreviewProvider } from '@previews/files';
 import { companionChangeEmitterDisposable } from '@events/companions';
 import { CompanionsViewProvider } from '@views/companions';
-import { contextPath, getRequiredFence, getWorkspaceUri } from '@vsc-neuropilot/api-types/utils';
+import { contextPath, getRequiredFence, getWorkspaceUri, normalizePath } from '@vsc-neuropilot/api-types/utils';
 
 // Shared commands
 export function registerCommonCommands() {

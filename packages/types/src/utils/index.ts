@@ -165,6 +165,22 @@ export function getWorkspaceUri(): vscode.Uri | undefined {
     return vscode.workspace.workspaceFolders?.[0]?.uri;
 }
 
+
+/**
+ * Normalize a path for comparisons.
+ * 
+ * Replaces Windows-style path separators with Unix-style ones.
+ * If the path has a drive letter, makes it lowercase.
+ * @param path The path to normalize.
+ */
+export function normalizePath(path: string): string {
+    let result = path.replace(/\\/g, '/');
+    if (/^[A-Z]:/.test(result)) {
+        result = result.charAt(0).toLowerCase() + result.slice(1);
+    }
+    return result;
+}
+
 //#endregion
 
 //#region Useful stuff

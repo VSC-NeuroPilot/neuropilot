@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { addTaskActions, handleTerminateTask, reloadTasks, taskEndedHandler } from '@/tasks';
 import { addTerminalActions, emergencyTerminalShutdown } from '@/pseudoterminal';
-import { isPathNeuroSafe, setVirtualCursor, normalizePath, getWorkspacePath } from '@/utils/misc';
+import { isPathNeuroSafe, setVirtualCursor, getWorkspacePath } from '@/utils/misc';
 import { NEURO } from '@/constants';
 import {
     initializeCommonState,
@@ -28,6 +28,7 @@ import { loadIgnoreFiles } from '@/utils/ignore_files';
 import { reregisterAllActions } from '@/rce';
 import { addCompleteCodeAction } from '@/completions';
 import { api } from '@/api';
+import { normalizePath } from '@vsc-neuropilot/api-types/utils';
 
 export function activate(context: vscode.ExtensionContext) {
     loadIgnoreFiles(
