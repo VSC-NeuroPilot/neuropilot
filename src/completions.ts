@@ -1,15 +1,16 @@
 import * as vscode from 'vscode';
 // this doesn't work because types or smth idk
 //import { ActionForcePriorityEnum } from 'neuro-game-sdk';
-import { PermissionLevel, ActionForcePriorityEnum, defineAction } from '@vsc-neuropilot/api-types';
+import { PermissionLevel, ActionForcePriorityEnum, defineAction, PositionContext } from '@vsc-neuropilot/api-types';
 
 import { z } from 'zod';
 
 import { NEURO } from '@/constants';
-import { logOutput, simpleFileName, getPositionContext, formatContext, NeuroPositionContext } from '@/utils/misc';
+import { logOutput, getPositionContext, formatContext } from '@/utils/misc';
 import { CONFIG, CONNECTION } from '@/config';
 import { actionHandlerFailure, actionHandlerSuccess, actionValidationAccept, actionValidationFailure, actionValidationRetry } from '@/utils/neuro_client';
 import { abortActionForce, addActions, canForceActions, tryForceActions } from '@/rce';
+import { contextPath } from '@vsc-neuropilot/api-types/utils';
 
 let lastSuggestions: string[] = [];
 let requestCancelled = false;
@@ -61,7 +62,7 @@ export function addCompleteCodeAction() {
 }
 
 // TODO: Figure out maxCount properly
-export function requestCompletion(cursorContext: NeuroPositionContext, fileName: string, language: string, maxCount: number) {
+export function requestCompletion(cursorContext: PositionContext, fileName: string, language: string, maxCount: number) {
     // If completions are disabled, notify and return early.
     if (CONFIG.completionTrigger === 'off') {
         if (!NEURO.warnOnCompletionsOff) {
@@ -135,7 +136,7 @@ export const completionsProvider: vscode.InlineCompletionItemProvider = {
 
         // Get context
         const cursorContext = getPositionContext(document, position);
-        const fileName = simpleFileName(document.fileName);
+        const fileName = contextPath(document.fileName);
         const maxCount = CONFIG.maxCompletions || 3;
 
         requestCompletion(cursorContext, fileName, document.languageId, maxCount);

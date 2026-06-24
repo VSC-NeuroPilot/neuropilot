@@ -6,7 +6,7 @@ import { actionHandlerFailure, actionHandlerRetry, actionHandlerSuccess, actionV
 import { Companion } from './companions';
 import { getAction, getActions } from '@/rce';
 import { findByToken } from '@/plugins';
-import { getDiffRanges, getWorkspacePath, getWorkspaceUri, isPathNeuroSafe, normalizePath, showDiffRanges, simpleFileName } from '@/utils/misc';
+import { formatContext, getDiffRanges, getPositionContext, isPathNeuroSafe, showDiffRanges } from '@/utils/misc';
 import { patienceDiff, patienceDiffPlus } from '@/patience_diff';
 import { CONFIG, CONNECTION } from '@/config';
 
@@ -73,6 +73,10 @@ export const api: NeuroPilotAPI = {
                 };
             },
         },
+        context: {
+            getPositionContext,
+            formatContext,
+        },
         diffs: {
             calculateDiff(oldLines: string[], newLines: string[]) {
                 const diff = patienceDiff(oldLines, newLines);
@@ -106,13 +110,7 @@ export const api: NeuroPilotAPI = {
             },
         },
         filePaths: {
-            simpleFileName,
-            normalizePath,
             isPathNeuroSafe,
-        },
-        workspace: {
-            getWorkspaceUri,
-            getWorkspacePath,
         },
     },
     config: new Config(),

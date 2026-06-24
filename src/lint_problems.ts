@@ -4,12 +4,13 @@ import { RCEContext, ActionValidationResult, ActionHandlerResult, defineAction }
 import { z } from 'zod';
 
 import { EXCEPTION_THROWN_STRING, NEURO } from '@/constants';
-import { normalizePath, getWorkspacePath, logOutput, isPathNeuroSafe, getWorkspaceUri } from '@/utils/misc';
+import { getWorkspacePath, logOutput, isPathNeuroSafe } from '@/utils/misc';
 import { CONFIG } from '@/config';
 import { filePreviewProvider } from '@/previews/files';
 import { actionValidationAccept, actionValidationFailure, actionValidationRetry, actionHandlerSuccess, actionHandlerFailure } from '@/utils/neuro_client';
 import { targetedFileLintingResolvedEvent, targetedFolderLintingResolvedEvent, workspaceLintingResolvedEvent } from '@events/linting';
 import { addActions } from '@/rce';
+import { getWorkspaceUri, normalizePath } from '@vsc-neuropilot/api-types/utils';
 
 export const CATEGORY_LINTING = 'Linting';
 

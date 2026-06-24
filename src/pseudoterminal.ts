@@ -10,11 +10,12 @@ import { RCEContext, ActionValidationResult, RCEHandlerReturns, ActionHandlerRes
 import { z } from 'zod';
 
 import { NEURO } from '@/constants';
-import { checkWorkspaceTrust, checkVirtualWorkspace, logOutput, delayAsync, getFence } from '@/utils/misc';
+import { checkWorkspaceTrust, checkVirtualWorkspace, logOutput, delayAsync } from '@/utils/misc';
 import { actionValidationAccept, actionValidationFailure, actionHandlerFailure, actionHandlerSuccess } from '@/utils/neuro_client';
 import { CONFIG } from '@/config';
 import { notifyOnTerminalClose } from '@events/shells';
 import { addActions } from '@/rce';
+import { getRequiredFence } from '@vsc-neuropilot/api-types/utils';
 
 export const CATEGORY_TERMINAL = 'Terminal Access';
 
@@ -226,7 +227,7 @@ function returnHandleRunCommand(command: string, shell: string) {
         const cachedOutput = session.outputStdout;
         await delayAsync(delay);
         if (session.outputStdout === cachedOutput) {
-            const fence = getFence(session.outputStdout!);
+            const fence = getRequiredFence(session.outputStdout!);
             NEURO.client?.sendContext(
                 `The ${shell} terminal outputted the following to stdout:\n\n${fence}\n${session.outputStdout!.replace(/\x1b\[[\x30-\x3F]*[\x20-\x2F]*[\x40-\x7F]|\x1b\]0;.+\r?\n/g, '')}\n${fence}`,
                 false,
@@ -239,7 +240,7 @@ function returnHandleRunCommand(command: string, shell: string) {
         const cachedOutput = session.outputStderr;
         await delayAsync(delay);
         if (session.outputStderr === cachedOutput) {
-            const fence = getFence(session.outputStderr!);
+            const fence = getRequiredFence(session.outputStderr!);
             NEURO.client?.sendContext(
                 `The ${shell} terminal outputted the following to stderr:\n\n${fence}\n${session.outputStderr!.replace(/\x1b\[[\x30-\x3F]*[\x20-\x2F]*[\x40-\x7F]|\x1b\]0;.+\r?\n/g, '')}\n${fence}`,
                 false,

@@ -19,6 +19,39 @@ For prereleases:
 - Pre-release versions (x.x.x-pre.x) are unstable releases for the designated API version. These contain work-in-progress types and annotations. Pre-release versions are not meant to be used except for trying out new API interfaces and giving feedback, and may change without prior programmatic or verbal notice. Pre-release versions are meant to be used with new builds from the `dev` branch of the base extension repo.
 - Release candidates (x.x.x-rc.x) are stable previews for the designated API version. These contain types that are more or less finalized for the designated release. Breaking changes should not be expected, both in type signature and functionality, but will always be highlighted in the changelog if necessary. This is also meant for feedback, but only for more subtle feedback before releasing that version such that it simply just contains bug fixes and very minor changes.
 
+## 1.0.0-pre.10
+
+### Added
+
+- 11 utility functions were added to the package with the new `./utils` partition:
+    - `contextPath` - Process a path for usage in context.
+    - `contextFileContent` - Process the contents of a text file for usage in context.
+    - `substituteMatch` - Get the string that would be inserted for a specified match.
+    - `splitIdentifier` - Split an identifier into an array of words.
+    - `toTitleCase` - Convert a string to Title Case.
+    - `formatActionName` - Turn an arbitrary string into a valid action name.
+    - `getWorkspaceUri` - Get the main workspace URI.
+    - `normalizePath` - Normalize a path for comparisons.
+    - `escapeRegExp` - Escape RegExp control characters.
+    - `getMaxFenceLength` - Search for the longest fence (at least 3 backticks in a row) in the given text.
+    - `getRequiredFence` - Gets the minimum fence required to enclose the given text.
+- 2 interfaces and 1 type were added:
+    - `PositionContext`
+    - `PositionContextOptions`
+    - `CursorPositionContextStyle`
+- 2 new functions were added to the API:
+    - `getPositionContext` - Get the context around a specified range in a document.
+    - `formatContext` - Format the context for sending to Neuro.
+
+### Removed
+
+- 2 file path utils were removed from the API:
+    - `simpleFileName` is replaced by `contextPath` in the utils partition (same functionality).
+    - `normalizePath` is replaced by `contextPath` in the utils partition (same functionality, corrected documentation).
+- Workspace utils were removed from the API:
+    - `getWorkspaceUri` is now exported directly by the utils partition.
+    - `getWorkspacePath` is unnecessary, the path can be obtained using `getWorkspaceUri`.
+
 ## 1.0.0-pre.9
 
 ### Added

@@ -3,10 +3,11 @@ import { ActionHandlerResult, PermissionLevel, defineAction } from '@vsc-neuropi
 import { z } from 'zod';
 
 import { EXCEPTION_THROWN_STRING, NEURO } from '@/constants';
-import { getFence, logOutput } from '@/utils/misc';
+import { logOutput } from '@/utils/misc';
 import { actionHandlerFailure, actionHandlerSuccess } from '@/utils/neuro_client';
 import { CONNECTION } from '@/config';
 import { addActions, CATEGORY_MISC } from './rce';
+import { getRequiredFence } from '@vsc-neuropilot/api-types/utils';
 
 const MEMENTO_KEY = 'lastDeliveredChangelogVersion';
 
@@ -97,7 +98,7 @@ export async function readAndStructureChangelog(name = 'NeuroPilot', fromVersion
         }
 
         const md = selected.map(s => `## ${s.version}\n\n${s.body.trim()}`).join('\n\n');
-        const fence = getFence(md);
+        const fence = getRequiredFence(md);
         const messageParts: string[] = [];
         messageParts.push(`Changelog entries from ${startVersion} to ${endVersion}:`);
         if (note) messageParts.push(note);

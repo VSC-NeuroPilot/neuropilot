@@ -4,7 +4,7 @@ import { PermissionLevel } from '@vsc-neuropilot/api-types';
 import { setPermissions } from '@/config';
 import { BaseWebviewViewProvider } from './base';
 import { getExtendedActionsInfo } from '@/rce';
-import { toTitleCase } from '@/utils/misc';
+import { toTitleCase } from '@vsc-neuropilot/api-types/utils';
 import type { ActionsViewMessage, ActionsViewProviderMessage, SettingsContext, ActionNode } from '@typing/views/actions';
 
 export class ActionsViewProvider extends BaseWebviewViewProvider<ActionsViewMessage, ActionsViewProviderMessage> {

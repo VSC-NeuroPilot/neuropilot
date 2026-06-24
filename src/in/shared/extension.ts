@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { PermissionLevel } from '@vsc-neuropilot/api-types';
 
 import { NEURO, EXTENSIONS } from '@/constants';
-import { logOutput, createClient, onClientConnected, setVirtualCursor, showAPIMessage, disconnectClient, reconnectClient, getWorkspaceUri, getFence, simpleFileName } from '@/utils/misc';
+import { logOutput, createClient, onClientConnected, setVirtualCursor, showAPIMessage, disconnectClient, reconnectClient } from '@/utils/misc';
 import { completionsProvider } from '@/completions';
 import { giveCookie } from '@/functions/cookies';
 import { ACCESS, ACTIONS, checkDeprecatedSettings, CONFIG, CONNECTION, setPermissions } from '@/config';
@@ -13,7 +13,7 @@ import { openDocsOnTarget, registerDocsCommands, registerDocsLink } from './docs
 import { sendChangelogOnDemand, loadAllChangelogs } from '@/changelog';
 import { moveCursorEmitterDiposable } from '@events/cursor';
 import { loadIgnoreFiles } from '@/utils/ignore_files';
-import { getWorkspacePath, normalizePath } from '@/utils/misc';
+import { getWorkspacePath } from '@/utils/misc';
 import { ActionsViewProvider } from '@/views/actions';
 import { ImagesViewProvider } from '@/views/image';
 import { ExecuteViewProvider, addCustomExecutionHistoryItem } from '@/views/execute';
@@ -21,6 +21,7 @@ import { actionsEventEmitterDisposable } from '@events/actions';
 import { filePreviewProvider } from '@previews/files';
 import { companionChangeEmitterDisposable } from '@events/companions';
 import { CompanionsViewProvider } from '@views/companions';
+import { contextPath, getRequiredFence, getWorkspaceUri, normalizePath } from '@vsc-neuropilot/api-types/utils';
 
 // Shared commands
 export function registerCommonCommands() {
@@ -496,7 +497,7 @@ export function sendCurrentFile() {
         return;
     }
     const document = editor.document;
-    const fileName = simpleFileName(document.fileName);
+    const fileName = contextPath(document.fileName);
     const language = document.languageId;
     const text = document.getText();
 
@@ -507,6 +508,6 @@ export function sendCurrentFile() {
     }
 
     logOutput('INFO', 'Sending current file to Neuro API');
-    const fence = getFence(text);
+    const fence = getRequiredFence(text);
     NEURO.client?.sendContext(`${CONNECTION.userName} sent you the contents of the file ${fileName}.\n\nContent:\n\n${fence}${language}\n${text}\n${fence}`);
 }
