@@ -5,6 +5,9 @@ export default defineConfig({
         index: 'src/index.ts',
         utils: 'src/utils/index.ts',
     },
+    deps: {
+        neverBundle: ['vscode'],
+    },
     outputOptions: {
         dir: 'dist',
     },

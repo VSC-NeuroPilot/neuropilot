@@ -2,7 +2,6 @@
   "name": "@vsc-neuropilot/api-types",
   "version": "1.0.0-pre.9",
   "type": "module",
-  "types": "./dist/index.d.mts",
   "files": [
     "dist",
     "CHANGELOG.md",
