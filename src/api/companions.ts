@@ -60,7 +60,7 @@ export class Companion extends Disposable implements CompanionAPI {
         removeActions(actionList);
     };
 
-    @validateContributions(Contributions.ACTIONS_MANAGE, Contributions.ACTIONS_MANAGE_OTHERS)
+    @validateContributions(Contributions.ACTIONS_MANAGE)
     registerAction(action: string) {
         if (!this.data.contributes.includes(Contributions.ACTIONS_MANAGE_OTHERS)) {
             const actionObject = getAction(action);
@@ -71,7 +71,7 @@ export class Companion extends Disposable implements CompanionAPI {
         registerAction(action);
     };
 
-    @validateContributions(Contributions.ACTIONS_MANAGE, Contributions.ACTIONS_MANAGE_OTHERS)
+    @validateContributions(Contributions.ACTIONS_MANAGE)
     unregisterAction(action: string) {
         if (!this.data.contributes.includes(Contributions.ACTIONS_MANAGE_OTHERS)) {
             const actionObject = getAction(action);
