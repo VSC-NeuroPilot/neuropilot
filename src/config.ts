@@ -544,9 +544,6 @@ export function setPermissionLevel(actionName: string, level: PermissionLevel, t
 class Config {
     get beforeContext(): number { return getConfig('beforeContext')!; }
     get afterContext(): number { return getConfig('afterContext')!; }
-    get maxCompletions(): number { return getConfig('maxCompletions')!; }
-    get completionTrigger(): string { return getConfig('completionTrigger')!; }
-    get timeout(): number { return getConfig('timeout')!; }
     get showTimeOnTerminalStart(): boolean { return getConfig('showTimeOnTerminalStart')!; }
     get terminalContextDelay(): number { return getConfig('terminalContextDelay')!; }
     get sendNewLintingProblemsOn(): string { return getConfig('sendNewLintingProblemsOn')!; }

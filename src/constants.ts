@@ -120,7 +120,7 @@ export const NEURO: Neuro = {
     },
 };
 
-// this will likely be transformed for a different use later when the API rolls around
+// TODO: this will likely be transformed for a different use later when the API rolls around
 interface ExtensionDependencies {
     copilotChat: boolean;
 }

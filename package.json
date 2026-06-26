@@ -191,12 +191,12 @@
 					"neuropilot.beforeContext": {
 						"type": "integer",
 						"default": 500,
-						"description": "The number of lines before the cursor position to include as context when editing a file or sending a completion request"
+						"description": "The number of lines before the cursor position to include as context when editing a file."
 					},
 					"neuropilot.afterContext": {
 						"type": "integer",
 						"default": 500,
-						"description": "The number of lines after the cursor position to include as context when editing a file or sending a completion request"
+						"description": "The number of lines after the cursor position to include as context when editing a file."
 					},
 					"neuropilot.includePattern": {
 						"markdownDeprecationMessage": "This setting has been moved to `neuropilot.access.includePattern`."
@@ -546,7 +546,7 @@
 					},
 					"neuropilot.connection.nameOfAPI": {
 						"type": "string",
-						"markdownDescription": "Who is currently acting as the Neuro API server?\nThis only changes the name in certain areas (such as Copilot-mode requests or Git commit messages) due to limitations.\n\nYou can add custom characters using `settings.json` if you ignore the lint error from VS Code.\n\n(Most) names mentioned here are not associated with NeuroPilot.",
+						"markdownDescription": "Who is currently acting as the Neuro API server?\nThis only changes the name in certain areas (such as Copilot-mode requests) due to limitations.\n\nYou can add custom characters using `settings.json` if you ignore the lint error from VS Code.\n\n(Most) names mentioned here are not associated with NeuroPilot.",
 						"default": "Neuro",
 						"enum": [
 							"Neuro",
@@ -704,7 +704,7 @@
 	"capabilities": {
 		"virtualWorkspaces": {
 			"supported": "limited",
-			"description": "In virtual workspaces, Terminal, Tasks, Git support (restricted on web) and Copilot Chat mode (restricted on web) is not available."
+			"description": "In virtual workspaces, Terminal and Tasks are not available."
 		},
 		"untrustedWorkspaces": {
 			"supported": "limited",
