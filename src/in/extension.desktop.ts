@@ -21,12 +21,10 @@ import {
     showUpdateReminder,
     startupCreateClient,
 } from './shared/extension';
-import { addChatAction, registerChatParticipant } from '@/chat';
 import { addCommonUnsupervisedActions, registerUnsupervisedHandlers } from '@entry/shared/unsupervised';
 import { registerSendSelectionToNeuro } from '../edit_files';
 import { loadIgnoreFiles } from '@/utils/ignore_files';
 import { reregisterAllActions } from '@/rce';
-import { addCompleteCodeAction } from '@/completions';
 import { api } from '@/api';
 import { normalizePath } from '@vsc-neuropilot/api-types/utils';
 
@@ -59,9 +57,6 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Desktop-specific handlers
     NEURO.context!.subscriptions.push(vscode.tasks.onDidEndTask(taskEndedHandler));
-
-    // Chat participant (desktop-specific setup)
-    registerChatParticipant();
 
     // Setup client connected handlers
     setupClientConnectedHandlers(reloadTasks, () => reregisterAllActions(false), registerUnsupervisedHandlers); // reloadTasks added to set it up at the same time
@@ -107,8 +102,6 @@ function reloadDesktopPermissions() {
 
 function addUnsupervisedActions() {
     addCommonUnsupervisedActions();
-    addChatAction();
-    addCompleteCodeAction();
     addTaskActions();
     addTerminalActions();
 }

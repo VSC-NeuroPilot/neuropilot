@@ -3,7 +3,6 @@ import { PermissionLevel } from '@vsc-neuropilot/api-types';
 
 import { NEURO, EXTENSIONS } from '@/constants';
 import { logOutput, createClient, onClientConnected, setVirtualCursor, showAPIMessage, disconnectClient, reconnectClient } from '@/utils/misc';
-import { completionsProvider } from '@/completions';
 import { giveCookie } from '@/functions/cookies';
 import { ACCESS, ACTIONS, checkDeprecatedSettings, CONFIG, CONNECTION, setPermissions } from '@/config';
 import { explainWithNeuro, fixWithNeuro, NeuroCodeActionsProvider, sendDiagnosticsDiff } from '@/lint_problems';
@@ -142,7 +141,6 @@ export function setupCommonProviders() {
     NEURO.viewProviders.execute = new ExecuteViewProvider();
     NEURO.viewProviders.companions = new CompanionsViewProvider();
     const providers = [
-        vscode.languages.registerInlineCompletionItemProvider({ pattern: '**' }, completionsProvider),
         vscode.languages.registerCodeActionsProvider(
             { scheme: 'file' },
             new NeuroCodeActionsProvider(),
