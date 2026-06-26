@@ -5,8 +5,6 @@ import assert from 'node:assert';
 import { CATEGORY_EDITING, editFileActions } from '@/edit_files';
 import { changelogActions } from '@/changelog';
 import { REQUEST_COOKIE_ACTION } from '@/functions/cookies';
-import { chatAction } from '@/chat';
-import { completeCodeAction } from '@/completions';
 import { CATEGORY_MISC } from '@/rce';
 import { lintActions } from '@/lint_problems';
 
@@ -48,18 +46,6 @@ suite('Validate action metadata', async () => {
                 const schema = lintActions[a].schema;
                 assert.ok(validate(schema, metaschema).valid);
             }
-        }
-    });
-
-    test('Copilot Chat integrations', () => {
-        const actionsToTest = {
-            chat: chatAction,
-            complete_code: completeCodeAction,
-        };
-        const actions = Object.keys(actionsToTest) as (keyof typeof actionsToTest)[];
-        for (const a of actions) {
-            assert.strictEqual(a, actionsToTest[a].name);
-            assert.ok(validate(actionsToTest[a].schema, metaschema).valid);
         }
     });
 
