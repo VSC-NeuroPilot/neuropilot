@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
-import { ActionHandlerResult, PermissionLevel, defineAction } from '@vsc-neuropilot/api-types';
+import { ActionHandlerResult, PermissionLevel } from '@vsc-neuropilot/api-types';
+import { defineAction } from '@vsc-neuropilot/api-types/utils';
 import { z } from 'zod';
 
 import { EXCEPTION_THROWN_STRING, NEURO } from '@/constants';

@@ -6,7 +6,8 @@
 
 import * as vscode from 'vscode';
 import { spawn, ChildProcessWithoutNullStreams } from 'node:child_process';
-import { RCEContext, ActionValidationResult, RCEHandlerReturns, ActionHandlerResult, defineAction } from '@vsc-neuropilot/api-types';
+import { RCEContext, ActionValidationResult, RCEHandlerReturns, ActionHandlerResult } from '@vsc-neuropilot/api-types';
+import { defineAction } from '@vsc-neuropilot/api-types/utils';
 import { z } from 'zod';
 
 import { NEURO } from '@/constants';

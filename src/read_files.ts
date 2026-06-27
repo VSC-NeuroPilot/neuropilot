@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
-import { defineAction, PositionContext, RCEContext, RCEHandlerReturns } from '@vsc-neuropilot/api-types';
+import { PositionContext, RCEContext, RCEHandlerReturns } from '@vsc-neuropilot/api-types';
+import { defineAction } from '@vsc-neuropilot/api-types/utils';
 import assert from 'node:assert';
 import { z } from 'zod';
 

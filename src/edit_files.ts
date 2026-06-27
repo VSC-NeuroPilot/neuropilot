@@ -1,7 +1,8 @@
 import * as vscode from 'vscode';
 import { z } from 'zod';
 import type { ActionData } from 'neuro-game-sdk';
-import { RCEHandlerReturns, ActionValidationResult, RCEContext, DiffRangeType, defineAction, PositionContext } from '@vsc-neuropilot/api-types';
+import { RCEHandlerReturns, ActionValidationResult, RCEContext, DiffRangeType, PositionContext } from '@vsc-neuropilot/api-types';
+import { defineAction } from '@vsc-neuropilot/api-types/utils';
 
 import { NEURO } from '@/constants';
 import { getDiffRanges, getPositionContext, getProperty, getVirtualCursor, showDiffRanges, isPathNeuroSafe, logOutput, setVirtualCursor, clearDecorations, formatContext, positionFromIndex, indexFromPosition } from '@/utils/misc';

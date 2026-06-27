@@ -6,7 +6,8 @@
 
 import * as vscode from 'vscode';
 
-import { RCEAction, RCEContext, RCEHandlerReturns, ActionHandlerResult, defineAction } from '@vsc-neuropilot/api-types';
+import { RCEAction, RCEContext, RCEHandlerReturns, ActionHandlerResult } from '@vsc-neuropilot/api-types';
+import { defineAction } from '@vsc-neuropilot/api-types/utils';
 
 import { NEURO } from '@/constants';
 import { logOutput, checkWorkspaceTrust, checkVirtualWorkspace } from '@/utils/misc';

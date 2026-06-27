@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import assert from 'node:assert';
-import { RCEContext, ActionValidationResult, ActionHandlerResult, defineAction } from '@vsc-neuropilot/api-types';
+import { RCEContext, ActionValidationResult, ActionHandlerResult } from '@vsc-neuropilot/api-types';
+import { defineAction } from '@vsc-neuropilot/api-types/utils';
 import { z } from 'zod';
 
 import { EXCEPTION_THROWN_STRING, NEURO } from '@/constants';
