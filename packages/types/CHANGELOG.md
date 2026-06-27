@@ -21,6 +21,10 @@ For prereleases:
 
 ## 1.0.0-pre.14
 
+### Breaking changes
+
+- `defineAction` is now imported from `/utils` instead of the main entrypoint.
+
 ### Fixed
 
 - Fixed `registerAction` and `unregisterAction` always requiring the `actions:manage_others` contribution point.
