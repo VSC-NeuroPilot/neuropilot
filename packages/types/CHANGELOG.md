@@ -35,6 +35,10 @@ For prereleases:
     - `defineSetupHook` for defining a context setup hook.
     - Note that these are meant to be used standalone, so you can get type hints if you want to reuse these components across actions. If you're already defining an action via `defineAction` and don't need to reuse those components across actions, you shouldn't need to use these helper functions (and is discouraged since it can overcomplicate type checking).
 
+### Changed
+
+- Cancel event predicates are now typed as `(event: T) => boolean | Thenable<boolean>`, which no longer restricts you to using `Promise`s.
+
 ## 1.0.0-pre.14
 
 ### Breaking changes

@@ -131,7 +131,7 @@ export interface RCECancelEventInitializer<T = any> {
     /** The reason that will be used to log the cancellation. */
     logReason?: ReasonGenerator<T>;
     /** Events that will trigger the cancellation. If the predicate is null, the event will always trigger the cancellation. */
-    events?: [Event<T>, ((data: T) => boolean | Promise<boolean>) | null][];
+    events?: [Event<T>, ((data: T) => boolean | Thenable<boolean>) | null][];
 }
 
 export interface RCECancelEvent<T = any> {
