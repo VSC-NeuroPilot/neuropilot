@@ -21,6 +21,10 @@ For prereleases:
 
 ## 1.0.0-pre.15
 
+### Breaking changes
+
+ `contextSetupHook` was renamed to `contextSetupHooks`.
+
 ### Added
 
 - There are now some new helper functions exported from `./utils`, similar the `defineAction` helper:

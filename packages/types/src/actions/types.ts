@@ -146,7 +146,7 @@ export interface RCEAction<
      * 
      * These functions will be parallelised, so the same key should not be accessed from multiple functions.
      */
-    contextSetupHook?: ((context: RCEContext<TData, TSchema, TDataShape>) => Thenable<void>)[];
+    contextSetupHooks?: ((context: RCEContext<TData, TSchema, TDataShape>) => Thenable<void>)[];
 }
 
 /**
