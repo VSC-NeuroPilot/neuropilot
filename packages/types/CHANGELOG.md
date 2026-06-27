@@ -19,6 +19,22 @@ For prereleases:
 - Pre-release versions (x.x.x-pre.x) are unstable releases for the designated API version. These contain work-in-progress types and annotations. Pre-release versions are not meant to be used except for trying out new API interfaces and giving feedback, and may change without prior programmatic or verbal notice. Pre-release versions are meant to be used with new builds from the `dev` branch of the base extension repo.
 - Release candidates (x.x.x-rc.x) are stable previews for the designated API version. These contain types that are more or less finalized for the designated release. Breaking changes should not be expected, both in type signature and functionality, but will always be highlighted in the changelog if necessary. This is also meant for feedback, but only for more subtle feedback before releasing that version such that it simply just contains bug fixes and very minor changes.
 
+## 1.0.0-pre.15
+
+### Added
+
+- There are now some new helper functions exported from `./utils`, similar the `defineAction` helper:
+    - `defineValidator` for defining a validator (sync or async).
+    - `defineHandler` for defining a handler.
+    - `defineCancelEvent` for defining a cancel event generator.
+    - `defineCancelEventInitializer` for defining an object with arguments to construct a cancel event class.
+    - `defineEventInfoArray` for defining an array where the first element is a `vscode.Event` interface, and the second element is a predicate.
+    - `defineEventPredicate` for defining a predicate for a cancel event (sync and async).
+    - `definePromptGenerator` for defining a Copilot prompt generator.
+    - `defineReasonGenerator` for defining a cancel event reason generator.
+    - `defineSetupHook` for defining a context setup hook.
+    - Note that these are meant to be used standalone, so you can get type hints if you want to reuse these components across actions. If you're already defining an action via `defineAction` and don't need to reuse those components across actions, you shouldn't need to use these helper functions (and is discouraged since it can overcomplicate type checking).
+
 ## 1.0.0-pre.14
 
 ### Breaking changes

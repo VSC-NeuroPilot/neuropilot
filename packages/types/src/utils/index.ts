@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
-import type { SchemaTypes, InferDataFromSchema, RCEAction } from '../actions/types';
+import type { SchemaTypes, InferDataFromSchema, RCEAction, ActionValidationResult, ActionHandlerResult } from '../actions/types';
+import { RCECancelEvent, RCECancelEventInitializer, RCEContext } from '../actions';
 
 //#region Context consistency
 
@@ -226,7 +227,6 @@ export function getRequiredFence(text: string): string {
  * @param action The action definition
  * @returns The same action with full type inference
  * @example
- * // Event type is inferred from cancelEvents
  * defineAction({
  *   name: 'my_action',
  *   schema: z.object({ file: z.string() }),
@@ -240,7 +240,94 @@ export function defineAction<
     const TData extends object | undefined,
     const TSchema extends SchemaTypes,
     const TInput extends InferDataFromSchema<TSchema>,
->(action: RCEAction<TData, TSchema, TInput>): RCEAction<TData, TSchema, TInput> {
+>(action: RCEAction<TData, TSchema, TInput>): typeof action {
     return action;
+};
+
+/* @__NO_SIDE_EFFECTS__ */
+export function defineValidator<
+    const TData extends object | undefined,
+    const TSchema extends SchemaTypes,
+    const TInput extends InferDataFromSchema<TSchema>,
+    const TReturn extends ActionValidationResult | Thenable<ActionValidationResult>,
+>(validator: (ctx: RCEContext<TData, TSchema, TInput>) => TReturn): typeof validator {
+    return validator;
+};
+
+/* @__NO_SIDE_EFFECTS__ */
+export function defineHandler<
+    const TData extends object | undefined,
+    const TSchema extends SchemaTypes,
+    const TInput extends InferDataFromSchema<TSchema>,
+    const TReturn extends ActionHandlerResult | Thenable<ActionHandlerResult>,
+>(handler: (ctx: RCEContext<TData, TSchema, TInput>) => TReturn): typeof handler {
+    return handler;
+};
+
+/* @__NO_SIDE_EFFECTS__ */
+export function definePreviewEffect<
+    const TData extends object | undefined,
+    const TSchema extends SchemaTypes,
+    const TInput extends InferDataFromSchema<TSchema>,
+    const TReturn extends { disopse: () => unknown },
+>(preview: (ctx: RCEContext<TData, TSchema, TInput>) => TReturn): typeof preview {
+    return preview;
+};
+
+/* @__NO_SIDE_EFFECTS__ */
+export function defineCancelEvent<
+    const TData extends object | undefined,
+    const TSchema extends SchemaTypes,
+    const TInput extends InferDataFromSchema<TSchema>,
+    const TEventData extends unknown | undefined,
+    const TReturn extends RCECancelEvent<TEventData> | null,
+>(event: (ctx: RCEContext<TData, TSchema, TInput>) => TReturn): typeof event {
+    return event;
+};
+
+/* @__NO_SIDE_EFFECTS__ */
+export function defineCancelEventInitializer<const T extends unknown | undefined>(init: RCECancelEventInitializer<T>): typeof init {
+    return init;
 }
 
+/* @__NO_SIDE_EFFECTS__ */
+export function defineEventInfoArray<const T extends unknown | undefined>(eventInfo: [vscode.Event<T>, ((event: T) => boolean | Promise<boolean>) | null]): typeof eventInfo {
+    return eventInfo;
+};
+
+/* @__NO_SIDE_EFFECTS__ */
+export function defineEventPredicate<
+    const T extends unknown | undefined,
+    const TReturn extends boolean | Promise<boolean>,
+>(predicate: (event: T) => TReturn): typeof predicate {
+    return predicate;
+};
+
+/* @__NO_SIDE_EFFECTS__ */
+export function definePromptGenerator<
+    const TData extends object | undefined,
+    const TSchema extends SchemaTypes,
+    const TInput extends InferDataFromSchema<TSchema>,
+>(generator: (ctx: RCEContext<TData, TSchema, TInput>) => string): typeof generator {
+    return generator;
+};
+
+/* @__NO_SIDE_EFFECTS__ */
+export function defineReasonGenerator<
+    const TEventData extends unknown | undefined,
+    const TData extends object | undefined,
+    const TSchema extends SchemaTypes,
+    const TInput extends InferDataFromSchema<TSchema>,
+>(generator: (ctx: RCEContext<TData, TSchema, TInput>, event: TEventData) => string): typeof generator {
+    return generator;
+};
+
+/* @__NO_SIDE_EFFECTS__ */
+export function defineSetupHook<
+    const TData extends object | undefined,
+    const TSchema extends SchemaTypes,
+    const TInput extends InferDataFromSchema<TSchema>,
+    const TReturn extends void | Thenable<void>,
+>(hook: (ctx: RCEContext<TData, TSchema, TInput>) => TReturn): typeof hook {
+    return hook;
+};
