@@ -54,7 +54,24 @@ interface ActionHandlerUtils {
     retry(message: string, historyNote?: string): ActionHandlerResult;
 }
 
-interface ActionsListingUtils {
+export interface NeuroPilotAPI {
+    /**
+     * Register your companion extension by creating a new object from this class.
+     * See {@link CompanionAPI} for the API surface it exposes.
+     */
+    Companion: CompanionAPIConstructor;
+    /**
+     * Config values and IDs from NeuroPilot.
+     */
+    config: NeuroPilotConfig;
+    /**
+     * Utilities for generating action validation messages
+     */
+    actionValidation: ActionValidationUtils;
+    /**
+     * Utililties for generating action handler messages
+     */
+    actionHandler: ActionHandlerUtils;
     /**
      * Get an action or an array of actions.
      * @todo split into overloads for sanity
@@ -64,9 +81,6 @@ interface ActionsListingUtils {
     getActions(action?: string | string[]): ItselfOrArray<RCEAction & {
         source?: string;
     }> | undefined;
-}
-
-interface ContextUtils {
     /**
      * Gets the context around a specified range in a document.
      * If no range is specified, gets the entire document.
@@ -76,7 +90,6 @@ interface ContextUtils {
      * @returns The context around the specified range. The amount of lines before and after the range is configurable in the settings.
      */
     getPositionContext(document: vscode.TextDocument, options: PositionContextOptions | vscode.Position): PositionContext;
-
     /**
      * Formats the context for sending to Neuro.
      * Assumes the cursor is at the end of `contextBefore` + `contextBetween` and at the start of `contextAfter`.
@@ -85,9 +98,6 @@ interface ContextUtils {
      * @returns The formatted context.
      */
     formatContext(context: PositionContext, overrideCursorStyle?: CursorPositionContextStyle): string;
-}
-
-interface DiffUtils {
     /**
      * Calculate the diff between two sets of lines using the Patience diff algorithm.
      *
@@ -110,7 +120,7 @@ interface DiffUtils {
      * See also: {@link DiffPlusLine.newIndex}
      * @param oldLines The lines before the change.
      * @param newLines The lines after the change.
-     * @see {@link DiffUtils.calculateDiff calculateDiff}
+     * @see {@link NeuroPilotAPI.calculateDiff calculateDiff}
      */
     calculateDiffPlus(oldLines: string[], newLines: string[]): DiffPlus;
     /**
@@ -129,17 +139,14 @@ interface DiffUtils {
     calculateDiffRanges(startPosition: vscode.Position, oldText: string, newText: string, tokenRegExp?: RegExp): DiffRange[];
     /**
      * Apply diff highlighting to a text editor based on the provided diff ranges.
-     * If you use {@link DiffUtils.calculateDiffRanges calculateDiffRanges} to calculate the
+     * If you use {@link NeuroPilotAPI.calculateDiffRanges calculateDiffRanges} to calculate the
      * diff ranges, the current text in the editor should be provided as the `newText` parameter.
      * @param editor The text editor to highlight.
      * @param diffRanges The diff ranges to highlight.
-     * If you use {@link DiffUtils.calculateDiffRanges calculateDiffRanges} to calculate these,
+     * If you use {@link NeuroPilotAPI.calculateDiffRanges calculateDiffRanges} to calculate these,
      * the current text in the editor should be provided as the `newText` parameter.
      */
     applyDiffHighlighting(editor: vscode.TextEditor, diffRanges: DiffRange[]): void;
-}
-
-interface FilePathUtils {
     /**
      * Checks if a file is Neuro-safe, according to the rules the user has set in NeuroPilot's settings.
      *
@@ -147,46 +154,6 @@ interface FilePathUtils {
      * @param path The path to the file. This utility expects an *absolute* path.
      */
     isPathNeuroSafe(path: string): boolean;
-}
-
-interface Utils {
-    /**
-     * Utilities for generating action validation messages
-     */
-    actionValidation: ActionValidationUtils;
-    /**
-     * Utililties for generating action handler messages
-     */
-    actionHandler: ActionHandlerUtils;
-    /**
-     * Utilities for the action listing
-     */
-    actionsListing: ActionsListingUtils;
-    /**
-     * Utilities for context messages
-     */
-    context: ContextUtils;
-    /**
-     * Utilities for generating and applying diffs
-     */
-    diffs: DiffUtils;
-    /**
-     * Utilities for working with file paths
-     */
-    filePaths: FilePathUtils;
-}
-
-export interface NeuroPilotAPI {
-    /**
-     * Register your companion extension by creating a new object from this class.
-     * See {@link CompanionAPI} for the API surface it exposes.
-     */
-    Companion: CompanionAPIConstructor;
-    /**
-     * Public, useful utilities you might want to use in your extension.
-     */
-    utils: Utils;
-    config: NeuroPilotConfig;
 }
 
 export interface ConfigValue<T> {

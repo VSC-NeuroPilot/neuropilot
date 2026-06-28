@@ -23,7 +23,8 @@ For prereleases:
 
 ### Breaking changes
 
- `contextSetupHook` was renamed to `contextSetupHooks`.
+- `contextSetupHook` was renamed to `contextSetupHooks`.
+- All objects under `NeuroPilotAPI.utils` were flattened and the functions moved to `NeuroPilotAPI`, to make it easier to find them.
 
 ### Added
 
