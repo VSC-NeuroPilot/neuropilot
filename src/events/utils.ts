@@ -1,15 +1,6 @@
 import * as vscode from 'vscode';
 
-import type { ReasonGenerator, RCECancelEvent as _RCECancelEvent } from '@vsc-neuropilot/api-types';
-
-export interface RCECancelEventInitializer<T = unknown> {
-    /** The reason that will be used to send to Neuro-sama. */
-    reason?: ReasonGenerator<T>;
-    /** The reason that will be used to log the cancellation. */
-    logReason?: ReasonGenerator<T>;
-    /** Events that will trigger the cancellation. If the predicate is null, the event will always trigger the cancellation. */
-    events?: [vscode.Event<T>, ((data: T) => boolean | Promise<boolean>) | null][];
-}
+import type { RCECancelEventInitializer, ReasonGenerator, RCECancelEvent as _RCECancelEvent } from '@vsc-neuropilot/api-types';
 
 export class RCECancelEvent<T = unknown> implements _RCECancelEvent<T> {
     /**
