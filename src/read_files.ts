@@ -28,7 +28,7 @@ export const readFileActions = {
             filePath: z.string().meta({
                 description: 'The relative path to the file. If omitted, reads the currently open file.',
                 examples: ['./index.html', 'style.css', 'src/main.js'],
-            }),
+            }).optional(),
         }),
         handler(context) {
             const { data: actionData } = context;
@@ -86,14 +86,17 @@ export const readFileActions = {
                         actionData.params.filePath = vscode.workspace.asRelativePath(normalizedUri, false);
                     }
 
+                    // Assert to the type checker that filePath is definitely defined
+                    const contextCopyWithFilePathDefined = contextCopy as RCEContext<{filePath: string}>;
+
                     // Run all validators with the resolved filePath
                     const neuroSafeResult = await neuroSafeValidation(true)(context);
                     if (!neuroSafeResult.success) return neuroSafeResult;
 
-                    const binaryResult = await binaryFileValidation(contextCopy);
+                    const binaryResult = await binaryFileValidation(contextCopyWithFilePathDefined);
                     if (!binaryResult.success) return binaryResult;
 
-                    const fileResult = await validateIsAFile(contextCopy);
+                    const fileResult = await validateIsAFile(contextCopyWithFilePathDefined);
                     if (!fileResult.success) return fileResult;
 
                     return actionValidationAccept();
