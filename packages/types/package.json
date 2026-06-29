@@ -1,6 +1,6 @@
 {
   "name": "@vsc-neuropilot/api-types",
-  "version": "1.0.0-pre.15",
+  "version": "1.0.0-pre.16",
   "type": "module",
   "files": [
     "dist",
