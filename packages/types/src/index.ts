@@ -2,6 +2,37 @@ import type { ActionHandlerResult, ActionValidationResult, Diff, DiffPlus, DiffR
 import type { CompanionAPI, CompanionAPIConstructor } from './companions/register';
 import type * as vscode from 'vscode';
 
+import { ActionForcePriorityEnum as _ActionForcePriorityEnum } from 'neuro-game-sdk';
+
+// don't worry I hate this too
+interface ActionForcePriorityEnumInterface {
+    /** Sets the priority to low. Is the default for action forces is the `priority` parameter is unspecified. */
+    readonly LOW: _ActionForcePriorityEnum.LOW,
+    /** Sets the priority to medium. Speeds Neuro's speaking up. */
+    readonly MEDIUM: _ActionForcePriorityEnum.MEDIUM,
+    /** Sets the priority to high. Processes the action force as soon as possible, which may cause Neuro to speed up or cut herself off. */
+    readonly HIGH: _ActionForcePriorityEnum.HIGH,
+    /** Sets the priority to critical. Use with caution; will force Neuro to respond at once, immediately.  */
+    readonly CRITICAL: _ActionForcePriorityEnum.CRITICAL,
+}
+
+/**
+ * This is a wrapper re-export around {@link _ActionForcePriorityEnum `neuro-game-sdk`'s ActionForcePriorityEnum}, so we can have proper a proper page for this on docs,
+ * and add our own member-level JSDoc annotations.
+ * Members are the same as the upstream enum's members.
+ * 
+ * @example
+ * ActionForcePriorityEnum.LOW // equivalent to low priority action force
+ * 
+ * @see https://github.com/VedalAI/neuro-sdk/blob/main/API/SPECIFICATION.md#parameters-5
+ */
+export const ActionForcePriorityEnum: ActionForcePriorityEnumInterface = {
+    LOW: _ActionForcePriorityEnum.LOW,
+    MEDIUM: _ActionForcePriorityEnum.MEDIUM,
+    HIGH: _ActionForcePriorityEnum.HIGH,
+    CRITICAL: _ActionForcePriorityEnum.CRITICAL,
+} as const;
+
 interface ActionValidationUtils {
     /**
      * Function to return an object that indicates handler success.
@@ -255,4 +286,3 @@ type ItselfOrArray<T> = T | T[];
 
 export * from './actions';
 export * from './companions';
-export { ActionForcePriorityEnum } from 'neuro-game-sdk';

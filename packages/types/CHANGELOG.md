@@ -19,6 +19,12 @@ For prereleases:
 - Pre-release versions (x.x.x-pre.x) are unstable releases for the designated API version. These contain work-in-progress types and annotations. Pre-release versions are not meant to be used except for trying out new API interfaces and giving feedback, and may change without prior programmatic or verbal notice. Pre-release versions are meant to be used with new builds from the `dev` branch of the base extension repo.
 - Release candidates (x.x.x-rc.x) are stable previews for the designated API version. These contain types that are more or less finalized for the designated release. Breaking changes should not be expected, both in type signature and functionality, but will always be highlighted in the changelog if necessary. This is also meant for feedback, but only for more subtle feedback before releasing that version such that it simply just contains bug fixes and very minor changes.
 
+## 1.0.0-pre.16
+
+### Changed
+
+- `ActionForcePriorityEnum`, which was previously a re-export of `neuro-game-sdk`'s enum, is now a wrapper object const that remains compatible with existing uses. This was done so we can add our own JSDoc annotations and so we can get proper type documentation generated for our docs. 
+
 ## 1.0.0-pre.15
 
 ### Breaking changes
