@@ -33,7 +33,7 @@ export const ActionForcePriorityEnum: ActionForcePriorityEnumInterface = {
     CRITICAL: _ActionForcePriorityEnum.CRITICAL,
 } as const;
 
-interface ActionValidationUtils {
+export interface ActionValidationUtils {
     /**
      * Function to return an object that indicates handler success.
      * @param message The message that will be sent to Neuro
@@ -57,7 +57,7 @@ interface ActionValidationUtils {
     retry(message: string, historyNote?: string): ActionValidationResult;
 }
 
-interface ActionHandlerUtils {
+export interface ActionHandlerUtils {
     /**
      * Create a successful action result.
      * This should be used if all parameters have been parsed correctly.

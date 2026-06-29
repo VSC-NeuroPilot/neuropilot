@@ -195,7 +195,7 @@ export interface CompanionMeta {
     contributes: Contributions[];
 }
 
-interface FileActionUtils {
+export interface FileActionUtils {
     /**
      * Mark certain files with a preview effect.
      * @param uris An array of files to mark. Direct inputs here are automatically assumed to be Neuro-safe, you must perform your own Neuro-safe checks at call time.
@@ -207,7 +207,7 @@ interface FileActionUtils {
     markPreviewFiles(uris: Uri[], promptString: string, absolutelyAllFiles?: boolean, noChildren?: boolean): Disposable;
 }
 
-interface EditActionUtils {
+export interface EditActionUtils {
     /**
      * Set a preview cursor that matches the normal colour scheme for NeuroPilot's preview cursor.
      * @param location A {@link Position} object where the cursor will be placed.
