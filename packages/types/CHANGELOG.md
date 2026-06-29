@@ -21,6 +21,10 @@ For prereleases:
 
 ## 1.0.0-pre.17
 
+### Breaking changes
+
+- `getActions` has been split to `getAction` and `getActions`, for querying one or multiple actions by name, respectively.
+
 ### Added
 
 - Some more interfaces were exported for the sake of type-checking assurances.

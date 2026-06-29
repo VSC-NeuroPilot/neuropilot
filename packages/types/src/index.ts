@@ -104,14 +104,19 @@ export interface NeuroPilotAPI {
      */
     actionHandler: ActionHandlerUtils;
     /**
-     * Get an action or an array of actions.
-     * @todo split into overloads for sanity
-     * @param action A string or array of strings of action names.
-     * @returns An action (if a string was provided), undefined (if a string was provided and nothing was found), or an array of actions (if nothing or an array was provided)
+     * Get an action.
+     * @param action An action name.
+     * @returns An {@link RCEAction} and its source companion.
      */
-    getActions(action?: string | string[]): ItselfOrArray<RCEAction & {
-        source?: string;
-    }> | undefined;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    getAction<const TData extends object | undefined = any>(action: string): RCEAction<TData> & { source?: string; } | undefined;
+    /**
+     * Get an array of actions.
+     * @param action An array of action names.
+     * @returns An array of {@link RCEAction} and their corresponding source companions.
+     */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    getActions<const TData extends object | undefined = any>(actions: string[]): (RCEAction<TData> & { source?: string })[];
     /**
      * Gets the context around a specified range in a document.
      * If no range is specified, gets the entire document.
@@ -281,8 +286,6 @@ export interface NeuroPilotConfig {
     //  */
     // readonly ignoreFiles: ConfigValue<string[]>;
 }
-
-type ItselfOrArray<T> = T | T[];
 
 export * from './actions';
 export * from './companions';
