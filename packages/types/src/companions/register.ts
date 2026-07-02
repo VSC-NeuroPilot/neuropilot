@@ -44,14 +44,14 @@ export interface CompanionAPI extends Disposable {
     /**
      * Registers an action to Neuro.
      * You must have declared either the `actions:manage` or `actions:manage_others` contribution point.
-     * @param actions An action name. That action must already have been added via {@link CompanionAPI.addActions}.
+     * @param action An action name. That action must already have been added via {@link CompanionAPI.addActions}.
      */
     registerAction(action: string): void;
 
     /**
      * Unregisters an action to Neuro.
      * You must have declared either the `actions:manage` or `actions:manage_others` contribution point.
-     * @param actions An action name. That action must already have been added via {@link CompanionAPI.addActions}
+     * @param action An action name. That action must already have been added via {@link CompanionAPI.addActions}
      */
     unregisterAction(action: string): void;
 

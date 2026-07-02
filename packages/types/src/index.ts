@@ -112,7 +112,7 @@ export interface NeuroPilotAPI {
     getAction<const TData extends object | undefined = any>(action: string): RCEAction<TData> & { source?: string; } | undefined;
     /**
      * Get an array of actions.
-     * @param action An array of action names.
+     * @param actions An array of action names.
      * @returns An array of {@link RCEAction} and their corresponding source companions.
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
