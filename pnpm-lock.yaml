@@ -29,11 +29,11 @@ importers:
         specifier: ^1.5.0
         version: 1.5.0
       neuro-game-sdk:
-        specifier: ^1.1.1
-        version: 1.1.1
+        specifier: ^1.1.2
+        version: 1.1.2
       preact:
-        specifier: ^10.29.2
-        version: 10.29.2
+        specifier: ^10.29.3
+        version: 10.29.3
     devDependencies:
       '@eslint/js':
         specifier: ^10.0.1
@@ -2303,8 +2303,8 @@ packages:
     resolution: {integrity: sha512-+EUsqGPLsM+j/zdChZjsnX51g4XrHFOIXwfnCVPGlQk/k5giakcKsuxCObBRu6DSm9opw/O6slWbJdghQM4bBg==}
     engines: {node: '>= 0.6'}
 
-  neuro-game-sdk@1.1.1:
-    resolution: {integrity: sha512-GR5l1OLMgvEc3zLd7Tde/e41mER5NY4Q8AHP6vAzG4aB+bhz57wJ0bIhq9BFi0a9RzOJdlX8/fz0wGrs6OAwzA==}
+  neuro-game-sdk@1.1.2:
+    resolution: {integrity: sha512-VD2NndJkS2JZh51NMhcmsN0EgUx3FEshnzNCcv1tBb8ehdwIcZYKTXSraiY/V1GRd2gffmUBSyQ1xUUyi+v3gA==}
 
   nice-try@1.0.5:
     resolution: {integrity: sha512-1nh45deeb5olNY7eX82BkPO7SSxR5SSYJiPTrTdFUVYwAl8CKMA5N9PjTYkHiRjisVcxcQ1HXdLhx2qxxJzLNQ==}
@@ -2539,8 +2539,8 @@ packages:
     resolution: {integrity: sha512-/+5VFTchJDoVj3bhoqi6UeymcD00DAwb1nJwamzPvHEszJ4FpF6SNNbUbOS8yI56qHzdV8eK0qEfOSiodkTdxg==}
     engines: {node: '>= 0.4'}
 
-  preact@10.29.2:
-    resolution: {integrity: sha512-7tNmwg/7mzzAoB/8kSg6Hl37JraAZw3Z3A0JSY7VXlZwo82Xn0G7wKbNNs2qoF4ZEEsQGTwDAroNdqKs1ofJxQ==}
+  preact@10.29.3:
+    resolution: {integrity: sha512-D9NL1GAnJZhc3RndVs4gDdxEeU9TcHgywMrhhOsnpdlvFjdbx0gAsLUnH6JEhlJH5giL7Tx5biWPUSEXE/HPzw==}
 
   prebuild-install@7.1.3:
     resolution: {integrity: sha512-8Mf2cbV7x1cXPUILADGI3wuhfqWvtiLA1iclTDbFRZkgRQS0NqsPZphna9V+HyTEadheuPmjaJMsbzKQFOzLug==}
@@ -5592,7 +5592,7 @@ snapshots:
 
   negotiator@0.6.3: {}
 
-  neuro-game-sdk@1.1.1:
+  neuro-game-sdk@1.1.2:
     dependencies:
       '@types/json-schema': 7.0.15
 
@@ -5839,7 +5839,7 @@ snapshots:
 
   possible-typed-array-names@1.1.0: {}
 
-  preact@10.29.2: {}
+  preact@10.29.3: {}
 
   prebuild-install@7.1.3:
     dependencies:
