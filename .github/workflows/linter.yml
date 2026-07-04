@@ -11,7 +11,7 @@ jobs:
       name: Type checker
       runs-on: ubuntu-latest
       steps:
-        - uses: actions/checkout@v6
+        - uses: actions/checkout@v7
           with:
             persist-credentials: false
         
@@ -35,7 +35,7 @@ jobs:
       name: Lint checker
       runs-on: ubuntu-latest
       steps:
-          - uses: actions/checkout@v6
+          - uses: actions/checkout@v7
             with:
               persist-credentials: false
 
@@ -63,8 +63,8 @@ jobs:
         contents: read
         actions: read
       steps:
-        - uses: actions/checkout@v6
+        - uses: actions/checkout@v7
           with:
             persist-credentials: false
         
-        - uses: zizmorcore/zizmor-action@v0.5.6
+        - uses: zizmorcore/zizmor-action@v0.5.7

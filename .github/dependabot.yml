@@ -46,3 +46,6 @@ updates:
       - dependabot
       - github_actions
       - meta
+    groups:
+      actions:
+        applies-to: version-updates
