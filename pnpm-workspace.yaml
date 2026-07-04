@@ -1,12 +1,7 @@
 allowBuilds:
   '@playwright/browser-chromium': true
-  '@vscode/vsce-sign': true
-  esbuild: true
-  keytar: true
+  '@vscode/vsce-sign': false
+  esbuild: false
+  keytar: false
 minimumReleaseAgeExclude:
-  - neuro-game-sdk@1.1.1
   - baseline-browser-mapping
-overrides:
-  diff@>=6.0.0 <8.0.3: '~8.0.3'
-  js-yaml@>=4.0.0 <4.1.1: '~4.1.1'
-  serialize-javascript@<7.0.5: '~7.0.5'
