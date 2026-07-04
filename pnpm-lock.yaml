@@ -72,12 +72,12 @@ importers:
       '@vscode/vsce':
         specifier: ^3.9.2
         version: 3.9.2
+      ansis:
+        specifier: ^4.3.1
+        version: 4.3.1
       baseline-browser-mapping:
         specifier: ^2.10.41
         version: 2.10.41
-      chalk:
-        specifier: ^5.6.2
-        version: 5.6.2
       cross-env:
         specifier: ^10.1.0
         version: 10.1.0
@@ -886,6 +886,10 @@ packages:
   ansi-styles@6.2.3:
     resolution: {integrity: sha512-4Dj6M28JB+oAH8kFkTLUo+a2jwOFkuqb3yucU0CANcRRUbxS0cP0nZYCGjcc3BNXwRIsUVmDGgzawme7zvJHvg==}
     engines: {node: '>=12'}
+
+  ansis@4.3.1:
+    resolution: {integrity: sha512-BJ8/l4R5LRE7hW9WdSuGYrLSHi2ynxeFpDFbH0K/CgNeY/tyhk+vO6TYxXC5r5CpUhNVX310xzPsN/H9lCdfOA==}
+    engines: {node: '>=14'}
 
   are-docs-informative@0.0.2:
     resolution: {integrity: sha512-ixiS0nLNNG5jNQzgZJNoUpBKdo9yTYZMGJ+QgT2jmjR7G7+QHRCc4v6LQ3NgE7EBJq+o0ams3waJwkrlBom8Ig==}
@@ -3715,6 +3719,8 @@ snapshots:
       color-convert: 2.0.1
 
   ansi-styles@6.2.3: {}
+
+  ansis@4.3.1: {}
 
   are-docs-informative@0.0.2: {}
 
