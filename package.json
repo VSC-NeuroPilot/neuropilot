@@ -777,6 +777,7 @@
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
+		"@standard-schema/spec": "catalog:",
 		"@stylistic/eslint-plugin": "^5.10.0",
 		"@types/glob-to-regexp": "^0.4.4",
 		"@types/json-schema": "^7.0.15",

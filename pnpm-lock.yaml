@@ -4,6 +4,12 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+catalogs:
+  default:
+    '@standard-schema/spec':
+      specifier: 1.1.0
+      version: 1.1.0
+
 importers:
 
   .:
@@ -36,6 +42,9 @@ importers:
       '@eslint/js':
         specifier: ^10.0.1
         version: 10.0.1(eslint@10.7.0(supports-color@8.1.1))
+      '@standard-schema/spec':
+        specifier: 'catalog:'
+        version: 1.1.0
       '@stylistic/eslint-plugin':
         specifier: ^5.10.0
         version: 5.10.0(eslint@10.7.0(supports-color@8.1.1))
@@ -68,7 +77,7 @@ importers:
         version: 0.0.15
       '@vscode/test-electron':
         specifier: ^3.0.0
-        version: 3.0.0(supports-color@8.1.1)
+        version: 3.0.0
       '@vscode/test-web':
         specifier: ^0.0.81
         version: 0.0.81(supports-color@8.1.1)
@@ -167,7 +176,7 @@ importers:
   packages/types:
     dependencies:
       '@standard-schema/spec':
-        specifier: ^1.1.0
+        specifier: 'catalog:'
         version: 1.1.0
       '@types/json-schema':
         specifier: ^7.0.15
@@ -4593,8 +4602,8 @@ snapshots:
 
   '@typespec/ts-http-runtime@0.3.6':
     dependencies:
-      http-proxy-agent: 7.0.2(supports-color@8.1.1)
-      https-proxy-agent: 7.0.6(supports-color@8.1.1)
+      http-proxy-agent: 7.0.2
+      https-proxy-agent: 7.0.6
       tslib: 2.8.1
     transitivePeerDependencies:
       - supports-color
@@ -4615,10 +4624,10 @@ snapshots:
     transitivePeerDependencies:
       - monocart-coverage-reports
 
-  '@vscode/test-electron@3.0.0(supports-color@8.1.1)':
+  '@vscode/test-electron@3.0.0':
     dependencies:
-      http-proxy-agent: 7.0.2(supports-color@8.1.1)
-      https-proxy-agent: 7.0.6(supports-color@8.1.1)
+      http-proxy-agent: 7.0.2
+      https-proxy-agent: 7.0.6
       jszip: 3.10.1
       ora: 8.2.0
       semver: 7.8.4
@@ -5649,7 +5658,7 @@ snapshots:
       statuses: 2.0.2
       toidentifier: 1.0.1
 
-  http-proxy-agent@7.0.2(supports-color@8.1.1):
+  http-proxy-agent@7.0.2:
     dependencies:
       agent-base: 7.1.4
       debug: 4.4.3(supports-color@8.1.1)
@@ -5665,7 +5674,7 @@ snapshots:
       - kerberos
       - supports-color
 
-  https-proxy-agent@7.0.6(supports-color@8.1.1):
+  https-proxy-agent@7.0.6:
     dependencies:
       agent-base: 7.1.4
       debug: 4.4.3(supports-color@8.1.1)

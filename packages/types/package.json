@@ -38,7 +38,7 @@
     "@types/vscode": "^1.95.0"
   },
   "dependencies": {
-    "@standard-schema/spec": "^1.1.0",
+    "@standard-schema/spec": "catalog:",
     "@types/json-schema": "^7.0.15",
     "neuro-game-sdk": "^1.0.10"
   },

@@ -11,3 +11,6 @@ allowBuilds:
   keytar: false
 minimumReleaseAgeExclude:
   - baseline-browser-mapping
+catalog:
+  '@standard-schema/spec': 1.1.0
+ 
