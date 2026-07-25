@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { RCECancelEvent } from './utils';
 import { CONNECTION } from '../config';
-import { getWorkspaceUri } from '@/utils/misc';
+import { getWorkspaceUri } from '@vsc-neuropilot/api-types/utils';
 
 /**
  * Wrapper event to check if a specific file is created.

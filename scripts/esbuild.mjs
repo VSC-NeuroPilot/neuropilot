@@ -143,34 +143,34 @@ try {
         case 'default':
             // Can't use watch while building both.
             if (watch) {
-                console.error(ansis.yellow.bold('⚠️  Cannot use flag --watch while building both desktop and web'));
+                //console.error(ansis.yellow.bold('⚠️  Cannot use flag --watch while building both desktop and web'));
                 //process.exit(1); we'll just continue building it normally ig
             }
             if (test) {
                 console.log(ansis.blue('🖥️🧪  Running desktop test build...'));
-                await desktopTest(production, false).catch(erm => {
+                await desktopTest(production, watch).catch(erm => {
                     console.error(ansis.red.bold(`💥  Desktop test build failed: ${erm}`));
                     process.exit(1);
                 });
                 console.log(ansis.blue('🌐🧪 Running web test build...'));
-                await webTest(production, false).catch(erm => {
+                await webTest(production, watch).catch(erm => {
                     console.error(ansis.red.bold(`💥  Web test build failed: ${erm}`));
                     process.exit(1);
                 });
                 console.log(ansis.green.bold.underline('🎉🧪 Tests compiled successfully!'));
             } else {
                 console.log(ansis.blue('🖥️  Running desktop build...'));
-                await desktop(production, false).catch(erm => {
+                await desktop(production, watch).catch(erm => {
                     console.error(ansis.red.bold(`💥  Desktop build failed: ${erm}`));
                     process.exit(1);
                 });
                 console.log(ansis.blue('🌐 Running web build...'));
-                await web(production, false).catch(erm => {
+                await web(production, watch).catch(erm => {
                     console.error(ansis.red.bold(`💥  Web build failed: ${erm}`));
                     process.exit(1);
                 });
                 console.log(ansis.blue('🌐 Running webview build...'));
-                await webview(production, false).catch(erm => {
+                await webview(production, watch).catch(erm => {
                     console.error(ansis.red.bold(`💥  Webview build failed: ${erm}`));
                     process.exit(1);
                 });

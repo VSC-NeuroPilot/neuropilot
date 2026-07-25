@@ -1,6 +1,10 @@
-import { BaseWebviewViewProvider } from './base';
-import { onDidAttemptAction, type ActionsEventData, type ActionStatus } from '../events/actions';
 import * as vscode from 'vscode';
+import assert from 'assert';
+import type { ActionsEventData, ActionStatus } from '@vsc-neuropilot/api-types';
+
+import { BaseWebviewViewProvider } from './base';
+import { onDidAttemptAction } from '../events/actions';
+import { NEURO } from '@/constants';
 import { Message } from '@typing/views';
 import type { ExecuteViewProviderMessage, ExecutionHistoryItem, ExecuteResult } from '@typing/views/execute';
 
@@ -10,20 +14,20 @@ export class ExecuteViewProvider extends BaseWebviewViewProvider<Message, Execut
     private static readonly mementoKey = 'bufferedResults';
     private bufferedResults: ExecutionHistoryItem[] = [];
     private readonly maxBufferSize: number = 50; // likely adjustable in the future, if set to 0 it will disable buffering, if set to -1 it will allow unlimited buffer size.
-    private context: vscode.ExtensionContext;
 
-    constructor(context: vscode.ExtensionContext) {
+    constructor() {
         super('execute/main.js', ['execute/style.css']);
-        this.context = context;
+
+        assert(NEURO.context);
 
         // Restore buffered results from previous session
-        const stored = this.context.globalState.get<ExecutionHistoryItem[]>(ExecuteViewProvider.mementoKey);
+        const stored = NEURO.context.globalState.get<ExecutionHistoryItem[]>(ExecuteViewProvider.mementoKey);
         if (stored && Array.isArray(stored)) {
             this.bufferedResults = stored.slice(0, this.maxBufferSize);
         }
 
         // Subscribe to action events immediately, not just when view is ready
-        this.context.subscriptions.push(
+        NEURO.context.subscriptions.push(
             onDidAttemptAction((data: ActionsEventData) => {
                 this.sendExecutionResult({
                     ...data,
@@ -43,7 +47,7 @@ export class ExecuteViewProvider extends BaseWebviewViewProvider<Message, Execut
         });
 
         // Subscribe to visibility changes to flush buffer when view is opened
-        this.context.subscriptions.push(
+        NEURO.context!.subscriptions.push(
             this._view!.onDidChangeVisibility(() => {
                 if (this._view!.visible) {
                     this.flushBufferedResults();
@@ -112,14 +116,14 @@ export class ExecuteViewProvider extends BaseWebviewViewProvider<Message, Execut
         }
         this.bufferedResults = [];
         // Clear from memento since items are now in the webview
-        this.context.globalState.update(ExecuteViewProvider.mementoKey, undefined);
+        NEURO.context!.globalState.update(ExecuteViewProvider.mementoKey, undefined);
     }
 
     /**
      * Persists the buffered results to extension storage.
      */
     private persistBuffer(): void {
-        this.context.globalState.update(ExecuteViewProvider.mementoKey, this.bufferedResults);
+        NEURO.context!.globalState.update(ExecuteViewProvider.mementoKey, this.bufferedResults);
     }
 
     /**

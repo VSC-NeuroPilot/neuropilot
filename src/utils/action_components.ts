@@ -1,14 +1,15 @@
 import * as vscode from 'vscode';
 import { z } from 'zod';
+import type { ActionData } from 'neuro-game-sdk';
+import { RCEContext, ActionValidationResult } from '@vsc-neuropilot/api-types';
 
-import { RCEContext } from '@ctx/rce';
 import { createCursorPositionChangedEvent } from '@events/cursor';
 import { RCECancelEvent } from '@events/utils';
-import { getProperty, isPathNeuroSafe, getVirtualCursor, indexFromPosition, getWorkspacePath, normalizePath, getWorkspaceUri, isBinary } from './misc';
-import { ActionValidationResult, actionValidationAccept, actionValidationFailure, actionValidationRetry } from './neuro_client';
-import { ActionData } from 'neuro-game-sdk';
-import { NEURO } from '@/constants';
+import { getProperty, isPathNeuroSafe, getVirtualCursor, indexFromPosition, getWorkspacePath, isBinary } from './misc';
+import { actionValidationAccept, actionValidationFailure, actionValidationRetry } from './neuro_client';
 import { createPreviewHighlight } from '@previews/edits';
+import { NEURO } from '@/constants';
+import { getWorkspaceUri, normalizePath } from '@vsc-neuropilot/api-types/utils';
 
 export const CONTEXT_NO_ACCESS = 'You do not have permission to access this file.';
 export const CONTEXT_NO_ACTIVE_DOCUMENT = 'No active document to edit.';

@@ -15,6 +15,7 @@ export async function desktop(prodFlag, watchFlag) {
         sourcemap: !prodFlag,
         sourcesContent: false,
         platform: 'node',
+        target: 'es2022',
         outfile: 'out/desktop/extension.js',
         external: ['vscode'],
         logLevel: 'warning',
@@ -45,6 +46,7 @@ export async function desktopTest(_prodFlag, watchFlag) {
         sourcemap: true, // Always generate sourcemaps for tests
         sourcesContent: true, // Include source content for better debugging
         platform: 'node',
+        target: 'es2022',
         outfile: 'out/desktop/test.js',
         tsconfig: './test-tsconfigs/tsconfig.app.json',
         external: [

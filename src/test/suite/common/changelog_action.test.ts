@@ -2,7 +2,7 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 import { instance, mock, reset } from 'ts-mockito';
 import { NEURO } from '@/constants';
-import { readAndStructureChangelog } from '@/changelog';
+import { deleteChangelogs, loadAllChangelogs, readAndStructureChangelog } from '@/changelog';
 import { NeuroClient } from 'neuro-game-sdk';
 
 suite('Integration: read_changelog action', () => {
@@ -10,7 +10,7 @@ suite('Integration: read_changelog action', () => {
     let mockedClient: NeuroClient;
     const memento = new Map<string, unknown>();
 
-    suiteSetup(() => {
+    suiteSetup(async () => {
         // Mock client and connectivity
         originalClient = NEURO.client;
         mockedClient = mock(NeuroClient);
@@ -57,13 +57,17 @@ suite('Integration: read_changelog action', () => {
             '',
         ].join('\n');
         const uri = vscode.Uri.joinPath(workspaceUri, 'CHANGELOG.md');
-        return vscode.workspace.fs.writeFile(uri, Buffer.from(changelogContent, 'utf8'));
+        await vscode.workspace.fs.writeFile(uri, Buffer.from(changelogContent, 'utf8'));
+
+        // Load the changelog into the in-memory changelogs object
+        await loadAllChangelogs();
     });
 
     suiteTeardown(() => {
         NEURO.client = originalClient;
         originalClient = null;
         NEURO.context = null;
+        deleteChangelogs('NeuroPilot');
     });
 
     teardown(() => {
@@ -73,7 +77,7 @@ suite('Integration: read_changelog action', () => {
 
     test('with explicit fromVersion includes that version to latest, oldest→latest', async () => {
         // === Act ===
-        const { message: text } = await readAndStructureChangelog('2.2.1');
+        const { message: text } = await readAndStructureChangelog('NeuroPilot', '2.2.1');
 
         // === Assert ===
         assert.ok(text?.includes('Changelog entries from 2.2.1 to 2.3.0:'), 'should show correct range');
@@ -93,7 +97,7 @@ suite('Integration: read_changelog action', () => {
     });
 
     test('default with no memento starts at 2.3.0', async () => {
-        const { message: text } = await readAndStructureChangelog(undefined);
+        const { message: text } = await readAndStructureChangelog();
         assert.ok(text?.includes('Changelog entries from 2.3.0 to 2.3.0:'), 'default should start at 2.3.0');
     });
 
@@ -101,7 +105,7 @@ suite('Integration: read_changelog action', () => {
         // simulate saved latest
         // @ts-expect-error - accessing test memento helper through NEURO.context
         await NEURO.context.globalState.update('lastDeliveredChangelogVersion', '2.3.0');
-        const { message: text } = await readAndStructureChangelog(undefined);
+        const { message: text } = await readAndStructureChangelog();
         assert.ok(text?.includes('Changelog entries from 2.3.0 to 2.3.0:'), 'should send only latest');
     });
 
@@ -109,7 +113,7 @@ suite('Integration: read_changelog action', () => {
         // saved 2.2.2 → should send 2.2.3 and 2.3.0
         // @ts-expect-error - accessing test memento helper through NEURO.context
         await NEURO.context.globalState.update('lastDeliveredChangelogVersion', '2.2.2');
-        const { message: text } = await readAndStructureChangelog(undefined);
+        const { message: text } = await readAndStructureChangelog();
         const contains = (m: string) => text?.includes(m);
         assert.ok(contains('Changelog entries from 2.2.3 to 2.3.0:'), 'range should start after saved');
         assert.ok(!contains('## 2.2.2'), 'should not include saved version');

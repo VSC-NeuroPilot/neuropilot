@@ -1,18 +1,10 @@
-import type { ActionValidationResult, InferDataFromSchema, RCEAction, SchemaTypes } from '@/utils/neuro_client';
-import type { ActionData } from 'neuro-game-sdk';
 import { Disposable, Progress } from 'vscode';
-import { ActionStatus, updateActionStatus } from '@events/actions';
+import type { ActionStatus } from '@vsc-neuropilot/api-types';
+
+import { updateActionStatus } from '@events/actions';
+import { SchemaTypes, ActionValidationResult, InferDataFromSchema, type RCEAction, RCEContext as _RCEContext, RCEActionData } from '@vsc-neuropilot/api-types';
 
 export type RCEStorage = Record<string | number | symbol, unknown>;
-
-/**
- * Conditional type for ActionData that makes params required when a schema exists,
- * and optional/undefined when no schema is provided.
- */
-export type RCEActionData<TDataShape, TSchema extends SchemaTypes> =
-    TSchema extends undefined
-        ? Omit<ActionData, 'params'> & { params?: undefined }
-        : Omit<ActionData, 'params'> & { params: TDataShape };
 
 export interface RCELifecycleMetadata {
     events?: Disposable[];
@@ -50,7 +42,7 @@ export class RCEContext<
     const TData extends unknown | undefined = undefined,
     const TSchema extends SchemaTypes = SchemaTypes,
     const TDataShape extends unknown | undefined = TData extends undefined ? InferDataFromSchema<TSchema> : TData,
-> extends Disposable {
+> extends Disposable implements _RCEContext {
     private success: boolean | null = null;
     createdAt: string = new Date().toLocaleTimeString();
 

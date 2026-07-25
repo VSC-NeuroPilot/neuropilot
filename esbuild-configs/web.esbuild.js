@@ -16,6 +16,7 @@ export async function web(prodFlag, watchFlag) {
         sourcemap: !prodFlag,
         sourcesContent: false,
         platform: 'browser',
+        target: 'es2022',
         outfile: 'out/web/extension.js',
         external: ['vscode'],
         logLevel: 'warning',
@@ -24,6 +25,7 @@ export async function web(prodFlag, watchFlag) {
             polyfillNode({
                 polyfills: { // trying to make the build as small as possible
                     child_process: false,
+                    crypto: true,
                     module: false,
                     os: false,
                     path: false,
@@ -33,6 +35,14 @@ export async function web(prodFlag, watchFlag) {
                     v8: false,
                     vm: false,
                     zlib: false,
+                },
+                globals: {
+                    __dirname: false,
+                    __filename: false,
+                    buffer: false,
+                    global: false,
+                    navigator: false,
+                    process: false,
                 },
             }),
             /* add to the end of plugins array */
@@ -60,6 +70,7 @@ export async function webTest(_prodFlag, watchFlag) {
         sourcemap: true, // Always generate sourcemaps for tests
         sourcesContent: true, // Include source content for better debugging        
         platform: 'browser',
+        target: 'es2022',
         outfile: 'out/web/test/index.js',
         tsconfig: './test-tsconfigs/tsconfig.web.json',
         banner: {
@@ -83,8 +94,9 @@ export async function webTest(_prodFlag, watchFlag) {
         // Include the same browser polyfills as the web bundle
         plugins: [
             polyfillNode({
-                polyfills: {
+                polyfills: { // trying to make the build as small as possible
                     child_process: false,
+                    crypto: true,
                     module: false,
                     os: false,
                     path: false,
@@ -94,6 +106,14 @@ export async function webTest(_prodFlag, watchFlag) {
                     v8: false,
                     vm: false,
                     zlib: false,
+                },
+                globals: {
+                    __dirname: false,
+                    __filename: false,
+                    buffer: true,
+                    global: false,
+                    navigator: false,
+                    process: false,
                 },
             }),
             esbuildProblemMatcherPlugin,
@@ -121,6 +141,7 @@ export async function webTestBrowser(_prodFlag, watchFlag) {
         sourcemap: true,
         sourcesContent: true,
         platform: 'browser',
+        target: 'es2022',
         outfile: 'out/web/test/browser.js',
         tsconfig: './test-tsconfigs/tsconfig.web.json',
         banner: {
@@ -139,7 +160,7 @@ export async function webTestBrowser(_prodFlag, watchFlag) {
         },
         plugins: [
             polyfillNode({
-                polyfills: {
+                polyfills: { // trying to make the build as small as possible
                     child_process: false,
                     crypto: true,
                     module: false,
@@ -151,6 +172,14 @@ export async function webTestBrowser(_prodFlag, watchFlag) {
                     v8: false,
                     vm: false,
                     zlib: false,
+                },
+                globals: {
+                    __dirname: false,
+                    __filename: false,
+                    buffer: true,
+                    global: false,
+                    navigator: false,
+                    process: false,
                 },
             }),
             esbuildProblemMatcherPlugin,

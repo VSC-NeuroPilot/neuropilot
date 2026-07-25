@@ -1,12 +1,12 @@
 import * as vscode from 'vscode';
 import { NeuroClient, type ActionData } from 'neuro-game-sdk';
+import { ActionForceParams } from '@vsc-neuropilot/api-types';
 
 import { TerminalSession } from './pseudoterminal';
-import type { GitExtension } from '@typing/git.d';
 import { ActionsViewProvider } from '@views/actions';
 import { ImagesViewProvider } from '@views/image';
 import type { ExecuteViewProvider } from '@views/execute';
-import type { ActionForceParams } from './utils/neuro_client';
+import { CompanionsViewProvider } from '@views/companions';
 
 export interface NeuroTask {
     id: string;
@@ -16,8 +16,9 @@ export interface NeuroTask {
 
 interface NeuroViewProviders {
     actions: ActionsViewProvider | null;
-    images: ImagesViewProvider | null;
+    companions: CompanionsViewProvider | null;
     execute: ExecuteViewProvider | null;
+    images: ImagesViewProvider | null;
 }
 
 interface Neuro {
@@ -56,8 +57,6 @@ interface Neuro {
     saving: boolean;
     /** Stores the state of the status bar item. */
     statusBarItem: vscode.StatusBarItem | null;
-    /** Whether or not to warn when requesting completions while the relevant permission is disabled. */
-    warnOnCompletionsOff: boolean;
     /**
      * The current offset of the virtual cursor for each file.
      * The offset is null for files that are not Neuro-safe.
@@ -103,7 +102,6 @@ export const NEURO: Neuro = {
     previousDiagnosticsMap: new Map(),
     saving: false,
     statusBarItem: null,
-    warnOnCompletionsOff: true,
     cursorOffsets: new Map(),
     cursorDecorationType: null,
     diffAddedDecorationType: null,
@@ -116,20 +114,19 @@ export const NEURO: Neuro = {
     tempDisabledActions: [],
     viewProviders: {
         actions: null,
-        images: null,
+        companions: null,
         execute: null,
+        images: null,
     },
 };
 
-// this will likely be transformed for a different use later when the API rolls around
+// TODO: this will likely be transformed for a different use later when the API rolls around
 interface ExtensionDependencies {
     copilotChat: boolean;
-    git: GitExtension | null;
 }
 
 export const EXTENSIONS: ExtensionDependencies = {
     copilotChat: false,
-    git: null,
 };
 
 export const PROMISE_REJECTION_STRING = 'Promise rejected';

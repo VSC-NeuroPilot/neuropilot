@@ -18,6 +18,13 @@ export function createPreviewCursor() {
     return cursorDecoration;
 }
 
+export function placePreviewCursor(highlight: vscode.TextEditorDecorationType, position: vscode.Position, promptString: string) {
+    vscode.window.activeTextEditor?.setDecorations(highlight, [{
+        range: new vscode.Range(position, position),
+        hoverMessage: `(Preview) Neuro wants to ${promptString}`,
+    }]);
+}
+
 export function createPreviewHighlight(bgColor = 'rgba(0, 47, 255, 0.42)', rulerColor = 'rgb(0, 102, 255)') {
     const highlightDecoration = vscode.window.createTextEditorDecorationType({
         backgroundColor: bgColor,
@@ -28,4 +35,11 @@ export function createPreviewHighlight(bgColor = 'rgba(0, 47, 255, 0.42)', ruler
         rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
     });
     return highlightDecoration;
+}
+
+export function placePreviewHighlight(highlight: vscode.TextEditorDecorationType, startLocation: vscode.Position, endLocation: vscode.Position, promptString: string) {
+    vscode.window.activeTextEditor?.setDecorations(highlight, [{
+        range: new vscode.Range(startLocation, endLocation),
+        hoverMessage: `(Preview) Neuro wants to ${promptString}`,
+    }]);
 }

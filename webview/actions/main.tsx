@@ -1,7 +1,8 @@
 import { render } from 'preact';
+import { PermissionLevel } from '@vsc-neuropilot/api-types';
+
 import { useState, useEffect, useMemo, useId } from 'preact/hooks';
 import type { ActionNode, ActionsViewMessage, ActionsViewProviderMessage, SettingsContext } from '@typing/views/actions';
-import { PermissionLevel } from '../../src/types/actions';
 
 interface State {
     actions: ActionNode[];

@@ -1,3 +1,9 @@
+packages:
+- .
+- packages/*
+
+ignoreWorkspaceRootCheck: true
+
 allowBuilds:
   '@playwright/browser-chromium': true
   '@vscode/vsce-sign': false
@@ -5,3 +11,6 @@ allowBuilds:
   keytar: false
 minimumReleaseAgeExclude:
   - baseline-browser-mapping
+catalog:
+  '@standard-schema/spec': 1.1.0
+ 

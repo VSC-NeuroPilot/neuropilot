@@ -10,6 +10,20 @@ Changes between each version before then will not be listed.
 
 ### Additions
 
+- NeuroPilot now has a public, extensible API that can be accessed by other extensions.
+  - Details, including API interfaces, documentation, and versioning can be found at https://vsc-neuropilot.github.io/
+    - API changelogs will usually not be listed here.
+  - The Git integration and Copilot Chat integration have been ripped out of the extension and are now published as separate extensions, which use the API.
+    - Because of this, you may see fairly reduced bundle sizes.
+    - If you want to re-add these features, you can simply install the corresponding extensions.
+  - Whenever companion extensions (extensions that hook into NeuroPilot) are connected, you'll see them listed in a new sidebar panel.
+  - This API isn't limited to in-house extensions. Other developers can create extensions that hook into NeuroPilot too. Go wild!
+
+### Changes
+
+- Replaced the `insert_turtle_here` placeholder in context with a format similar to JavaScript templates.
+  - The new equivalent for `insert_turtle_here` is `${userName}`.
+  - See the documentation for available placeholders. <!-- TODO: Link + actually add to documentation -->
 - Internally, NeuroPilot changed to use [Zod](https://zod.dev) for JSON schema generation and validation.
   - This shouldn't mean that schemas are changed (except `rewrite_lines`, which is intentional). If any schemas have been changed as a result of this, it is considered a regression, and [is worth reporting](https://github.com/VSC-NeuroPilot/neuropilot/issues/new).
   - NeuroPilot actually accepts any TypeScript schema library that conforms to the [Standard JSON Schema specification](https://standardschema.dev/json-schema), however this is only relevant for the public API where companion developers can choose between schema libraries listed as compatible in the above list.
@@ -38,7 +52,6 @@ Changes between each version before then will not be listed.
 
 - The RCE system was reworked to handle asynchronous operations much better, in preparation for the upcoming public API. As a result, there may be slightly more context being sent to Neuro (most notably, from the new asynchronous validation system).
   - Minor note: Action forces have also been reworked to go through RCE, also in preparation for the upcoming public API. This shouldn't change anything on Neuro's end, however, other than forcing retries over and over again for Neuro if she continuously fails to input stuff correctly.
-
 
 ### Removals
 

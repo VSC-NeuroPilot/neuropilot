@@ -1,0 +1,51 @@
+{
+  "name": "@vsc-neuropilot/api-types",
+  "version": "1.0.0-pre.17",
+  "type": "module",
+  "files": [
+    "dist",
+    "CHANGELOG.md",
+    "SECURITY.md",
+    "CONTRIBUTING.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/VSC-NeuroPilot/neuropilot.git",
+    "directory": "packages/types"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "types": "tsgo --noEmit",
+    "prepare": "pnpm run build"
+  },
+  "keywords": [],
+  "author": "KTrain5369",
+  "license": "MIT",
+  "devDependencies": {
+    "@arethetypeswrong/core": "^0.18.4",
+    "@types/node": "^24.12.0",
+    "@types/vscode": "^1.95.0",
+    "@typescript/native-preview": "7.0.0-dev.20260418.1",
+    "publint": "^0.3.21",
+    "tsdown": "^0.22.3"
+  },
+  "peerDependencies": {
+    "@types/vscode": "^1.95.0"
+  },
+  "dependencies": {
+    "@standard-schema/spec": "catalog:",
+    "@types/json-schema": "^7.0.15",
+    "neuro-game-sdk": "^1.0.10"
+  },
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./utils": "./dist/utils.mjs",
+    "./package.json": "./package.json"
+  },
+  "sideEffects": false
+}

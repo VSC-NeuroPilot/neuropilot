@@ -17,6 +17,8 @@ package-lock.json
 
 # build output
 dist/
+bin/
+**/*.tsbuildinfo
 
 # logs
 npm-debug.log*

@@ -121,6 +121,42 @@
 			}
 		},
 		{
+			"type": "npm",
+			"script": "test:watch:desktop:tsc",
+			"group": "build",
+			"problemMatcher": "$tsc-watch",
+			"isBackground": true,
+			"label": "npm: test:watch:desktop:tsc",
+			"presentation": {
+				"group": "watch",
+				"reveal": "never"
+			}
+		},
+		{
+			"type": "npm",
+			"script": "test:watch:desktop:esbuild",
+			"group": "build",
+			"problemMatcher": "$esbuild-watch",
+			"isBackground": true,
+			"label": "npm: test:watch:desktop:esbuild",
+			"presentation": {
+				"group": "watch",
+				"reveal": "never"
+			}
+		},
+		{
+			"label": "watch:test:desktop",
+			"dependsOn": [
+				"npm: test:watch:desktop:tsc",
+				"npm: test:watch:desktop:esbuild"
+			],
+			"presentation": {
+				"reveal": "never"
+			},
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
 			"label": "Publish extension",
 			"type": "shell",
 			"command": "vsce publish ${input:version} --allow-star-activation",

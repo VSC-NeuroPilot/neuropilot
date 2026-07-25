@@ -1,24 +1,26 @@
 import * as vscode from 'vscode';
+import { PermissionLevel } from '@vsc-neuropilot/api-types';
+
 import { NEURO, EXTENSIONS } from '@/constants';
-import { logOutput, createClient, onClientConnected, setVirtualCursor, showAPIMessage, disconnectClient, reconnectClient, getWorkspaceUri, getFence, simpleFileName } from '@/utils/misc';
-import { completionsProvider } from '@/completions';
+import { logOutput, createClient, onClientConnected, setVirtualCursor, showAPIMessage, disconnectClient, reconnectClient } from '@/utils/misc';
 import { giveCookie } from '@/functions/cookies';
-import { ACCESS, ACTIONS, checkDeprecatedSettings, CONFIG, CONNECTION, PermissionLevel, setPermissions } from '@/config';
+import { ACCESS, ACTIONS, checkDeprecatedSettings, CONFIG, CONNECTION, setPermissions } from '@/config';
 import { explainWithNeuro, fixWithNeuro, NeuroCodeActionsProvider, sendDiagnosticsDiff } from '@/lint_problems';
 import { editorChangeHandler, fileSaveListener, moveNeuroCursorHere, workspaceEditHandler } from '../../edit_files';
 import { emergencyDenyRequests, acceptRceRequest, denyRceRequest, revealRceNotification, clearRceRequest, getActions, reregisterAllActions } from '@/rce';
-import type { GitExtension } from '@typing/git';
-import { getGitExtension } from '@/git';
 import { openDocsOnTarget, registerDocsCommands, registerDocsLink } from './docs';
-import { sendChangelogOnDemand } from '@/changelog';
+import { sendChangelogOnDemand, loadAllChangelogs } from '@/changelog';
 import { moveCursorEmitterDiposable } from '@events/cursor';
 import { loadIgnoreFiles } from '@/utils/ignore_files';
-import { getWorkspacePath, normalizePath } from '@/utils/misc';
+import { getWorkspacePath } from '@/utils/misc';
 import { ActionsViewProvider } from '@/views/actions';
 import { ImagesViewProvider } from '@/views/image';
 import { ExecuteViewProvider, addCustomExecutionHistoryItem } from '@/views/execute';
 import { actionsEventEmitterDisposable } from '@events/actions';
 import { filePreviewProvider } from '@previews/files';
+import { companionChangeEmitterDisposable } from '@events/companions';
+import { CompanionsViewProvider } from '@views/companions';
+import { contextPath, getRequiredFence, getWorkspaceUri, normalizePath } from '@vsc-neuropilot/api-types/utils';
 
 // Shared commands
 export function registerCommonCommands() {
@@ -93,7 +95,7 @@ export function setupCommonEventHandlers() {
                 setVirtualCursor();
             }
             if (event.affectsConfiguration('neuropilot.actionPermissions')) {
-                reregisterAllActions(true);
+                reregisterAllActions();
                 NEURO.viewProviders.actions?.refreshActions();
             }
 
@@ -123,18 +125,22 @@ export function initializeCommonState(context: vscode.ExtensionContext) {
     NEURO.context.subscriptions.push(
         NEURO.outputChannel,
         actionsEventEmitterDisposable,
+        companionChangeEmitterDisposable,
         vscode.window.registerFileDecorationProvider(filePreviewProvider),
         filePreviewProvider,
     );
     checkDeprecatedSettings(context.extension.packageJSON.version as string);
+
+    // Load all changelog versions on activation
+    loadAllChangelogs();
 }
 
 export function setupCommonProviders() {
     NEURO.viewProviders.actions = new ActionsViewProvider();
     NEURO.viewProviders.images = new ImagesViewProvider();
-    NEURO.viewProviders.execute = new ExecuteViewProvider(NEURO.context!);
+    NEURO.viewProviders.execute = new ExecuteViewProvider();
+    NEURO.viewProviders.companions = new CompanionsViewProvider();
     const providers = [
-        vscode.languages.registerInlineCompletionItemProvider({ pattern: '**' }, completionsProvider),
         vscode.languages.registerCodeActionsProvider(
             { scheme: 'file' },
             new NeuroCodeActionsProvider(),
@@ -143,6 +149,8 @@ export function setupCommonProviders() {
         vscode.window.registerWebviewViewProvider(ActionsViewProvider.viewId, NEURO.viewProviders.actions),
         vscode.window.registerWebviewViewProvider(ImagesViewProvider.viewId, NEURO.viewProviders.images),
         vscode.window.registerWebviewViewProvider(ExecuteViewProvider.viewId, NEURO.viewProviders.execute),
+        vscode.window.registerWebviewViewProvider(CompanionsViewProvider.viewId, NEURO.viewProviders.companions),
+        NEURO.viewProviders.images,
     ];
 
     return providers;
@@ -283,16 +291,6 @@ function switchCurrentNeuroAPIUser() {
 export function obtainExtensionState(): void {
     const copilotChat = vscode.extensions.getExtension('github.copilot-chat')?.isActive;
     EXTENSIONS.copilotChat = copilotChat === true;
-
-    const git = vscode.extensions.getExtension<GitExtension>('vscode.git');
-    if (git?.isActive !== undefined) {
-        EXTENSIONS.git = git.isActive === true ? git.exports : null;
-    } else {
-        EXTENSIONS.git = null;
-    }
-    if (vscode.env.uiKind === vscode.UIKind.Desktop) {
-        getGitExtension();
-    }
 }
 
 export function deactivate() {
@@ -497,7 +495,7 @@ export function sendCurrentFile() {
         return;
     }
     const document = editor.document;
-    const fileName = simpleFileName(document.fileName);
+    const fileName = contextPath(document.fileName);
     const language = document.languageId;
     const text = document.getText();
 
@@ -508,6 +506,6 @@ export function sendCurrentFile() {
     }
 
     logOutput('INFO', 'Sending current file to Neuro API');
-    const fence = getFence(text);
+    const fence = getRequiredFence(text);
     NEURO.client?.sendContext(`${CONNECTION.userName} sent you the contents of the file ${fileName}.\n\nContent:\n\n${fence}${language}\n${text}\n${fence}`);
 }

@@ -29,7 +29,7 @@ on:
 permissions: {}
 
 jobs:
-    build:
+    extension:
         name: Build extension
         runs-on: ubuntu-latest
         steps:
@@ -63,3 +63,31 @@ jobs:
               with:
                 path: neuropilot-*.vsix
                 name: NeuroPilot (Non-Production) Build ${{ github.sha }}
+    api:
+        name: Build API
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout source repository
+              uses: actions/checkout@v6
+              with:
+                ref: ${{ github.sha }}
+                submodules: true
+                persist-credentials: false
+
+            - name: Setup pnpm
+              uses: pnpm/action-setup@v6
+            
+            - name: Setup Node.js
+              uses: actions/setup-node@v6
+              with:
+                node-version-file: ./package.json
+                cache: 'pnpm'
+                cache-dependency-path: './pnpm-lock.yaml'
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+            
+            - name: Build API types
+              env:
+                NODE_ENV: ${{ inputs.prod || '0' }}
+              run: cd packages/types && pnpm build

@@ -1,18 +1,20 @@
 import * as vscode from 'vscode';
+import { RCEContext, ActionValidationResult, RCEHandlerReturns, PermissionLevel } from '@vsc-neuropilot/api-types';
+import { defineAction } from '@vsc-neuropilot/api-types/utils';
 import assert from 'node:assert';
 import { z } from 'zod';
 
 import { EXCEPTION_THROWN_STRING, NEURO, PROMISE_REJECTION_STRING } from '@/constants';
-import { getProperty, getWorkspacePath, getWorkspaceUri, isPathNeuroSafe, logOutput, normalizePath, notifyOnCaughtException, stripTailSlashes } from '@/utils/misc';
-import { actionValidationFailure, actionValidationAccept, ActionValidationResult, actionValidationRetry, RCEHandlerReturns, actionHandlerSuccess, actionHandlerFailure, defineAction } from '@/utils/neuro_client';
-import { PermissionLevel, getPermissionLevel } from '@/config';
+import { getProperty, getWorkspacePath, isPathNeuroSafe, logOutput, notifyOnCaughtException, stripTailSlashes } from '@/utils/misc';
+import { actionValidationFailure, actionValidationAccept, actionValidationRetry, actionHandlerSuccess, actionHandlerFailure } from '@/utils/neuro_client';
+import { getPermissionLevel } from '@/config';
 import { targetedFileCreatedEvent, targetedFileDeletedEvent } from '@events/files';
 import { RCECancelEvent } from '@events/utils';
-import { addActions } from './rce';
-import { RCEContext } from '@ctx/rce';
+import { addActions } from '@/rce';
 import { filePreviewProvider } from '@/previews/files';
 import { commonCancelEvents, checkCurrentFile, CONTEXT_NO_ACTIVE_DOCUMENT, STATUS_NO_ACTIVE_DOCUMENT, CONTEXT_NO_ACCESS, STATUS_NO_ACCESS, ACTION_FAIL_NOTES, validatePath, neuroSafeValidation, getUriExistence, validateIsAFile } from './utils/action_components';
-import { readFileActions } from './read_files';
+import { readFileActions } from '@/read_files';
+import { getWorkspaceUri, normalizePath } from '@vsc-neuropilot/api-types/utils';
 
 export const CATEGORY_FILE_ACTIONS = 'File System';
 

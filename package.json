@@ -19,7 +19,7 @@
 			"version": "^24.16.0"
 		}
 	},
-	"packageManager": "pnpm@11.5.0",
+	"packageManager": "pnpm@11.8.0",
 	"categories": [
 		"AI",
 		"Programming Languages",
@@ -32,62 +32,6 @@
 	"main": "./out/desktop/extension.js",
 	"browser": "./out/web/extension.js",
 	"contributes": {
-		"chatParticipants": [
-			{
-				"id": "neuropilot.api",
-				"name": "neuroapi",
-				"fullName": "Neuro API (custom name selected)",
-				"description": "Chat with the connected server",
-				"when": "config.neuropilot.currentlyAsNeuroAPI != 'Neuro' && config.neuropilot.currentlyAsNeuroAPI != 'Evil'",
-				"isSticky": true,
-				"commands": [
-					{
-						"name": "fix",
-						"description": "Ask the server to fix an error"
-					},
-					{
-						"name": "explain",
-						"description": "Ask the server to explain something in your code"
-					}
-				]
-			},
-			{
-				"id": "neuropilot.neuro",
-				"name": "neuro",
-				"fullName": "Neuro-sama",
-				"description": "Chat with Neuro-sama",
-				"when": "config.neuropilot.currentlyAsNeuroAPI == 'Neuro'",
-				"isSticky": true,
-				"commands": [
-					{
-						"name": "fix",
-						"description": "Ask Neuro to fix an error"
-					},
-					{
-						"name": "explain",
-						"description": "Ask Neuro to explain something in your code"
-					}
-				]
-			},
-			{
-				"id": "neuropilot.evil",
-				"name": "evil",
-				"fullName": "Evil Neuro",
-				"description": "Chat with Evil Neuro",
-				"when": "config.neuropilot.currentlyAsNeuroAPI === 'Evil'",
-				"isSticky": true,
-				"commands": [
-					{
-						"name": "fix",
-						"description": "Ask Evil to fix an error"
-					},
-					{
-						"name": "explain",
-						"description": "Ask Evil to explain something in your code"
-					}
-				]
-			}
-		],
 		"commands": [
 			{
 				"command": "neuropilot.reconnect",
@@ -247,37 +191,12 @@
 					"neuropilot.beforeContext": {
 						"type": "integer",
 						"default": 500,
-						"description": "The number of lines before the cursor position to include as context when editing a file or sending a completion request"
+						"description": "The number of lines before the cursor position to include as context when editing a file."
 					},
 					"neuropilot.afterContext": {
 						"type": "integer",
 						"default": 500,
-						"description": "The number of lines after the cursor position to include as context when editing a file or sending a completion request"
-					},
-					"neuropilot.maxCompletions": {
-						"type": "integer",
-						"default": 3,
-						"description": "The maximum number of completions to request"
-					},
-					"neuropilot.completionTrigger": {
-						"type": "string",
-						"default": "invokeOnly",
-						"description": "When to trigger completions",
-						"enum": [
-							"off",
-							"invokeOnly",
-							"automatic"
-						],
-						"enumDescriptions": [
-							"Disable inline completion suggestions",
-							"Only request completions when the user explicitly invokes the completion provider",
-							"Automatically request completions when the user stops typing"
-						]
-					},
-					"neuropilot.timeout": {
-						"type": "integer",
-						"default": 10000,
-						"description": "The timeout in milliseconds for completions and chat responses in ms"
+						"description": "The number of lines after the cursor position to include as context when editing a file."
 					},
 					"neuropilot.includePattern": {
 						"markdownDeprecationMessage": "This setting has been moved to `neuropilot.access.includePattern`."
@@ -592,8 +511,8 @@
 					},
 					"neuropilot.connection.initialContext": {
 						"type": "string",
-						"default": "You are using an extension in Visual Studio Code that allows you to code together with Vedal.",
-						"markdownDescription": "The initial context to sent to Neuro-sama (or whatever is connected to NeuroPilot)\n\nTo replace with your name (according to [this setting](vscode://settings/neuropilot.connection.userName)), use `insert_turtle_here`.",
+						"default": "You are using an extension in Visual Studio Code that allows you to code together with ${userName}.",
+						"markdownDescription": "The initial context to sent to Neuro-sama (or whatever is connected to NeuroPilot)\n\nTo replace with your name (according to [this setting](vscode://settings/neuropilot.connection.userName)), use `${userName}`.",
 						"editPresentation": "multilineText"
 					},
 					"neuropilot.connection.autoConnect": {
@@ -627,7 +546,7 @@
 					},
 					"neuropilot.connection.nameOfAPI": {
 						"type": "string",
-						"markdownDescription": "Who is currently acting as the Neuro API server?\nThis only changes the name in certain areas (such as Copilot-mode requests or Git commit messages) due to limitations.\n\nYou can add custom characters using `settings.json` if you ignore the lint error from VS Code.\n\n(Most) names mentioned here are not associated with NeuroPilot.",
+						"markdownDescription": "Who is currently acting as the Neuro API server?\nThis only changes the name in certain areas (such as Copilot-mode requests) due to limitations.\n\nYou can add custom characters using `settings.json` if you ignore the lint error from VS Code.\n\n(Most) names mentioned here are not associated with NeuroPilot.",
 						"default": "Neuro",
 						"enum": [
 							"Neuro",
@@ -751,6 +670,12 @@
 				},
 				{
 					"type": "webview",
+					"id": "neuropilot.companionsView",
+					"name": "Companions",
+					"icon": "assets/neuropilot-font.svg"
+				},
+				{
+					"type": "webview",
 					"id": "neuropilot.imagesView",
 					"name": "Images",
 					"icon": "assets/neuropilot-font.svg"
@@ -779,7 +704,7 @@
 	"capabilities": {
 		"virtualWorkspaces": {
 			"supported": "limited",
-			"description": "In virtual workspaces, Terminal, Tasks, Git support (restricted on web) and Copilot Chat mode (restricted on web) is not available."
+			"description": "In virtual workspaces, Terminal and Tasks are not available."
 		},
 		"untrustedWorkspaces": {
 			"supported": "limited",
@@ -842,14 +767,17 @@
 		"test:web:browser:open:firefox": "vscode-test-web --headless --browser=firefox --extensionDevelopmentPath=. --extensionTestsPath=out/web/test/browser.js test-playground",
 		"test:web:browser:open:webkit": "vscode-test-web --headless --browser=webkit --extensionDevelopmentPath=. --extensionTestsPath=out/web/test/browser.js test-playground",
 		"test:web:browser:open:vscode": "vscode-test-web --headless --extensionDevelopmentPath=. --extensionTestsPath=out/web/test/browser.js test-playground",
+		"test:watch:desktop": "npm run build:desktop && npm-run-all -p test:watch:desktop:*",
 		"test:desktop": "npm run build:desktop && npm-run-all -s test:desktop:*",
 		"test:desktop:tsc": "tsc --noEmit --project test-tsconfigs/tsconfig.app.json",
+		"test:watch:desktop:tsc": "tsc --noEmit --project test-tsconfigs/tsconfig.app.json --watch",
 		"test:desktop:esbuild": "node ./scripts/esbuild.mjs --mode desktop --test",
+		"test:watch:desktop:esbuild": "node ./scripts/esbuild.mjs --mode desktop --test --watch",
 		"test:desktop:vscode": "vscode-test --label desktopUnitTest"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
-		"@standard-schema/spec": "^1.1.0",
+		"@standard-schema/spec": "catalog:",
 		"@stylistic/eslint-plugin": "^5.10.0",
 		"@types/glob-to-regexp": "^0.4.4",
 		"@types/json-schema": "^7.0.15",
@@ -858,6 +786,7 @@
 		"@types/vscode": "^1.95.0",
 		"@types/vscode-webview": "^1.57.5",
 		"@typescript/native": "npm:typescript@^7.0.2",
+		"@vsc-neuropilot/api-types": "workspace:*",
 		"@vscode/test-cli": "^0.0.15",
 		"@vscode/test-electron": "^3.0.0",
 		"@vscode/test-web": "^0.0.81",

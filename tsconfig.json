@@ -5,7 +5,9 @@
         { "path": "./tsconfig.webview.json" },
         { "path": "./tsconfig.node.json" },
         { "path": "./test-tsconfigs/tsconfig.app.json" },
-        { "path": "./test-tsconfigs/tsconfig.web.json" }
+        { "path": "./test-tsconfigs/tsconfig.web.json" },
+        { "path": "./packages/types/tsconfig.json" },
+        { "path": "./packages/cli/tsconfig.json" },
     ],
     "exclude": ["project-files", "media", "dist", "playground/**", "scripts"]
 }

@@ -1,15 +1,7 @@
 import { Disposable, EventEmitter } from 'vscode';
 import { ActionData } from 'neuro-game-sdk';
-import type { ActionStatus } from '@typing/actions';
 
-export { ActionStatus }; // re-exporting for the sake of compat I'm done with this
-
-export interface ActionsEventData {
-    readonly action: string;
-    readonly status: ActionStatus;
-    readonly message?: string;
-    readonly executionId: string;
-}
+import { ActionsEventData, ActionStatus } from '@vsc-neuropilot/api-types';
 
 const actionsEventEmitter = new EventEmitter<ActionsEventData>();
 export const onDidAttemptAction = actionsEventEmitter.event;

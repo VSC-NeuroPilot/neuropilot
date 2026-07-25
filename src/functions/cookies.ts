@@ -1,12 +1,13 @@
 import * as vscode from 'vscode';
+import { PermissionLevel, SimplifiedStatusUpdateHandler } from '@vsc-neuropilot/api-types';
+import { defineAction } from '@vsc-neuropilot/api-types/utils';
 import z from 'zod';
 
 import { logOutput } from '@/utils/misc';
 import { NEURO } from '@/constants';
-import { CONNECTION, PermissionLevel, getPermissionLevel } from '@/config';
+import { CONNECTION, getPermissionLevel } from '@/config';
 import { addActions, CATEGORY_MISC } from '@/rce';
-import { actionHandlerFailure, actionHandlerSuccess, defineAction } from '@/utils/neuro_client';
-import { SimplifiedStatusUpdateHandler } from '@ctx/rce';
+import { actionHandlerFailure, actionHandlerSuccess } from '@/utils/neuro_client';
 
 export const REQUEST_COOKIE_ACTION = defineAction({
     name: 'request_cookie',
@@ -44,6 +45,7 @@ export const REQUEST_COOKIE_ACTION = defineAction({
                     'NullReferenceException: Flavor reference not set to an instance of a Cookie.',
                     'TypeError: Cannot read property \'flavor\' of undefined cookie.',
                     'Segmentation fault (core dumped).',
+                    'AssertionError: Expected cookie to be truthy, got undefined instead.',
                 ];
                 const randomIndex = Math.floor(Math.random() * quotes.length);
                 return actionHandlerFailure(base + quotes[randomIndex], `${base.replace('You', CONNECTION.nameOfAPI)}${quotes[randomIndex].replace(/you|You/g, CONNECTION.nameOfAPI)} (undefined flavor)`);

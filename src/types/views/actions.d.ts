@@ -1,4 +1,4 @@
-import type { PermissionLevel } from '../actions';
+import type { PermissionLevel } from '@vsc-neuropilot/api-types';
 
 export type SettingsContext = 'user' | 'workspace';
 

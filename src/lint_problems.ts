@@ -1,15 +1,17 @@
 import * as vscode from 'vscode';
 import assert from 'node:assert';
+import { RCEContext, ActionValidationResult, ActionHandlerResult } from '@vsc-neuropilot/api-types';
+import { defineAction } from '@vsc-neuropilot/api-types/utils';
 import { z } from 'zod';
 
 import { EXCEPTION_THROWN_STRING, NEURO } from '@/constants';
-import { normalizePath, getWorkspacePath, logOutput, isPathNeuroSafe, getWorkspaceUri } from '@/utils/misc';
+import { getWorkspacePath, logOutput, isPathNeuroSafe } from '@/utils/misc';
 import { CONFIG } from '@/config';
 import { filePreviewProvider } from '@/previews/files';
-import { actionValidationAccept, actionValidationFailure, ActionValidationResult, actionValidationRetry, ActionHandlerResult, actionHandlerSuccess, actionHandlerFailure, defineAction } from '@/utils/neuro_client';
+import { actionValidationAccept, actionValidationFailure, actionValidationRetry, actionHandlerSuccess, actionHandlerFailure } from '@/utils/neuro_client';
 import { targetedFileLintingResolvedEvent, targetedFolderLintingResolvedEvent, workspaceLintingResolvedEvent } from '@events/linting';
 import { addActions } from '@/rce';
-import { RCEContext } from '@ctx/rce';
+import { getWorkspaceUri, normalizePath } from '@vsc-neuropilot/api-types/utils';
 
 export const CATEGORY_LINTING = 'Linting';
 

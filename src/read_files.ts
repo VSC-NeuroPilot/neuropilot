@@ -1,18 +1,20 @@
 import * as vscode from 'vscode';
+import { PositionContext, RCEContext, RCEHandlerReturns } from '@vsc-neuropilot/api-types';
+import { defineAction } from '@vsc-neuropilot/api-types/utils';
 import assert from 'node:assert';
 import { z } from 'zod';
 
-import { RCEContext } from '@ctx/rce';
-import { EXCEPTION_THROWN_STRING, NEURO, PROMISE_REJECTION_STRING } from './constants';
-import { previewCursorMovement } from './edit_files';
-import { isPathNeuroSafe, getVirtualCursor, setVirtualCursor, getPositionContext, logOutput, formatContext, getFence, escapeRegExp, filterFileContents, indexFromPosition, positionFromIndex, getWorkspacePath, getWorkspaceUri, NeuroPositionContext, normalizePath, notifyOnCaughtException, simpleFileName } from './utils/misc';
-import { RCEHandlerReturns, actionHandlerFailure, actionHandlerSuccess, actionValidationAccept, actionValidationFailure, defineAction } from './utils/neuro_client';
-import { _LINE_RANGE_SCHEMA, _POSITION_SCHEMA, ACTION_FAIL_NOTES, binaryFileValidation, cancelOnDidChangeActiveTextEditor, checkCurrentFile, commonCancelEvents, commonCancelEventsWithCursor, CONTEXT_NO_ACCESS, CONTEXT_NO_ACTIVE_DOCUMENT, createLineRangeValidator, createPositionValidator, createStringValidator, findAndFilter, LineRange, MATCH_OPTIONS, MatchOptions, neuroSafeValidation, previewFindFunctions, STATUS_NO_ACCESS, STATUS_NO_ACTIVE_DOCUMENT, STATUS_NO_MATCHES_FOUND, validateIsAFile, validateRegex } from './utils/action_components';
-import { CONFIG, CONNECTION } from './config';
+import { EXCEPTION_THROWN_STRING, NEURO, PROMISE_REJECTION_STRING } from '@/constants';
+import { previewCursorMovement, previewFindFunctions } from '@/edit_files';
+import { isPathNeuroSafe, getVirtualCursor, setVirtualCursor, getPositionContext, logOutput, formatContext, indexFromPosition, positionFromIndex, getWorkspacePath, notifyOnCaughtException } from './utils/misc';
+import { actionHandlerFailure, actionHandlerSuccess, actionValidationAccept, actionValidationFailure } from '@/utils/neuro_client';
+import { _LINE_RANGE_SCHEMA, _POSITION_SCHEMA, ACTION_FAIL_NOTES, binaryFileValidation, cancelOnDidChangeActiveTextEditor, checkCurrentFile, commonCancelEvents, commonCancelEventsWithCursor, CONTEXT_NO_ACCESS, CONTEXT_NO_ACTIVE_DOCUMENT, createLineRangeValidator, createPositionValidator, createStringValidator, findAndFilter, LineRange, MATCH_OPTIONS, MatchOptions, neuroSafeValidation, STATUS_NO_ACCESS, STATUS_NO_ACTIVE_DOCUMENT, STATUS_NO_MATCHES_FOUND, validateIsAFile, validateRegex } from './utils/action_components';
+import { CONFIG, CONNECTION } from '@/config';
 import { targetedFileDeletedEvent } from '@events/files';
 import { RCECancelEvent } from '@events/utils';
 import { filePreviewProvider } from '@previews/files';
-import { addActions } from './rce';
+import { addActions } from '@/rce';
+import { contextFileContent, contextPath, escapeRegExp, getRequiredFence, getWorkspaceUri, normalizePath } from '@vsc-neuropilot/api-types/utils';
 
 const CATEGORY_READING = 'Read Files';
 
@@ -26,7 +28,7 @@ export const readFileActions = {
             filePath: z.string().meta({
                 description: 'The relative path to the file. If omitted, reads the currently open file.',
                 examples: ['./index.html', 'style.css', 'src/main.js'],
-            }),
+            }).optional(),
         }),
         handler(context) {
             const { data: actionData } = context;
@@ -84,14 +86,17 @@ export const readFileActions = {
                         actionData.params.filePath = vscode.workspace.asRelativePath(normalizedUri, false);
                     }
 
+                    // Assert to the type checker that filePath is definitely defined
+                    const contextCopyWithFilePathDefined = contextCopy as RCEContext<{filePath: string}>;
+
                     // Run all validators with the resolved filePath
                     const neuroSafeResult = await neuroSafeValidation(true)(context);
                     if (!neuroSafeResult.success) return neuroSafeResult;
 
-                    const binaryResult = await binaryFileValidation(contextCopy);
+                    const binaryResult = await binaryFileValidation(contextCopyWithFilePathDefined);
                     if (!binaryResult.success) return binaryResult;
 
-                    const fileResult = await validateIsAFile(contextCopy);
+                    const fileResult = await validateIsAFile(contextCopyWithFilePathDefined);
                     if (!fileResult.success) return fileResult;
 
                     return actionValidationAccept();
@@ -184,7 +189,7 @@ export const readFileActions = {
     highlight_lines: defineAction({
         name: 'highlight_lines',
         description: 'Highlight the specified lines.'
-            + ' Can be used to draw insert_turtle_here\'s or Chat\'s attention towards something.'
+            + ' Can be used to draw ${userName}\'s or Chat\'s attention towards something.'
             + ' This will not move your cursor.'
             + ' Line numbers are one-based.',
         category: CATEGORY_READING,
@@ -206,7 +211,7 @@ export const readFileActions = {
         description: 'Find text in the active document.'
             + ' If you set "useRegex" to true, you can use a Regex in the "find" parameter.'
             + ' This will place your cursor directly before or after the found text (depending on "moveCursor"), unless you searched for multiple instances.'
-            + ' Set "highlight" to true to highlight the found text, if you want to draw insert_turtle_here\'s or Chat\'s attention to it.'
+            + ' Set "highlight" to true to highlight the found text, if you want to draw ${userName}\'s or Chat\'s attention to it.'
             + ' If you search for multiple matches, the numbers at the start of each line are the one-based line numbers and not part of the code.',
         category: CATEGORY_READING,
         schema: z.object({
@@ -319,7 +324,7 @@ function returnHandleOpenFile(relativePath: string) {
                 if (cursor === undefined || cursor === null) {
                     // No cursor available yet: send entire document
                     const decodedContent = document.getText();
-                    const fence = getFence(decodedContent);
+                    const fence = getRequiredFence(decodedContent);
                     NEURO.client?.sendContext(`Contents of the file ${relativePath}:\n\n${fence}\n${decodedContent}\n${fence}`);
                 } else {
                     // Cursor available: send contextual snippet around the cursor
@@ -355,7 +360,7 @@ function returnHandleReadFile(filePath?: string) {
     // If no filePath provided, read current file
     if (!filePath || filePath === '' || vscode.workspace.asRelativePath(editor.document.uri) === vscode.workspace.asRelativePath(vscode.Uri.joinPath(getWorkspaceUri()!, filePath))) {
         const document = editor.document;
-        const fileName = simpleFileName(document.fileName);
+        const fileName = contextPath(document.fileName);
         const cursor = getVirtualCursor()!;
 
         if (!isPathNeuroSafe(document.fileName)) {
@@ -363,9 +368,9 @@ function returnHandleReadFile(filePath?: string) {
         }
 
         // Manually construct context to include entire file
-        const positionContext: NeuroPositionContext = {
-            contextBefore: filterFileContents(document.getText(new vscode.Range(new vscode.Position(0, 0), cursor))),
-            contextAfter: filterFileContents(document.getText(new vscode.Range(cursor, document.lineAt(document.lineCount - 1).rangeIncludingLineBreak.end))),
+        const positionContext: PositionContext = {
+            contextBefore: contextFileContent(document.getText(new vscode.Range(new vscode.Position(0, 0), cursor))),
+            contextAfter: contextFileContent(document.getText(new vscode.Range(cursor, document.lineAt(document.lineCount - 1).rangeIncludingLineBreak.end))),
             startLine: 0,
             endLine: document.lineCount - 1,
             totalLines: document.lineCount,
@@ -388,7 +393,7 @@ function returnHandleReadFile(filePath?: string) {
         return vscode.workspace.fs.readFile(fileAsUri).then(
             (data: Uint8Array) => {
                 const decodedContent = new TextDecoder('utf-8').decode(data);
-                const fence = getFence(decodedContent);
+                const fence = getRequiredFence(decodedContent);
                 return actionHandlerSuccess(`Contents of the file ${file}:\n\n${fence}\n${decodedContent}\n${fence}`, 'File contents sent');
             },
             (erm: unknown) => {
@@ -492,7 +497,7 @@ function returnHandleGetUserSelection() {
         : `${CONNECTION.userName}'s selection is from (${editor.selection.start.line + 1}:${editor.selection.start.character + 1}) to (${editor.selection.end.line + 1}:${editor.selection.end.character + 1}).`;
 
     const selectedText = editor.document.getText(editor.selection);
-    const fence = getFence(selectedText);
+    const fence = getRequiredFence(selectedText);
     const postamble = editor.selection.isEmpty
         ? ''
         : `\n\n${CONNECTION.userName}'s selection contains:\n\n${fence}\n${selectedText}\n${fence}`;
@@ -544,7 +549,7 @@ function returnHandleFindText(find: string, match: MatchOptions, useRegex = fals
         return actionHandlerFailure(CONTEXT_NO_ACCESS, STATUS_NO_ACCESS);
     }
 
-    const documentText = filterFileContents(document.getText());
+    const documentText = contextFileContent(document.getText());
 
     const regex = new RegExp(useRegex ? find : escapeRegExp(find), 'gm');
     const cursorOffset = indexFromPosition(documentText, getVirtualCursor()!);
@@ -587,7 +592,7 @@ function returnHandleFindText(find: string, match: MatchOptions, useRegex = fals
         }
         const lineNumberContextFormat = CONFIG.lineNumberContextFormat || '{n}|';
         const text = lines.map((line, i) => lineNumberContextFormat.replace('{n}', (positions[i].line + 1).toString()) + line).join('\n');
-        const fence = getFence(text);
+        const fence = getRequiredFence(text);
         return actionHandlerSuccess(`Found ${positions.length} matches:\n\n${fence}\n${text}\n${fence}`, `Found ${positions.length} matches`);
     }
 }

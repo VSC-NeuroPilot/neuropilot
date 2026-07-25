@@ -1,0 +1,165 @@
+.companions-container {
+    padding: 8px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+.header h3 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    flex: 1;
+    min-width: 0;
+}
+
+.companion-count {
+    background: var(--vscode-badge-background);
+    color: var(--vscode-badge-foreground);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+    color: var(--vscode-descriptionForeground);
+    gap: 8px;
+    text-align: center;
+}
+
+.empty-state .codicon {
+    font-size: 32px;
+    opacity: 0.7;
+}
+
+.empty-state p {
+    margin: 0;
+}
+
+.empty-state .hint {
+    font-size: 11px;
+    opacity: 0.8;
+}
+
+.companions-list {
+    overflow-y: auto;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.companion-card {
+    background: var(--vscode-editor-background);
+    border: 1px solid var(--vscode-panel-border);
+    border-radius: 4px;
+    padding: 12px;
+    transition: border-color 0.2s;
+}
+
+.companion-card:hover {
+    border-color: var(--vscode-focusBorder);
+}
+
+.companion-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.companion-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+}
+
+.companion-name {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--vscode-foreground);
+}
+
+.companion-author {
+    font-size: 11px;
+    color: var(--vscode-descriptionForeground);
+}
+
+.docs-link {
+    color: var(--vscode-textLink-foreground);
+    text-decoration: none;
+    padding: 4px;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.docs-link:hover {
+    background: var(--vscode-toolbar-hoverBackground);
+}
+
+.docs-link .codicon {
+    font-size: 16px;
+}
+
+.contributions {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--vscode-panel-border);
+}
+
+.contributions-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--vscode-descriptionForeground);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.contributions-list {
+    list-style: none;
+    padding: 0;
+    margin: 8px 0 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.contribution-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    padding: 4px 0;
+}
+
+.contribution-item .codicon {
+    color: var(--vscode-testing-iconPassed);
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
+.contribution-item span {
+    color: var(--vscode-foreground);
+}

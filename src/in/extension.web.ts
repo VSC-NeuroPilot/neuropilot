@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { isPathNeuroSafe, setVirtualCursor, normalizePath, getWorkspacePath } from '@/utils/misc';
+import { isPathNeuroSafe, setVirtualCursor, getWorkspacePath } from '@/utils/misc';
 import { NEURO } from '@/constants';
 import {
     initializeCommonState,
@@ -22,6 +22,8 @@ import { addCommonUnsupervisedActions, registerUnsupervisedHandlers } from '@ent
 import { registerSendSelectionToNeuro } from '../edit_files';
 import { loadIgnoreFiles } from '@/utils/ignore_files';
 import { reregisterAllActions } from '../rce';
+import { api } from '@/api';
+import { normalizePath } from '@vsc-neuropilot/api-types/utils';
 
 export function activate(context: vscode.ExtensionContext) {
     loadIgnoreFiles(
@@ -77,6 +79,8 @@ export function activate(context: vscode.ExtensionContext) {
     if (vscode.window.activeTextEditor && isPathNeuroSafe(vscode.window.activeTextEditor.document.fileName)) {
         setVirtualCursor(vscode.window.activeTextEditor.selection.active);
     }
+
+    return api;
 }
 
 export function deactivate() {

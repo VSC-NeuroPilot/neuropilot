@@ -1,15 +1,12 @@
 import * as vscode from 'vscode';
+import { CursorPositionContextStyle, PermissionLevel } from '@vsc-neuropilot/api-types';
+
 
 import { NEURO } from '@/constants';
 import { logOutput } from '@/utils/misc';
 import { getAction } from '@/rce';
-import { PermissionLevel } from '@typing/actions';
-
-export { PermissionLevel }; // re-exporting for the sake of compat I'm done with this
 
 //#region Types
-
-export type CursorPositionContextStyle = 'off' | 'inline' | 'lineAndColumn' | 'both';
 
 export interface Permission {
     /** The ID of the permission in package.json, without the `neuropilot.permission.` prefix. */
@@ -547,9 +544,6 @@ export function setPermissionLevel(actionName: string, level: PermissionLevel, t
 class Config {
     get beforeContext(): number { return getConfig('beforeContext')!; }
     get afterContext(): number { return getConfig('afterContext')!; }
-    get maxCompletions(): number { return getConfig('maxCompletions')!; }
-    get completionTrigger(): string { return getConfig('completionTrigger')!; }
-    get timeout(): number { return getConfig('timeout')!; }
     get showTimeOnTerminalStart(): boolean { return getConfig('showTimeOnTerminalStart')!; }
     get terminalContextDelay(): number { return getConfig('terminalContextDelay')!; }
     get sendNewLintingProblemsOn(): string { return getConfig('sendNewLintingProblemsOn')!; }

@@ -35,15 +35,6 @@ The amount of times the extension should retry is [also configurable](vscode://s
 We refer to permission modes in NeuroPilot as either Autopilot mode (top GIF) or Copilot mode (bottom GIF) which can be configured alongside disabling it completely.
 These refer to different levels of permission Neuro can be given over certain groups of actions.
 
-### Copilot Chat integration
-
-This extension adds a chat participant that allows you to interact with her as if she was Copilot.
-This includes:
-
-- Chatting with her through the chat sidebar (invoked by typing `@neuro`, `@evil` or `@neuroapi`).
-- Requesting inline completions (tab-complete, as its known).
-- Asking her to fix or explain lint errors.
-
 ## Security
 
 The extension has multiple security measures in place to prevent Neuro from doing any real damage.
@@ -52,8 +43,6 @@ Neuro can only run tasks that have the string `[Neuro]` at the start of their `d
 Neuro cannot open, edit, or otherwise access files or folders that start with a dot (`.`), or files in such folders.
 This is mainly to prevent her from opening `.vscode/tasks.json` to essentially run arbitrary commands in the terminal, or editing `.vscode/settings.json` to escalate her permissions.
 **Warning: If your workspace is inside such a folder, Neuro will not be able to edit *any* files!**
-
-Neuro also can't change the global git configuration, only the one local to the current repository.
 
 Note that:
 

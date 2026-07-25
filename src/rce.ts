@@ -5,32 +5,23 @@
 
 import * as vscode from 'vscode';
 import assert from 'node:assert';
-import { ActionData, type NeuroClient } from 'neuro-game-sdk';
+import { ActionData, ActionForcePriorityEnum, type NeuroClient } from 'neuro-game-sdk';
 import { validate } from 'jsonschema';
-import type { StandardJSONSchemaV1 } from '@standard-schema/spec';
 import type { JSONSchema7 } from 'json-schema';
 
-import { ActionForceParams, actionHandlerFailure, ActionHandlerResult, actionHandlerSuccess, InferDataFromSchema, RCEAction, SchemaTypes, stripToAction, attemptConvertStandardJSONSchema } from '@/utils/neuro_client';
+import { RCEAction, type RCECancelEvent, ActionHandlerResult, PermissionLevel, ActionForceParams, InjectionBaseData, InferDataFromSchema, SchemaTypes } from '@vsc-neuropilot/api-types';
+
+import { actionHandlerFailure, actionHandlerSuccess, stripToAction, attemptConvertStandardJSONSchema } from '@/utils/neuro_client';
 import { NEURO } from '@/constants';
 import { isThenable, logOutput, notifyOnCaughtException } from '@/utils/misc';
-import { ACTIONS, CONFIG, CONNECTION, getAllPermissions, getPermissionLevel, PermissionLevel, stringToPermissionLevel } from '@/config';
-import type { RCECancelEvent } from '@events/utils';
+import { ACTIONS, CONFIG, CONNECTION, getAllPermissions, getPermissionLevel, stringToPermissionLevel } from '@/config';
 import { fireOnActionStart, updateActionStatus } from '@events/actions';
 import { RCEContext } from '@/context/rce';
 
 export const CATEGORY_MISC = 'Miscellaneous';
 
-const ACTIONS_ARRAY: RCEAction[] = [];
+const ACTIONS_ARRAY: RCEActionPlus[] = [];
 const REGISTERED_ACTIONS: Set<string> = /* @__PURE__ */ new Set<string>();
-
-/**
- * A prompt parameter can either be a string or a function that converts an RCEContext into a prompt string.
- */
-export type PromptGenerator<
-    TData extends unknown | undefined = unknown,
-    TSchema extends StandardJSONSchemaV1 | JSONSchema7 | undefined = JSONSchema7 | undefined,
-    TDataShape = InferDataFromSchema<TSchema>,
-> = string | ((context: RCEContext<TData, TSchema, TDataShape>) => string);
 
 let activeRequestContext: RCEContext | null = null;
 
@@ -49,6 +40,28 @@ export interface ExtendedActionInfo {
     isConfigured: boolean;
     configuredWorkspacePermission?: PermissionLevel;
     configuredGlobalPermission?: PermissionLevel;
+}
+
+export interface RCEActionPlus<
+    TData extends unknown | undefined = undefined,
+    TSchema extends SchemaTypes = SchemaTypes,
+    TDataShape extends unknown | undefined = TData extends undefined ? InferDataFromSchema<TSchema> : TData,
+> extends RCEAction<TData, TSchema, TDataShape> {
+    /**
+     * The source companion's token.
+     * If omitted, can be safely assumed to come from NeuroPilot Base.
+     */
+    sourceToken?: string;
+    /**
+     * A list of companion names that have injected into this action.
+     * The array is in chronological order of who injected into the action.
+     */
+    injectedBy?: InjectionData[]
+}
+
+export interface InjectionData {
+    companion: string;
+    injects: Partial<InjectionBaseData>;
 }
 
 export const cancelRequestAction: RCEAction = {
@@ -311,10 +324,11 @@ export function denyRceRequest(): void {
  * Adds multiple actions to the RCE system.
  * @param actions The actions to add.
  * @param register Whether to register the actions with Neuro immediately if the permissions allow.
+ * @param source The action's source companion. For backwards compatibility reasons, defaults to NeuroPilot.
  */
 // allowing any here because it genuinely doens't matter what gets passed in
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function addActions(actions: RCEAction<any, SchemaTypes, any>[], register = true): void {
+export function addActions(actions: RCEAction<any, SchemaTypes, any>[], register = true, sourceToken?: string): void {
     const actionsToAdd = actions.filter(a => !ACTIONS_ARRAY.some(existing => existing.name === a.name));
     const actionsNotToAdd = actions.filter(a => !actionsToAdd.includes(a));
     if (actionsNotToAdd.length > 0) {
@@ -324,7 +338,7 @@ export function addActions(actions: RCEAction<any, SchemaTypes, any>[], register
         if ('converter' in a) delete a.converter;
         return a as RCEAction;
     });
-    ACTIONS_ARRAY.push(...finalActionForms);
+    ACTIONS_ARRAY.push(...finalActionForms.map(a => ({ ...a, sourceToken })));
     if (register && NEURO.connected) {
         const actionNames = actionsToAdd.map(a => a.name);
         const actionsToRegister = actionNames
@@ -341,6 +355,7 @@ export function addActions(actions: RCEAction<any, SchemaTypes, any>[], register
 /**
  * Removes multiple actions from the registry.
  * @param actionNames The names of the actions to remove.
+ * @param token The token to use when checking actions.
  */
 export function removeActions(actionNames: string[]): void {
     for (const actionName of actionNames) {
@@ -392,7 +407,7 @@ export function unregisterAllActions(): void {
  * Reregisters all actions with the Neuro API.
  * @param conservative Only reregister as necessary.
  */
-export function reregisterAllActions(conservative: boolean): void {
+export function reregisterAllActions(conservative = true): void {
     // Can't reregister if no client is connected
     if (!NEURO.connected) return;
 
@@ -527,10 +542,10 @@ export function tryForceActions(params: ActionForceParams, strict = false): bool
 
     // Register actions with overridden permissions if specified
     if (params.overridePermissions) {
-        reregisterAllActions(true);
+        reregisterAllActions();
     }
 
-    NEURO.client?.forceActions(paramsCopy.query, paramsCopy.actionNames, paramsCopy.state, paramsCopy.ephemeral_context, paramsCopy.priority);
+    NEURO.client?.forceActions(paramsCopy.query, paramsCopy.actionNames, paramsCopy.state, paramsCopy.ephemeral_context, paramsCopy.priority as ActionForcePriorityEnum | undefined);
 
     return true;
 }
@@ -539,7 +554,7 @@ export function tryForceActions(params: ActionForceParams, strict = false): bool
 function clearActionForce(): void {
     if (!NEURO.currentActionForce) return;
     NEURO.currentActionForce = null;
-    reregisterAllActions(true);
+    reregisterAllActions();
 }
 
 /**
@@ -553,24 +568,26 @@ export async function abortActionForce(): Promise<void> {
     NEURO.client?.unregisterActions(NEURO.currentActionForce?.actionNames ?? []);
     NEURO.currentActionForce = null; // Not using clearActionForce here since we want to delay re-registration.
     await new Promise(resolve => setTimeout(resolve, 250)); // Wait for 250ms
-    reregisterAllActions(true);
+    reregisterAllActions();
 }
 
 /**
  * Gets the list of registered actions.
  * Do not modify the actions in the returned array directly.
+ * @param names Optional array of names that can be used to filter out actions that don't match that name.
  * @returns The list of registered actions.
  */
-export function getActions(): readonly RCEAction[] {
-    return ACTIONS_ARRAY;
+export function getActions(names?: string[]): readonly RCEActionPlus[] {
+    if (!names) return ACTIONS_ARRAY;
+    return ACTIONS_ARRAY.filter(v => names.includes(v.name));
 }
 
 export function getAction<
     const TData extends unknown | undefined,
     const TSchema extends SchemaTypes,
     const TDataShape extends unknown | undefined,
->(actionName: string): RCEAction<TData, TSchema, TDataShape> | undefined {
-    return ACTIONS_ARRAY.find(a => a.name === actionName) as RCEAction<TData, TSchema, TDataShape> | undefined;
+>(actionName: string): RCEActionPlus<TData, TSchema, TDataShape> | undefined {
+    return ACTIONS_ARRAY.find(a => a.name === actionName) as RCEActionPlus<TData, TSchema, TDataShape> | undefined;
 }
 
 export function getExtendedActionsInfo(): ExtendedActionInfo[] {
@@ -654,11 +671,11 @@ export async function RCEActionHandler(actionData: ActionData) {
                 return;
             }
 
-            if (action.contextSetupHook) {
+            if (action.contextSetupHooks) {
                 context.lifecycle.setupHooks = false;
                 // TODO: Add documentation for handling if a value already exists in case of async race timing and all that
                 const setupArray = [];
-                for (const hook of action.contextSetupHook) {
+                for (const hook of action.contextSetupHooks) {
                     setupArray.push(hook(context));
                 }
                 Promise.allSettled(setupArray).then(() => context!.lifecycle.setupHooks = true);
@@ -740,7 +757,7 @@ export async function RCEActionHandler(actionData: ActionData) {
                     if (typeof reason === 'string') {
                         createdReason = reason.trim();
                     } else if (typeof reason === 'function') {
-                        createdReason = reason(actionData, eventData).trim();
+                        createdReason = reason(context!, eventData).trim();
                     } else {
                         createdReason = 'a cancellation event was fired.';
                     };
@@ -748,7 +765,7 @@ export async function RCEActionHandler(actionData: ActionData) {
                     if (typeof logReason === 'string') {
                         createdLogReason = logReason.trim();
                     } else if (typeof logReason === 'function') {
-                        createdLogReason = logReason(actionData, eventData).trim();
+                        createdLogReason = logReason(context!, eventData).trim();
                     } else {
                         createdLogReason = createdReason;
                     }

@@ -1,0 +1,226 @@
+import { Disposable, Event, Position, ExtensionContext, Extension, Uri, TextEditorDecorationType } from 'vscode';
+import { ActionForceParams, ActionsEventData, InjectionBaseData, RCEAction, SchemaTypes } from '../actions/types';
+import { Contributions } from './enum';
+import { RCECancelEventConstructor } from '../actions';
+
+export interface CompanionAPI extends Disposable {
+    /**
+     * Utilities specific to creating actions.
+     * These are separated due to them returning Disposables that need to be handled better.
+     */
+    actionUtils: {
+        files: FileActionUtils;
+        edits: EditActionUtils;
+        /**
+         * Creates a new cancel event for RCE.
+         * Make sure to properly dispose of them when you no longer need the cancel events.
+         * If you are adding them to the cancel events array of an action, this should automatically be handled.
+         */
+        CancelEvent: RCECancelEventConstructor;
+    };
+
+    /**
+     * Whether or not Neuro is connected to NeuroPilot.
+     */
+    isNeuroConnected(): boolean;
+
+    /* Action registrations */
+    /**
+     * Add an action to NeuroPilot's actions registry.
+     * You must have declared the `actions:manage` contribution point.
+     * @param actions An array of {@link RCEAction actions} that will be registered.
+     * @param register Whether or not these actions should be immediately registered to Neuro. This does not effect your ability to register the action at any point, this simply acts as a shorthand.
+     */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    addActions(actions: RCEAction<any, SchemaTypes, any>[], register?: boolean): void;
+
+    /**
+     * Remove an action from NeuroPilot's actions registry.
+     * You must have declared the `actions:manage` contribution point.
+     * @param actions An array of action names to remove from the registry.
+     */
+    removeActions(actions: string[]): void;
+
+    /**
+     * Registers an action to Neuro.
+     * You must have declared either the `actions:manage` or `actions:manage_others` contribution point.
+     * @param action An action name. That action must already have been added via {@link CompanionAPI.addActions}.
+     */
+    registerAction(action: string): void;
+
+    /**
+     * Unregisters an action to Neuro.
+     * You must have declared either the `actions:manage` or `actions:manage_others` contribution point.
+     * @param action An action name. That action must already have been added via {@link CompanionAPI.addActions}
+     */
+    unregisterAction(action: string): void;
+
+    /**
+     * Re-attempts to register all actions
+     * You must have declared either the `actions:manage` or `actions:manage_others` contribution point.
+     * @param conservative If true, only re-register actions as is deemed necessary.
+     */
+    reregisterAllActions(conservative?: boolean): void;
+
+    /**
+     * Checks whether or not forcing an action from Neuro is possible right now.
+     * You must have specified the `actions:force` contribution point.
+     */
+    canForceActions(): boolean;
+
+    /**
+     * Try to force an action from Neuro.
+     * You must have specified the `actions:force` contribution point.
+     * @param params An object describing the action force's parameters.
+     * @param strict If true, fails if any action in the parameter object cannot be executed by Neuro, otherwise simply strips out those actions if found.
+     * Defaults to false.
+     * If actions are stripped out, at least one action must remain, otherwise the action force will fail.
+     * @return `true` if successfully forced an action, `false` otherwise.
+     */
+    tryForceActions(params: ActionForceParams, strict?: boolean): boolean;
+
+    /**
+     * Gets the status of the current action force.
+     * You must have specified the `actions:force` contribution point.
+     * 
+     * @returns `null` if there is no action force currently, otherwise returns the exact params sent by the action force.
+     */
+    getCurrentActionForce(): ActionForceParams | null;
+
+    /**
+     * Aborts the current action force.
+     * You must have specified the `actions:force` contribution point.
+     * 
+     * This temporarily unregisters all actions for 250ms before re-registering actions at their current permission level.
+     */
+    abortActionForce(): Promise<void>;
+
+    /**
+     * Inject into any registered action and modify most of its properties.
+     * You must have specified the `actions:inject` contribution point.
+     * @param name The action name to inject into
+     * @param injection An object containing the properties to inject.
+     * @param force Allows changing the action's description and schema. Defaults to false. **Don't set this to true if you don't need it!**
+     */
+    injectIntoAction(name: string, injection: Partial<InjectionBaseData>, force?: boolean): void;
+
+    /**
+     * Subscribe to the event that fires if an action status was changed.
+     * You must have declared the `actions:process` contribution point.
+     * 
+     * Note that this event fires when action statuses change, see the example below to filter to actions beginning execution.
+     * @example
+     * 
+     * ```ts
+     * companion.onDidAttemptAction((data) => {
+     *     if (data.status === 'pending' && data.message === 'Validating action...') {
+     *         doSomething(data)
+     *     }
+     * })
+     * ```
+     */
+    onActionStatusChanged: Event<ActionsEventData>;
+
+    /**
+     * Send freeform context to Neuro.
+     * You must have specified the `context` contribution point.
+     * @param message The context to send to Neuro. Will be formatted as "Message from (companion): "
+     * @param silent If false, will prompt Neuro more strongly to react to that context. Defaults to true.
+     */
+    sendContext(message: string, silent?: boolean): void;
+
+    /**
+     * Add a changelog entry that Neuro can query for your companion.
+     * You must have specified the `changelog` contribution point.
+     * @param version The version tag for your companion
+     * @param changelog The changelog for that version. It is strongly recommended to follow Markdown formatting. 
+     */
+    addChangelog(version: string, changelog: string): void;
+
+    /* Neuro Cursor */
+    /**
+     * Get Neuro's current cursor location in the current file.
+     * @returns Either a {@link Position} object showing where her cursor is right now, `null` if she can't access the current file, or `undefined` if there is no cursor in the file for whatever reason (such as a read-only editor). 
+     */
+    getCursor(): Position | null | undefined;
+
+    /**
+     * Move Neuro's cursor location.
+     * @param location The location to move her cursor to. `null` removes the cursor entirely and `undefined` moves it to the last known location (failing that, an error is logged and no cursor is placed).
+     */
+    setCursor(location?: Position | null): void;
+
+    /**
+     * Subscribe to the event that fires if Neuro's cursor position changed.
+     * You must have declared the `cursor:get` contribution point.
+     * 
+     * The listener will receive the same information as if your companion had called {@link CompanionAPI.getCursor} manually.
+     * 
+     * See also: {@link Event VS Code's Event type}
+     */
+    onDidMoveCursor: Event<Position | null | undefined>;
+}
+
+export type CompanionAPIConstructor = new (data: CompanionMeta) => CompanionAPI;
+
+export interface CompanionMeta {
+    /** 
+     * The human-readable name of your companion.
+     * If left undefined, will use the extension name (not the extension display name!) from the {@link CompanionMeta.extensionId extensionId} property.
+     */
+    name?: string;
+    /**
+     * The ID of your extensino, as idenfitied on the marketplace.
+     * You can pass this in from your {@link ExtensionContext context object} by using the {@link Extension.id context.extension.id} property.
+     * 
+     * You can also construct this from your package.json file using the format `${publisher}.${name}`.
+     */
+    extensionId: string;
+    /**
+     * The author of the companion.
+     * (that's you!)
+     * 
+     * You only need to put in a display name (and that's likely the only amount of space given for your display name anyways)
+     */
+    author: string;
+    /**
+     * A link to your comapnion's documentation page.
+     * This page can either be your repo, wiki, or separate site hosting your documentation.
+     */
+    docs?: string;
+    /**  
+     * An array of contributions this extension adds. Some features require a specific contribution to be specified, see the documentation.  
+     * @see {@link https://vsc-neuropilot.github.io/docs/api}  
+     */
+    contributes: Contributions[];
+}
+
+export interface FileActionUtils {
+    /**
+     * Mark certain files with a preview effect.
+     * @param uris An array of files to mark. Direct inputs here are automatically assumed to be Neuro-safe, you must perform your own Neuro-safe checks at call time.
+     * @param promptString A string that describes what Neuro is about to do. Should match the scheme "Neuro wants to (do something)"
+     * @param absolutelyAllFiles For folders, bypass checking children for Neuro-safe path validation and highlights them anyways. Has no effect on files.
+     * @param noChildren For folders, does not mark its children in the preview effect. Has no effect on files.
+     * @returns A Disposable that, when its dispose method is called, unmarks the marked files.
+     */
+    markPreviewFiles(uris: Uri[], promptString: string, absolutelyAllFiles?: boolean, noChildren?: boolean): Disposable;
+}
+
+export interface EditActionUtils {
+    /**
+     * Set a preview cursor that matches the normal colour scheme for NeuroPilot's preview cursor.
+     * @param location A {@link Position} object where the cursor will be placed.
+     * @param prompt The prompt suffix that displays when hovering over the cursor. Must match the scheme "Neuro wants to (x)"
+     * @returns The {@link TextEditorDecorationType} that was used to create the highlight.
+     */
+    setPreviewCursor(location: Position, prompt: string): TextEditorDecorationType;
+    /**
+     * Set a preview highlight that matches the normal colour scheme for NeuroPilot's preview highlights.
+     * @param startPosition A {@link Position} object that marks the start of the highlight.
+     * @param endPosition A {@link Position} object that marks the end of the highlight.
+     * @param prompt The prompt suffix that displays when hovering over the cursor. Must match the scheme "Neuro wants to (x)"
+     * @returns The {@link TextEditorDecorationType} that was used to create the highlight.
+     */
+    setPreviewHighlight(startPosition: Position, endPosition: Position, prompt: string): TextEditorDecorationType;
+}
