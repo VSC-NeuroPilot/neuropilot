@@ -857,6 +857,7 @@
 		"@types/node": "^20",
 		"@types/vscode": "^1.95.0",
 		"@types/vscode-webview": "^1.57.5",
+		"@typescript/native": "npm:typescript@^7.0.2",
 		"@vscode/test-cli": "^0.0.15",
 		"@vscode/test-electron": "^3.0.0",
 		"@vscode/test-web": "^0.0.81",
@@ -877,7 +878,7 @@
 		"playwright": "^1.61.1",
 		"ts-mockito": "^2.6.1",
 		"tsx": "^4.22.5",
-		"typescript": "^6.0.3",
+		"typescript": "npm:@typescript/typescript6@^6.0.2",
 		"typescript-eslint": "^8.62.1",
 		"yaml": "^2.9.0"
 	},
