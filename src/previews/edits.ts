@@ -11,7 +11,8 @@ export function createPreviewCursor() {
         before: {
             contentText: 'ᛙ',
             margin: '0 0 0 -0.25ch',
-            textDecoration: 'none; position: absolute; display: inline-block; top: 0; font-size: 200%; font-weight: bold; z-index: 1',
+            textDecoration:
+                'none; position: absolute; display: inline-block; top: 0; font-size: 200%; font-weight: bold; z-index: 1',
             color: 'rgb(0, 102, 255)',
         },
     });

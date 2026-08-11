@@ -18,9 +18,7 @@ export function fireCursorPositionChangedEvent(position: vscode.Position | null 
 export function createCursorPositionChangedEvent() {
     return new RCECancelEvent({
         reason: 'your cursor position changed.',
-        logReason: (_data) => `${CONNECTION.nameOfAPI}'s cursor position changed.`,
-        events: [
-            [onDidMoveCursorEvent, null],
-        ],
+        logReason: _data => `${CONNECTION.nameOfAPI}'s cursor position changed.`,
+        events: [[onDidMoveCursorEvent, null]],
     });
 }

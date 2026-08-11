@@ -3,8 +3,25 @@ import { EXTENSIONS, NEURO, PROMISE_REJECTION_STRING } from '@/constants';
 import type { Change, CommitOptions, Commit, Repository, API, GitExtension } from '@typing/git.d';
 import { ForcePushMode } from '@typing/git.d';
 import { StatusStrings, RefTypeStrings } from '@typing/git_status';
-import { logOutput, simpleFileName, isPathNeuroSafe, normalizePath, getWorkspacePath, getWorkspaceUri } from '@/utils/misc';
-import { ActionValidationResult, actionValidationAccept, actionValidationFailure, RCEAction, actionValidationRetry, RCEHandlerReturns, actionHandlerSuccess, actionHandlerFailure, actionHandlerRetry } from '@/utils/neuro_client';
+import {
+    logOutput,
+    simpleFileName,
+    isPathNeuroSafe,
+    normalizePath,
+    getWorkspacePath,
+    getWorkspaceUri,
+} from '@/utils/misc';
+import {
+    ActionValidationResult,
+    actionValidationAccept,
+    actionValidationFailure,
+    RCEAction,
+    actionValidationRetry,
+    RCEHandlerReturns,
+    actionHandlerSuccess,
+    actionHandlerFailure,
+    actionHandlerRetry,
+} from '@/utils/neuro_client';
 import assert from 'node:assert';
 import { RCECancelEvent } from '@events/utils';
 import { addActions, registerAction, reregisterAllActions, unregisterAction } from './rce';
@@ -34,10 +51,8 @@ export function getGitExtension() {
 }
 
 function gitValidator(): ActionValidationResult {
-    if (!git)
-        return actionValidationFailure('Git extension not available.', 'Git extension not activated');
-    if (!repo)
-        return actionValidationFailure('You are not in a repository.', 'Not in a repo');
+    if (!git) return actionValidationFailure('Git extension not available.', 'Git extension not activated');
+    if (!repo) return actionValidationFailure('You are not in a repository.', 'Not in a repo');
 
     return actionValidationAccept();
 }
@@ -45,7 +60,10 @@ function gitValidator(): ActionValidationResult {
 async function neuroSafeValidationHelper(filePath: string): Promise<ActionValidationResult> {
     const absolutePath = getAbsoluteFilePath(filePath);
     if (!isPathNeuroSafe(absolutePath)) {
-        return actionValidationFailure('You are not allowed to access this file path.', 'Access to targeted file disallowed');
+        return actionValidationFailure(
+            'You are not allowed to access this file path.',
+            'Access to targeted file disallowed',
+        );
     }
 
     const fileUri = vscode.Uri.file(absolutePath);
@@ -61,14 +79,13 @@ async function filePathGitValidator(context: RCEContext): Promise<ActionValidati
     const actionData = context.data;
     if (actionData.params.filePath === '') {
         return actionValidationRetry('No file path specified.');
-    };
+    }
 
     const filePath: string | string[] = actionData.params?.filePath;
     if (typeof filePath === 'string') {
         const result = await neuroSafeValidationHelper(filePath);
         if (!result.success) return result;
-    }
-    else if (Array.isArray(filePath)) {
+    } else if (Array.isArray(filePath)) {
         for (const file of filePath) {
             const result = await neuroSafeValidationHelper(file);
             if (!result.success) return result;
@@ -111,7 +128,10 @@ function gitDiffValidator(context: RCEContext): ActionValidationResult {
             }
         case 'diffBetween':
             if (!actionData.params?.ref1 || !actionData.params?.ref2) {
-                return actionValidationRetry('"ref1" AND "ref2" is required for the diff type of "diffWith"', FAIL_NOTE);
+                return actionValidationRetry(
+                    '"ref1" AND "ref2" is required for the diff type of "diffWith"',
+                    FAIL_NOTE,
+                );
             } else {
                 return actionValidationAccept();
             }
@@ -125,12 +145,11 @@ function gitDiffValidator(context: RCEContext): ActionValidationResult {
     }
 }
 const commonCancelEvents: ((context: RCEContext) => RCECancelEvent | null)[] = [
-    () => new RCECancelEvent({
-        reason: 'the Git extension was disabled.',
-        events: [
-            [vscode.extensions.getExtension<GitExtension>('vscode.git')!.exports.onDidChangeEnablement, null],
-        ],
-    }),
+    () =>
+        new RCECancelEvent({
+            reason: 'the Git extension was disabled.',
+            events: [[vscode.extensions.getExtension<GitExtension>('vscode.git')!.exports.onDidChangeEnablement, null]],
+        }),
 ];
 
 export const gitActions = {
@@ -148,9 +167,11 @@ export const gitActions = {
         validators: {
             sync: [
                 () => {
-                    if (!git) return actionValidationFailure('Git extension not available.', 'Git extension not activated');
+                    if (!git)
+                        return actionValidationFailure('Git extension not available.', 'Git extension not activated');
                     return actionValidationAccept();
-                }, () => {
+                },
+                () => {
                     if (getWorkspaceUri()) {
                         return actionValidationAccept();
                     } else {
@@ -182,9 +203,9 @@ export const gitActions = {
         handler: handleAddFileToGit,
         preview: (ctx: RCEContext) => {
             const ws = getWorkspaceUri();
-            if (!ws) return { dispose: () => { } };
+            if (!ws) return { dispose: () => {} };
             const filePaths: string[] = ctx.data.params!.filePath;
-            const fileUris: vscode.Uri[] = filePaths.map((p) => {
+            const fileUris: vscode.Uri[] = filePaths.map(p => {
                 return vscode.Uri.joinPath(ws, p);
             });
             return filePreviewProvider.mark(fileUris, 'add this file to the Git staging area');
@@ -230,14 +251,18 @@ export const gitActions = {
         schema: {
             type: 'object',
             properties: {
-                ref_to_merge: { type: 'string', description: 'The branch name to merge into the current branch.' },
+                ref_to_merge: {
+                    type: 'string',
+                    description: 'The branch name to merge into the current branch.',
+                },
             },
             required: ['ref_to_merge'],
             additionalProperties: false,
         },
         handler: handleGitMerge,
         cancelEvents: commonCancelEvents,
-        promptGenerator: (context: RCEContext) => `merge "${context.data.params.ref_to_merge}" into the current branch.`,
+        promptGenerator: (context: RCEContext) =>
+            `merge "${context.data.params.ref_to_merge}" into the current branch.`,
         validators: {
             sync: [gitValidator],
         },
@@ -249,7 +274,7 @@ export const gitActions = {
         category: CATEGORY_GIT,
         handler: handleGitStatus,
         cancelEvents: commonCancelEvents,
-        promptGenerator: 'get the repository\'s Git status.',
+        promptGenerator: "get the repository's Git status.",
         validators: {
             sync: [gitValidator],
         },
@@ -276,15 +301,16 @@ export const gitActions = {
         handler: handleRemoveFileFromGit,
         preview: (ctx: RCEContext) => {
             const ws = getWorkspaceUri();
-            if (!ws) return { dispose: () => { } };
+            if (!ws) return { dispose: () => {} };
             const filePaths: string[] = ctx.data.params!.filePath;
-            const fileUris: vscode.Uri[] = filePaths.map((p) => {
+            const fileUris: vscode.Uri[] = filePaths.map(p => {
                 return vscode.Uri.joinPath(ws, p);
             });
             return filePreviewProvider.mark(fileUris, 'remove this file from the Git staging area');
         },
         cancelEvents: commonCancelEvents,
-        promptGenerator: (context: RCEContext) => `remove the file "${context.data.params.filePath}" from the staging area.`,
+        promptGenerator: (context: RCEContext) =>
+            `remove the file "${context.data.params.filePath}" from the staging area.`,
         validators: {
             sync: [gitValidator],
             async: [filePathGitValidator],
@@ -298,7 +324,10 @@ export const gitActions = {
         schema: {
             type: 'object',
             properties: {
-                branchName: { type: 'string', description: 'Which branch in the Git repository should be deleted?' },
+                branchName: {
+                    type: 'string',
+                    description: 'Which branch in the Git repository should be deleted?',
+                },
                 force: { type: 'boolean', description: 'If true, forcibly deletes a branch.' },
             },
             required: ['branchName'],
@@ -359,23 +388,40 @@ export const gitActions = {
         schema: {
             type: 'object',
             properties: {
-                ref1: { type: 'string', description: 'The first ref to use to diff with. Only used if diffType is "diffWith", "diffIndexWith", and "diffBetween".' },
-                ref2: { type: 'string', description: 'The second ref to diff against the first ref. Only used if diffType is "diffBetween".' },
-                filePath: { type: 'string', description: 'For certain diff types, you can specify a file to diff. If omitted, will usually diff the entire ref.' },
-                diffType: { type: 'string', enum: ['diffWithHEAD', 'diffWith', 'diffIndexWithHEAD', 'diffIndexWith', 'diffBetween', 'fullDiff'], description: 'The type of diff to run. This will also affect what parameters are required.' },
+                ref1: {
+                    type: 'string',
+                    description:
+                        'The first ref to use to diff with. Only used if diffType is "diffWith", "diffIndexWith", and "diffBetween".',
+                },
+                ref2: {
+                    type: 'string',
+                    description:
+                        'The second ref to diff against the first ref. Only used if diffType is "diffBetween".',
+                },
+                filePath: {
+                    type: 'string',
+                    description:
+                        'For certain diff types, you can specify a file to diff. If omitted, will usually diff the entire ref.',
+                },
+                diffType: {
+                    type: 'string',
+                    enum: ['diffWithHEAD', 'diffWith', 'diffIndexWithHEAD', 'diffIndexWith', 'diffBetween', 'fullDiff'],
+                    description: 'The type of diff to run. This will also affect what parameters are required.',
+                },
             },
             additionalProperties: false,
         },
         handler: handleDiffFiles,
         preview: (ctx: RCEContext) => {
             const ws = getWorkspaceUri();
-            if (!ws) return { dispose: () => { } };
+            if (!ws) return { dispose: () => {} };
             const filePath: string = ctx.data.params!.filePath;
             const fileUri: vscode.Uri = vscode.Uri.joinPath(ws, filePath);
             return filePreviewProvider.mark([fileUri], 'view the diff for this file');
         },
         cancelEvents: commonCancelEvents,
-        promptGenerator: (context: RCEContext) => `obtain ${context.data.params?.filePath ? `"${context.data.params.filePath}"'s` : 'a'} Git diff${context.data.params?.ref1 && context.data.params?.ref2 ? ` between ${context.data.params.ref1} and ${context.data.params.ref2}` : context.data.params?.ref1 ? ` at ref ${context.data.params.ref1}` : ''}${context.data.params?.diffType ? ` (of type "${context.data.params.diffType}")` : ''}.`,
+        promptGenerator: (context: RCEContext) =>
+            `obtain ${context.data.params?.filePath ? `"${context.data.params.filePath}"'s` : 'a'} Git diff${context.data.params?.ref1 && context.data.params?.ref2 ? ` between ${context.data.params.ref1} and ${context.data.params.ref2}` : context.data.params?.ref1 ? ` at ref ${context.data.params.ref1}` : ''}${context.data.params?.diffType ? ` (of type "${context.data.params.diffType}")` : ''}.`,
         validators: {
             sync: [gitValidator, gitDiffValidator],
             async: [filePathGitValidator],
@@ -399,7 +445,8 @@ export const gitActions = {
         },
         handler: handleGitLog,
         cancelEvents: commonCancelEvents,
-        promptGenerator: (context: RCEContext) => `get the ${context.data.params?.log_limit ? `${context.data.params.log_limit} most recent commits in the ` : ''}Git log.`,
+        promptGenerator: (context: RCEContext) =>
+            `get the ${context.data.params?.log_limit ? `${context.data.params.log_limit} most recent commits in the ` : ''}Git log.`,
         validators: {
             sync: [gitValidator],
         },
@@ -420,7 +467,7 @@ export const gitActions = {
         handler: handleGitBlame,
         preview: (ctx: RCEContext) => {
             const ws = getWorkspaceUri();
-            if (!ws) return { dispose: () => { } };
+            if (!ws) return { dispose: () => {} };
             const filePath: string = ctx.data.params!.filePath;
             const fileUri: vscode.Uri = vscode.Uri.joinPath(ws, filePath);
             return filePreviewProvider.mark([fileUri], 'view the blame history for this file');
@@ -443,22 +490,29 @@ export const gitActions = {
             type: 'object',
             properties: {
                 name: { type: 'string', description: 'The name of the tag.' },
-                upstream: { type: 'string', description: 'What commit/ref do you want to tag? If not set, will tag the current commit.' },
+                upstream: {
+                    type: 'string',
+                    description: 'What commit/ref do you want to tag? If not set, will tag the current commit.',
+                },
             },
             required: ['name'],
             additionalProperties: false,
         },
         handler: handleTagHEAD,
         cancelEvents: commonCancelEvents,
-        promptGenerator: (context: RCEContext) => `tag the current commit with the name "${context.data.params.name}" and associate it with the "${context.data.params.upstream}" remote.`,
+        promptGenerator: (context: RCEContext) =>
+            `tag the current commit with the name "${context.data.params.name}" and associate it with the "${context.data.params.upstream}" remote.`,
         validators: {
-            sync: [gitValidator, (context: RCEContext) => {
-                const tagPattern = /^(?![/.@])(?!.*[/.@]$)(?!.*[/.@]{2,})(?:[a-z]+(?:[/.@][a-z]+)*)$/;
-                if (!tagPattern.test(context.data.params.name)) {
-                    return actionValidationFailure('The Git tag does not conform to Git\'s tag naming rules.');
-                }
-                return actionValidationAccept();
-            }],
+            sync: [
+                gitValidator,
+                (context: RCEContext) => {
+                    const tagPattern = /^(?![/.@])(?!.*[/.@]$)(?!.*[/.@]{2,})(?:[a-z]+(?:[/.@][a-z]+)*)$/;
+                    if (!tagPattern.test(context.data.params.name)) {
+                        return actionValidationFailure("The Git tag does not conform to Git's tag naming rules.");
+                    }
+                    return actionValidationAccept();
+                },
+            ],
         },
         registerCondition: () => !!repo,
     },
@@ -499,7 +553,8 @@ export const gitActions = {
         },
         handler: handleSetGitConfig,
         cancelEvents: commonCancelEvents,
-        promptGenerator: (context: RCEContext) => `set the Git config key "${context.data.params.key}" to "${context.data.params.value}".`,
+        promptGenerator: (context: RCEContext) =>
+            `set the Git config key "${context.data.params.key}" to "${context.data.params.value}".`,
         validators: {
             sync: [gitValidator],
         },
@@ -512,13 +567,18 @@ export const gitActions = {
         schema: {
             type: 'object',
             properties: {
-                key: { type: 'string', description: 'The config key to get. If omitted, you will get the full list of config keys and their values.' },
+                key: {
+                    type: 'string',
+                    description:
+                        'The config key to get. If omitted, you will get the full list of config keys and their values.',
+                },
             },
             additionalProperties: false,
         },
         handler: handleGetGitConfig,
         cancelEvents: commonCancelEvents,
-        promptGenerator: (context: RCEContext) => context.data.params?.key ? `get the Git config key "${context.data.params.key}".` : 'get the Git config.',
+        promptGenerator: (context: RCEContext) =>
+            context.data.params?.key ? `get the Git config key "${context.data.params.key}".` : 'get the Git config.',
         validators: {
             sync: [gitValidator],
         },
@@ -533,8 +593,15 @@ export const gitActions = {
         schema: {
             type: 'object',
             properties: {
-                remoteName: { type: 'string', description: 'Which remote to fetch from. If omitted, will fetch from the default set repo.' },
-                branchName: { type: 'string', description: 'Which branch to fetch from. If omitted, will fetch from the set remote branch of the current branch.' },
+                remoteName: {
+                    type: 'string',
+                    description: 'Which remote to fetch from. If omitted, will fetch from the default set repo.',
+                },
+                branchName: {
+                    type: 'string',
+                    description:
+                        'Which branch to fetch from. If omitted, will fetch from the set remote branch of the current branch.',
+                },
             },
             additionalProperties: false,
         },
@@ -543,10 +610,8 @@ export const gitActions = {
         promptGenerator: (context: RCEContext) => {
             if (context.data.params.remoteName && context.data.params.branchName)
                 return `fetch commits ${context.data.params.remoteName}/${context.data.params.branchName}.`;
-            else if (context.data.params.remoteName)
-                return `fetch commits from ${context.data.params.remoteName}.`;
-            else if (context.data.params.branchName)
-                return `fetch commits from ${context.data.params.branchName}.`;
+            else if (context.data.params.remoteName) return `fetch commits from ${context.data.params.remoteName}.`;
+            else if (context.data.params.branchName) return `fetch commits from ${context.data.params.branchName}.`;
             return 'fetch commits.';
         },
         validators: {
@@ -573,9 +638,18 @@ export const gitActions = {
         schema: {
             type: 'object',
             properties: {
-                remoteName: { type: 'string', description: 'The remote to push to. If omitted, will push to the default remote.' },
-                branchName: { type: 'string', description: 'The branch to push to. If omitted, will push to the set remote branch.' },
-                forcePush: { type: 'boolean', description: 'If true, will forcibly push to remote.' },
+                remoteName: {
+                    type: 'string',
+                    description: 'The remote to push to. If omitted, will push to the default remote.',
+                },
+                branchName: {
+                    type: 'string',
+                    description: 'The branch to push to. If omitted, will push to the set remote branch.',
+                },
+                forcePush: {
+                    type: 'boolean',
+                    description: 'If true, will forcibly push to remote.',
+                },
             },
             additionalProperties: false,
         },
@@ -605,15 +679,24 @@ export const gitActions = {
         schema: {
             type: 'object',
             properties: {
-                remoteName: { type: 'string', description: 'The nickname set for the remote. You will use this name for inputs to other remote-related actions if you wish to use their remote parameters.' },
-                remoteURL: { type: 'string', description: 'The URL that the remote name is aliased to. It must be either SSH (which will only work if SSH is properly set up) or HTTPS.' },
+                remoteName: {
+                    type: 'string',
+                    description:
+                        'The nickname set for the remote. You will use this name for inputs to other remote-related actions if you wish to use their remote parameters.',
+                },
+                remoteURL: {
+                    type: 'string',
+                    description:
+                        'The URL that the remote name is aliased to. It must be either SSH (which will only work if SSH is properly set up) or HTTPS.',
+                },
             },
             required: ['remoteName', 'remoteURL'],
             additionalProperties: false,
         },
         handler: handleAddGitRemote,
         cancelEvents: commonCancelEvents,
-        promptGenerator: (context: RCEContext) => `add a new remote "${context.data.params.remoteName}" with URL "${context.data.params.remoteURL}".`,
+        promptGenerator: (context: RCEContext) =>
+            `add a new remote "${context.data.params.remoteName}" with URL "${context.data.params.remoteURL}".`,
         validators: {
             sync: [gitValidator],
         },
@@ -626,7 +709,10 @@ export const gitActions = {
         schema: {
             type: 'object',
             properties: {
-                remoteName: { type: 'string', description: 'Name of the remote Git repository to remove.' },
+                remoteName: {
+                    type: 'string',
+                    description: 'Name of the remote Git repository to remove.',
+                },
             },
             required: ['remoteName'],
             additionalProperties: false,
@@ -654,7 +740,8 @@ export const gitActions = {
         },
         handler: handleRenameGitRemote,
         cancelEvents: commonCancelEvents,
-        promptGenerator: (context: RCEContext) => `rename the remote "${context.data.params.oldRemoteName}" to "${context.data.params.newRemoteName}".`,
+        promptGenerator: (context: RCEContext) =>
+            `rename the remote "${context.data.params.oldRemoteName}" to "${context.data.params.newRemoteName}".`,
         validators: {
             sync: [gitValidator],
         },
@@ -718,7 +805,7 @@ export function addGitActions() {
             return;
         }
 
-        git.openRepository(root).then((r) => {
+        git.openRepository(root).then(r => {
             repo = r;
 
             addActions(actionsToRegister);
@@ -742,14 +829,20 @@ export function handleNewGitRepo(): RCEHandlerReturns {
 
     const folderPath = workspaceFolders[0].uri.fsPath;
 
-    return git!.init(vscode.Uri.file(folderPath)).then(() => {
-        repo = git!.repositories[0]; // Update the repo reference to the new repository, just in case
-        reregisterAllActions(true);
-        return actionHandlerSuccess('Initialized a new Git repository in the workspace folder. You should now be able to use git commands.', 'Repo initialized');
-    }, (erm: string) => {
-        logOutput('ERROR', `Failed to initialize Git repository: ${erm}`);
-        return actionHandlerFailure('Failed to initialize Git repository', PROMISE_REJECTION_STRING);
-    });
+    return git!.init(vscode.Uri.file(folderPath)).then(
+        () => {
+            repo = git!.repositories[0]; // Update the repo reference to the new repository, just in case
+            reregisterAllActions(true);
+            return actionHandlerSuccess(
+                'Initialized a new Git repository in the workspace folder. You should now be able to use git commands.',
+                'Repo initialized',
+            );
+        },
+        (erm: string) => {
+            logOutput('ERROR', `Failed to initialize Git repository: ${erm}`);
+            return actionHandlerFailure('Failed to initialize Git repository', PROMISE_REJECTION_STRING);
+        },
+    );
 }
 
 export function handleGetGitConfig(context: RCEContext): RCEHandlerReturns {
@@ -758,17 +851,25 @@ export function handleGetGitConfig(context: RCEContext): RCEHandlerReturns {
     const configKey: string | undefined = actionData.params.key;
 
     if (!configKey) {
-        return repo.getConfigs().then((configs: { key: string; value: string; }[]) => {
-            return actionHandlerSuccess(`Git config:\n${configs.map((config) => `- ${config.key}: ${config.value}`).join('\n')}`, `Sent ${configs.length} repo Git config(s)`);
+        return repo.getConfigs().then((configs: { key: string; value: string }[]) => {
+            return actionHandlerSuccess(
+                `Git config:\n${configs.map(config => `- ${config.key}: ${config.value}`).join('\n')}`,
+                `Sent ${configs.length} repo Git config(s)`,
+            );
         });
-    }
-    else {
-        return repo.getConfig(configKey).then((configValue: string) => {
-            return actionHandlerSuccess(`Git config key "${configKey}": ${configValue}`, `Sent repo config value for key "${configKey}"`);
-        }, (erm: string) => {
-            logOutput('ERROR', `Failed to get Git config key "${configKey}": ${erm}`);
-            return actionHandlerFailure(`Failed to get Git config key "${configKey}"`, PROMISE_REJECTION_STRING);
-        });
+    } else {
+        return repo.getConfig(configKey).then(
+            (configValue: string) => {
+                return actionHandlerSuccess(
+                    `Git config key "${configKey}": ${configValue}`,
+                    `Sent repo config value for key "${configKey}"`,
+                );
+            },
+            (erm: string) => {
+                logOutput('ERROR', `Failed to get Git config key "${configKey}": ${erm}`);
+                return actionHandlerFailure(`Failed to get Git config key "${configKey}"`, PROMISE_REJECTION_STRING);
+            },
+        );
     }
 }
 
@@ -778,12 +879,18 @@ export function handleSetGitConfig(context: RCEContext): RCEHandlerReturns {
     const configKey: string = actionData.params.key;
     const configValue: string = actionData.params.value;
 
-    return repo.setConfig(configKey, configValue).then(() => {
-        return actionHandlerSuccess(`Set Git config key "${configKey}" to: ${configValue}`, `Wrote new repo config value of "${configKey}"`);
-    }, (erm: string) => {
-        logOutput('ERROR', `Failed to set Git config key "${configKey}": ${erm}`);
-        return actionHandlerFailure(`Failed to set Git config key "${configKey}"`, PROMISE_REJECTION_STRING);
-    });
+    return repo.setConfig(configKey, configValue).then(
+        () => {
+            return actionHandlerSuccess(
+                `Set Git config key "${configKey}" to: ${configValue}`,
+                `Wrote new repo config value of "${configKey}"`,
+            );
+        },
+        (erm: string) => {
+            logOutput('ERROR', `Failed to set Git config key "${configKey}": ${erm}`);
+            return actionHandlerFailure(`Failed to set Git config key "${configKey}"`, PROMISE_REJECTION_STRING);
+        },
+    );
 }
 
 /*
@@ -795,12 +902,18 @@ export function handleNewGitBranch(context: RCEContext): RCEHandlerReturns {
     assert(repo);
     const branchName: string = actionData.params.branchName;
 
-    return repo.createBranch(branchName, true).then(() => {
-        return actionHandlerSuccess(`Created and switched to new branch ${branchName}.`, `Branch "${branchName}" created`);
-    }, (erm: string) => {
-        logOutput('ERROR', `Failed to create branch: ${erm}`);
-        return actionHandlerFailure(`Failed to create branch ${branchName}`, PROMISE_REJECTION_STRING);
-    });
+    return repo.createBranch(branchName, true).then(
+        () => {
+            return actionHandlerSuccess(
+                `Created and switched to new branch ${branchName}.`,
+                `Branch "${branchName}" created`,
+            );
+        },
+        (erm: string) => {
+            logOutput('ERROR', `Failed to create branch: ${erm}`);
+            return actionHandlerFailure(`Failed to create branch ${branchName}`, PROMISE_REJECTION_STRING);
+        },
+    );
 }
 
 export function handleSwitchGitBranch(context: RCEContext): RCEHandlerReturns {
@@ -808,12 +921,15 @@ export function handleSwitchGitBranch(context: RCEContext): RCEHandlerReturns {
     assert(repo);
     const branchName: string = actionData.params.branchName;
 
-    return repo.checkout(branchName).then(() => {
-        return actionHandlerSuccess(`Switched to branch ${branchName}.`, `Branch "${branchName}" checked out`);
-    }, (erm: string) => {
-        logOutput('ERROR', `Failed to switch branch: ${erm}`);
-        return actionHandlerFailure(`Failed to switch to branch ${branchName}`, PROMISE_REJECTION_STRING);
-    });
+    return repo.checkout(branchName).then(
+        () => {
+            return actionHandlerSuccess(`Switched to branch ${branchName}.`, `Branch "${branchName}" checked out`);
+        },
+        (erm: string) => {
+            logOutput('ERROR', `Failed to switch branch: ${erm}`);
+            return actionHandlerFailure(`Failed to switch to branch ${branchName}`, PROMISE_REJECTION_STRING);
+        },
+    );
 }
 
 export function handleDeleteGitBranch(context: RCEContext): RCEHandlerReturns {
@@ -822,12 +938,21 @@ export function handleDeleteGitBranch(context: RCEContext): RCEHandlerReturns {
     const branchName: string = actionData.params.branchName;
     const forceDelete: boolean = actionData.params.force ?? false;
 
-    return repo.deleteBranch(branchName, forceDelete).then(() => {
-        return actionHandlerSuccess(`Deleted branch ${branchName}.`, `Branch "${branchName}"${forceDelete ? ' forcibly' : ''} deleted`);
-    }, (erm: string) => {
-        logOutput('ERROR', `Failed to delete branch: ${erm}`);
-        return actionHandlerFailure(`Failed to delete branch "${branchName}".${forceDelete === false ? '\nEnsure the branch is merged before deleting, or force delete it to discard changes.' : ''}`, PROMISE_REJECTION_STRING);
-    });
+    return repo.deleteBranch(branchName, forceDelete).then(
+        () => {
+            return actionHandlerSuccess(
+                `Deleted branch ${branchName}.`,
+                `Branch "${branchName}"${forceDelete ? ' forcibly' : ''} deleted`,
+            );
+        },
+        (erm: string) => {
+            logOutput('ERROR', `Failed to delete branch: ${erm}`);
+            return actionHandlerFailure(
+                `Failed to delete branch "${branchName}".${forceDelete === false ? '\nEnsure the branch is merged before deleting, or force delete it to discard changes.' : ''}`,
+                PROMISE_REJECTION_STRING,
+            );
+        },
+    );
 }
 
 /*
@@ -838,84 +963,89 @@ interface StateStringProps {
     fileName?: string;
     originalFileName?: string;
     renamedFileName?: string;
-    status: string
+    status: string;
 }
 
 export function handleGitStatus(): RCEHandlerReturns {
     assert(repo);
 
-    return repo.status().then(() => {
-        function translateChange(change: Change) {
-            const isRename = change.renameUri !== undefined;
-            return {
-                fileName: !isRename ? simpleFileName(change.uri.fsPath) : undefined,
-                originalFileName: isRename ? simpleFileName(change.originalUri.fsPath) : undefined,
-                renamedFileName: isRename ? simpleFileName(change.renameUri.fsPath) : undefined,
-                status: StatusStrings[change.status],
+    return repo.status().then(
+        () => {
+            function translateChange(change: Change) {
+                const isRename = change.renameUri !== undefined;
+                return {
+                    fileName: !isRename ? simpleFileName(change.uri.fsPath) : undefined,
+                    originalFileName: isRename ? simpleFileName(change.originalUri.fsPath) : undefined,
+                    renamedFileName: isRename ? simpleFileName(change.renameUri.fsPath) : undefined,
+                    status: StatusStrings[change.status],
+                };
+            }
+            // Can't stringify the repo state directly (because of getters I assume)
+            if (!repo) return actionHandlerFailure('Repo unavailable', 'Repo unavailable');
+            const state = {
+                indexChanges: repo.state.indexChanges.map((change: Change) => translateChange(change)),
+                workingTreeChanges: repo.state.workingTreeChanges.map((change: Change) => translateChange(change)),
+                mergeChanges: repo.state.mergeChanges.map((change: Change) => translateChange(change)),
+                HEAD: {
+                    name: repo.state.HEAD?.name,
+                    type: repo.state.HEAD !== undefined ? RefTypeStrings[repo.state.HEAD.type] : undefined,
+                    ahead: repo.state.HEAD?.ahead,
+                    behind: repo.state.HEAD?.behind,
+                    commit: repo.state.HEAD?.commit,
+                    remote: repo.state.HEAD?.remote,
+                    upstream: repo.state.HEAD?.upstream,
+                },
             };
-        }
-        // Can't stringify the repo state directly (because of getters I assume)
-        if (!repo) return actionHandlerFailure('Repo unavailable', 'Repo unavailable');
-        const state = {
-            indexChanges: repo.state.indexChanges.map((change: Change) => translateChange(change)),
-            workingTreeChanges: repo.state.workingTreeChanges.map((change: Change) => translateChange(change)),
-            mergeChanges: repo.state.mergeChanges.map((change: Change) => translateChange(change)),
-            HEAD: {
-                name: repo.state.HEAD?.name,
-                type: repo.state.HEAD !== undefined ? RefTypeStrings[repo.state.HEAD.type] : undefined,
-                ahead: repo.state.HEAD?.ahead,
-                behind: repo.state.HEAD?.behind,
-                commit: repo.state.HEAD?.commit,
-                remote: repo.state.HEAD?.remote,
-                upstream: repo.state.HEAD?.upstream,
-            },
-        };
 
-        // Helper function to map changes
-        function mapChanges(array: StateStringProps[], prefix?: string) {
-            const changes: string[] = [];
-            array.map((change: StateStringProps) => {
-                if (change.originalFileName && change.renamedFileName) {
-                    changes.push(`${prefix ?? ''}(${change.status}) ${change.originalFileName} -> ${change.renamedFileName}`);
-                } else if (change.fileName) {
-                    changes.push(`${prefix ?? ''}(${change.status}) ${change.fileName}`);
-                } else {
-                    const a = 'aeiou'.includes(change.status[0]) ? 'an' : 'a';
-                    changes.push(`${prefix ?? ''}${a} ${change.status} file had some missing data.`);
-                }
-            });
-            return changes;
-        }
+            // Helper function to map changes
+            function mapChanges(array: StateStringProps[], prefix?: string) {
+                const changes: string[] = [];
+                array.map((change: StateStringProps) => {
+                    if (change.originalFileName && change.renamedFileName) {
+                        changes.push(
+                            `${prefix ?? ''}(${change.status}) ${change.originalFileName} -> ${change.renamedFileName}`,
+                        );
+                    } else if (change.fileName) {
+                        changes.push(`${prefix ?? ''}(${change.status}) ${change.fileName}`);
+                    } else {
+                        const a = 'aeiou'.includes(change.status[0]) ? 'an' : 'a';
+                        changes.push(`${prefix ?? ''}${a} ${change.status} file had some missing data.`);
+                    }
+                });
+                return changes;
+            }
 
-        // Constructing the state string
-        const mergeStateString: string =
-            `Index changes:\n${mapChanges(state.indexChanges, '- ').join('\n')}\n\n` +
-            `Working tree changes:\n${mapChanges(state.workingTreeChanges, '- ').join('\n')}\n\n` +
-            `Merge changes:\n${mapChanges(state.mergeChanges, '- ').join('\n')}\n\n`;
+            // Constructing the state string
+            const mergeStateString: string =
+                `Index changes:\n${mapChanges(state.indexChanges, '- ').join('\n')}\n\n` +
+                `Working tree changes:\n${mapChanges(state.workingTreeChanges, '- ').join('\n')}\n\n` +
+                `Merge changes:\n${mapChanges(state.mergeChanges, '- ').join('\n')}\n\n`;
 
+            const HEADUpstreamState: string =
+                `       Remote branch name: ${state.HEAD.upstream?.name}\n` +
+                `       On remote ${state.HEAD.upstream?.remote}\n` +
+                `       ${state.HEAD.upstream?.commit ? `At commit ${state.HEAD.upstream?.commit}\n` : 'No commit on remote.\n'}`;
 
-        const HEADUpstreamState: string =
-            `       Remote branch name: ${state.HEAD.upstream?.name}\n` +
-            `       On remote ${state.HEAD.upstream?.remote}\n` +
-            `       ${state.HEAD.upstream?.commit ? `At commit ${state.HEAD.upstream?.commit}\n` : 'No commit on remote.\n'}`;
+            const HEADStateString: string =
+                'Current HEAD:\n' +
+                `   Name: ${state.HEAD.name}\n` +
+                `   Type: ${state.HEAD.type}\n` +
+                `   At commit ${state.HEAD.commit}\n` +
+                `   ${state.HEAD.upstream ? `Remote branch details:\n${HEADUpstreamState}\n` : 'No remote branch details.\n'}` +
+                `   ${state.HEAD.upstream ? `Changes since last pull/push: ${state.HEAD.ahead} ahead | ${state.HEAD.behind} behind\n}` : 'No remote, so no pull/push info available.\n'}`;
 
+            const stateStringArray: string[] = [mergeStateString, HEADStateString];
 
-        const HEADStateString: string =
-            'Current HEAD:\n' +
-            `   Name: ${state.HEAD.name}\n` +
-            `   Type: ${state.HEAD.type}\n` +
-            `   At commit ${state.HEAD.commit}\n` +
-            `   ${state.HEAD.upstream ? `Remote branch details:\n${HEADUpstreamState}\n` : 'No remote branch details.\n'}` +
-            `   ${state.HEAD.upstream ? `Changes since last pull/push: ${state.HEAD.ahead} ahead | ${state.HEAD.behind} behind\n}` : 'No remote, so no pull/push info available.\n'}`;
-
-
-        const stateStringArray: string[] = [mergeStateString, HEADStateString];
-
-        return actionHandlerSuccess(`Git status:\n\n${stateStringArray.join('\n')}`, `${repo.state.indexChanges.length + repo.state.workingTreeChanges.length + repo.state.mergeChanges.length} changes + more info sent`);
-    }, (erm: string) => {
-        logOutput('ERROR', `Failed to get Git status: ${erm}`);
-        return actionHandlerFailure('Failed to get Git repository status', PROMISE_REJECTION_STRING);
-    });
+            return actionHandlerSuccess(
+                `Git status:\n\n${stateStringArray.join('\n')}`,
+                `${repo.state.indexChanges.length + repo.state.workingTreeChanges.length + repo.state.mergeChanges.length} changes + more info sent`,
+            );
+        },
+        (erm: string) => {
+            logOutput('ERROR', `Failed to get Git status: ${erm}`);
+            return actionHandlerFailure('Failed to get Git repository status', PROMISE_REJECTION_STRING);
+        },
+    );
 }
 
 // Helper to convert a provided file path (or wildcard) to an absolute path using the workspace folder (or repo root if not available)
@@ -936,12 +1066,18 @@ export function handleAddFileToGit(context: RCEContext): RCEHandlerReturns {
         absolutePaths.push(getAbsoluteFilePath(path));
     }
 
-    return repo.add(absolutePaths).then(() => {
-        return actionHandlerSuccess(`Added files "${filePath.join(', ')}" to staging area.`, `Added ${filePath.length} files to staging`);
-    }, (erm: string) => {
-        logOutput('ERROR', `Failed to git add: ${erm}\nTried to add ${absolutePaths}`);
-        return actionHandlerFailure('Adding files to staging area failed', PROMISE_REJECTION_STRING);
-    });
+    return repo.add(absolutePaths).then(
+        () => {
+            return actionHandlerSuccess(
+                `Added files "${filePath.join(', ')}" to staging area.`,
+                `Added ${filePath.length} files to staging`,
+            );
+        },
+        (erm: string) => {
+            logOutput('ERROR', `Failed to git add: ${erm}\nTried to add ${absolutePaths}`);
+            return actionHandlerFailure('Adding files to staging area failed', PROMISE_REJECTION_STRING);
+        },
+    );
 }
 
 export function handleRemoveFileFromGit(context: RCEContext): RCEHandlerReturns {
@@ -954,12 +1090,18 @@ export function handleRemoveFileFromGit(context: RCEContext): RCEHandlerReturns 
         absolutePaths.push(getAbsoluteFilePath(path));
     }
 
-    return repo.revert(absolutePaths).then(() => {
-        return actionHandlerSuccess(`Removed "${filePath.join(', ')}" from the index.`, `${absolutePaths.length} files removed from staging`);
-    }, (erm: string) => {
-        logOutput('ERROR', `Git remove failed: ${erm}\nTried to remove ${absolutePaths}`);
-        return actionHandlerFailure('Removing files from the index failed', PROMISE_REJECTION_STRING);
-    });
+    return repo.revert(absolutePaths).then(
+        () => {
+            return actionHandlerSuccess(
+                `Removed "${filePath.join(', ')}" from the index.`,
+                `${absolutePaths.length} files removed from staging`,
+            );
+        },
+        (erm: string) => {
+            logOutput('ERROR', `Git remove failed: ${erm}\nTried to remove ${absolutePaths}`);
+            return actionHandlerFailure('Removing files from the index failed', PROMISE_REJECTION_STRING);
+        },
+    );
 }
 
 export function handleMakeGitCommit(context: RCEContext): RCEHandlerReturns {
@@ -971,11 +1113,10 @@ export function handleMakeGitCommit(context: RCEContext): RCEHandlerReturns {
 
     if (!commitOptions) {
         ExtraCommitOptions = undefined;
-    }
-    else {
+    } else {
         let invalidCommitOptionCheck: boolean | undefined;
         const invalidCommitOptions: string[] = [];
-        commitOptions.map((option) => {
+        commitOptions.map(option => {
             if (!ExtraCommitOptions) return;
             switch (option) {
                 case 'amend':
@@ -994,17 +1135,26 @@ export function handleMakeGitCommit(context: RCEContext): RCEHandlerReturns {
             }
         });
         if (invalidCommitOptionCheck === true) {
-            return actionHandlerFailure(`Invalid commit options: ${invalidCommitOptions.join(', ')}`, `${invalidCommitOptions.length} invalid commit options provided`);
+            return actionHandlerFailure(
+                `Invalid commit options: ${invalidCommitOptions.join(', ')}`,
+                `${invalidCommitOptions.length} invalid commit options provided`,
+            );
         }
     }
 
     repo.inputBox.value = message;
-    return repo.commit(message, ExtraCommitOptions).then(() => {
-        return actionHandlerSuccess(`Committed with message: "${message}"\nCommit options used: ${commitOptions ? commitOptions : 'None'}`, `${ExtraCommitOptions?.amend ? 'Amended c' : 'C'}ommit applied${ExtraCommitOptions?.signoff ? ' with signoff' : ''}`);
-    }, (erm: string) => {
-        logOutput('ERROR', `Failed to commit: ${erm}`);
-        return actionHandlerFailure('Failed to record commit', PROMISE_REJECTION_STRING);
-    });
+    return repo.commit(message, ExtraCommitOptions).then(
+        () => {
+            return actionHandlerSuccess(
+                `Committed with message: "${message}"\nCommit options used: ${commitOptions ? commitOptions : 'None'}`,
+                `${ExtraCommitOptions?.amend ? 'Amended c' : 'C'}ommit applied${ExtraCommitOptions?.signoff ? ' with signoff' : ''}`,
+            );
+        },
+        (erm: string) => {
+            logOutput('ERROR', `Failed to commit: ${erm}`);
+            return actionHandlerFailure('Failed to record commit', PROMISE_REJECTION_STRING);
+        },
+    );
 }
 
 export function handleGitMerge(context: RCEContext): RCEHandlerReturns {
@@ -1012,29 +1162,41 @@ export function handleGitMerge(context: RCEContext): RCEHandlerReturns {
     assert(repo);
     const refToMerge = actionData.params.ref_to_merge;
 
-    return repo.merge(refToMerge).then(() => {
-        return actionHandlerSuccess(`Cleanly merged ${refToMerge} into the current branch.`, `Cleanly merged ${refToMerge}`);
-    }, (erm: string) => {
-        if (repo?.state.mergeChanges.some(() => true)) {
-            registerAction(gitActions.abort_merge.name);
-            return actionHandlerSuccess(`Encountered merge conflicts while merging ref "${refToMerge}", fix and execute the merge action again once resolved`, `Merged ${refToMerge} - conflict resolution required`);
-        } else {
-            logOutput('ERROR', `Encountered an error when merging ${refToMerge}: ${erm}`);
-            return actionHandlerFailure(`Couldn't merge ${refToMerge}.`, PROMISE_REJECTION_STRING);
-        }
-    });
+    return repo.merge(refToMerge).then(
+        () => {
+            return actionHandlerSuccess(
+                `Cleanly merged ${refToMerge} into the current branch.`,
+                `Cleanly merged ${refToMerge}`,
+            );
+        },
+        (erm: string) => {
+            if (repo?.state.mergeChanges.some(() => true)) {
+                registerAction(gitActions.abort_merge.name);
+                return actionHandlerSuccess(
+                    `Encountered merge conflicts while merging ref "${refToMerge}", fix and execute the merge action again once resolved`,
+                    `Merged ${refToMerge} - conflict resolution required`,
+                );
+            } else {
+                logOutput('ERROR', `Encountered an error when merging ${refToMerge}: ${erm}`);
+                return actionHandlerFailure(`Couldn't merge ${refToMerge}.`, PROMISE_REJECTION_STRING);
+            }
+        },
+    );
 }
 
 export function handleAbortMerge(): RCEHandlerReturns {
     assert(repo);
 
-    return repo.mergeAbort().then(() => {
-        unregisterAction(gitActions.abort_merge.name);
-        return actionHandlerSuccess('Merge aborted.', 'Aborted merging');
-    }, (erm: string) => {
-        logOutput('ERROR', `Failed to abort merge: ${erm}`);
-        return actionHandlerFailure("Couldn't abort merging!", PROMISE_REJECTION_STRING);
-    });
+    return repo.mergeAbort().then(
+        () => {
+            unregisterAction(gitActions.abort_merge.name);
+            return actionHandlerSuccess('Merge aborted.', 'Aborted merging');
+        },
+        (erm: string) => {
+            logOutput('ERROR', `Failed to abort merge: ${erm}`);
+            return actionHandlerFailure("Couldn't abort merging!", PROMISE_REJECTION_STRING);
+        },
+    );
 }
 
 export function handleDiffFiles(context: RCEContext): RCEHandlerReturns {
@@ -1050,48 +1212,85 @@ export function handleDiffFiles(context: RCEContext): RCEHandlerReturns {
 
     switch (diffType) {
         case 'diffWithHEAD':
-            return repo.diffWithHEAD(diffThisFile)
+            return repo
+                .diffWithHEAD(diffThisFile)
                 .then((diff: string) => {
-                    return actionHandlerSuccess(`Diff with HEAD for ${filePath || 'workspace root'}:\n${diff}`, 'Sent diff with HEAD');
+                    return actionHandlerSuccess(
+                        `Diff with HEAD for ${filePath || 'workspace root'}:\n${diff}`,
+                        'Sent diff with HEAD',
+                    );
                 })
                 .catch((erm: string) => {
                     logOutput('ERROR', `Failed to get diff with HEAD for ${filePath || 'workspace root'}: ${erm}`);
-                    return actionHandlerFailure(`Failed to get diff with HEAD for ${filePath || 'workspace root'}.`, PROMISE_REJECTION_STRING);
+                    return actionHandlerFailure(
+                        `Failed to get diff with HEAD for ${filePath || 'workspace root'}.`,
+                        PROMISE_REJECTION_STRING,
+                    );
                 });
 
         case 'diffWith':
             if (ref1) {
-                return repo.diffWith(ref1, diffThisFile)
+                return repo
+                    .diffWith(ref1, diffThisFile)
                     .then((diff: string) => {
-                        return actionHandlerSuccess(`Diff with ref "${ref1}" for ${filePath || 'workspace root'}:\n${diff}`, `Sent diff with ref "${ref1}"`);
+                        return actionHandlerSuccess(
+                            `Diff with ref "${ref1}" for ${filePath || 'workspace root'}:\n${diff}`,
+                            `Sent diff with ref "${ref1}"`,
+                        );
                     })
                     .catch((erm: string) => {
-                        logOutput('ERROR', `Failed to get diff with ref "${ref1}" for ${filePath || 'workspace root'}: ${erm}`);
-                        return actionHandlerFailure(`Failed to get diff with ref "${ref1}" for ${filePath || 'workspace root'}.`, PROMISE_REJECTION_STRING);
+                        logOutput(
+                            'ERROR',
+                            `Failed to get diff with ref "${ref1}" for ${filePath || 'workspace root'}: ${erm}`,
+                        );
+                        return actionHandlerFailure(
+                            `Failed to get diff with ref "${ref1}" for ${filePath || 'workspace root'}.`,
+                            PROMISE_REJECTION_STRING,
+                        );
                     });
             } else {
                 return actionHandlerRetry('Ref1 is required for diffWith.', 'Missing ref1 parameter');
             }
 
         case 'diffIndexWithHEAD':
-            return repo.diffIndexWithHEAD(diffThisFile)
+            return repo
+                .diffIndexWithHEAD(diffThisFile)
                 .then((diff: string) => {
-                    return actionHandlerSuccess(`Diff index with HEAD for ${filePath || 'workspace root'}:\n${diff}`, 'Sent diff index with HEAD');
+                    return actionHandlerSuccess(
+                        `Diff index with HEAD for ${filePath || 'workspace root'}:\n${diff}`,
+                        'Sent diff index with HEAD',
+                    );
                 })
                 .catch((erm: string) => {
-                    logOutput('ERROR', `Failed to get diff index with HEAD for ${filePath || 'workspace root'}: ${erm}`);
-                    return actionHandlerFailure(`Failed to get diff index with HEAD for ${filePath || 'workspace root'}.`, PROMISE_REJECTION_STRING);
+                    logOutput(
+                        'ERROR',
+                        `Failed to get diff index with HEAD for ${filePath || 'workspace root'}: ${erm}`,
+                    );
+                    return actionHandlerFailure(
+                        `Failed to get diff index with HEAD for ${filePath || 'workspace root'}.`,
+                        PROMISE_REJECTION_STRING,
+                    );
                 });
 
         case 'diffIndexWith':
             if (ref1) {
-                return repo.diffIndexWith(ref1, diffThisFile)
+                return repo
+                    .diffIndexWith(ref1, diffThisFile)
                     .then((diff: string) => {
-                        return actionHandlerSuccess(`Diff index with ref "${ref1}" for ${filePath || 'workspace root'}:\n${diff}`, `Sent diff index with ref "${ref1}"`);
+                        return actionHandlerSuccess(
+                            `Diff index with ref "${ref1}" for ${filePath || 'workspace root'}:\n${diff}`,
+                            `Sent diff index with ref "${ref1}"`,
+                        );
                     })
                     .catch((erm: string) => {
-                        logOutput('ERROR', `Failed to get diff index with ref "${ref1}" for ${filePath || 'workspace root'}: ${erm}`);
-                        return actionHandlerFailure(`Failed to get diff index with ref "${ref1}" for ${filePath || 'workspace root'}.`, PROMISE_REJECTION_STRING);
+                        logOutput(
+                            'ERROR',
+                            `Failed to get diff index with ref "${ref1}" for ${filePath || 'workspace root'}: ${erm}`,
+                        );
+                        return actionHandlerFailure(
+                            `Failed to get diff index with ref "${ref1}" for ${filePath || 'workspace root'}.`,
+                            PROMISE_REJECTION_STRING,
+                        );
                     });
             } else {
                 return actionHandlerRetry('Ref1 is required for diffIndexWith.', 'Missing ref1 parameter');
@@ -1099,26 +1298,43 @@ export function handleDiffFiles(context: RCEContext): RCEHandlerReturns {
 
         case 'diffBetween':
             if (ref1 && ref2) {
-                return repo.diffBetween(ref1, ref2, diffThisFile)
+                return repo
+                    .diffBetween(ref1, ref2, diffThisFile)
                     .then((diff: string) => {
-                        return actionHandlerSuccess(`Diff between refs "${ref1}" and "${ref2}" for ${filePath || 'workspace root'}:\n${diff}`, `Sent diff between "${ref1}" and "${ref2}"`);
+                        return actionHandlerSuccess(
+                            `Diff between refs "${ref1}" and "${ref2}" for ${filePath || 'workspace root'}:\n${diff}`,
+                            `Sent diff between "${ref1}" and "${ref2}"`,
+                        );
                     })
                     .catch((erm: string) => {
-                        logOutput('ERROR', `Failed to get diff between refs "${ref1}" and "${ref2}" for ${filePath || 'workspace root'}: ${erm}`);
-                        return actionHandlerFailure(`Failed to get diff between refs "${ref1}" and "${ref2}" for ${filePath || 'workspace root'}.`, PROMISE_REJECTION_STRING);
+                        logOutput(
+                            'ERROR',
+                            `Failed to get diff between refs "${ref1}" and "${ref2}" for ${filePath || 'workspace root'}: ${erm}`,
+                        );
+                        return actionHandlerFailure(
+                            `Failed to get diff between refs "${ref1}" and "${ref2}" for ${filePath || 'workspace root'}.`,
+                            PROMISE_REJECTION_STRING,
+                        );
                     });
             } else {
-                return actionHandlerRetry('Both ref1 and ref2 are required for diffBetween.', 'Missing ref1 or ref2 parameter');
+                return actionHandlerRetry(
+                    'Both ref1 and ref2 are required for diffBetween.',
+                    'Missing ref1 or ref2 parameter',
+                );
             }
 
         case 'fullDiff':
-            return repo.diffWithHEAD(diffThisFile)
+            return repo
+                .diffWithHEAD(diffThisFile)
                 .then((diff: string) => {
                     return actionHandlerSuccess(`Full diff for workspace root:\n${diff}`, 'Sent full diff');
                 })
                 .catch((erm: string) => {
                     logOutput('ERROR', `Failed to get full diff for workspace root: ${erm}`);
-                    return actionHandlerFailure('Failed to get full diff for workspace root.', PROMISE_REJECTION_STRING);
+                    return actionHandlerFailure(
+                        'Failed to get full diff for workspace root.',
+                        PROMISE_REJECTION_STRING,
+                    );
                 });
 
         default:
@@ -1132,21 +1348,30 @@ export function handleGitLog(context: RCEContext): RCEHandlerReturns {
 
     const logLimit: number | undefined = actionData.params?.log_limit;
 
-    return repo.log().then((commits: Commit[]) => {
-        // If log_limit is defined, restrict number of commits to that value.
-        if (logLimit) {
-            commits = commits.slice(0, logLimit);
-        }
-        // Build a readable commit log string.
-        const commitLog = commits.map(commit =>
-            `Commit: ${commit.hash}\nMessage: ${commit.message}\nAuthor: ${commit.authorName}\nDate: ${commit.authorDate}\n`,
-        ).join('\n');
+    return repo.log().then(
+        (commits: Commit[]) => {
+            // If log_limit is defined, restrict number of commits to that value.
+            if (logLimit) {
+                commits = commits.slice(0, logLimit);
+            }
+            // Build a readable commit log string.
+            const commitLog = commits
+                .map(
+                    commit =>
+                        `Commit: ${commit.hash}\nMessage: ${commit.message}\nAuthor: ${commit.authorName}\nDate: ${commit.authorDate}\n`,
+                )
+                .join('\n');
 
-        return actionHandlerSuccess(`Commit log:\n${commitLog}`, `Sent ${commits.length} commit${commits.length !== 1 ? 's' : ''}`);
-    }, (erm: string) => {
-        logOutput('ERROR', `Failed to get git log: ${erm}`);
-        return actionHandlerFailure('Failed to get git log.', PROMISE_REJECTION_STRING);
-    });
+            return actionHandlerSuccess(
+                `Commit log:\n${commitLog}`,
+                `Sent ${commits.length} commit${commits.length !== 1 ? 's' : ''}`,
+            );
+        },
+        (erm: string) => {
+            logOutput('ERROR', `Failed to get git log: ${erm}`);
+            return actionHandlerFailure('Failed to get git log.', PROMISE_REJECTION_STRING);
+        },
+    );
 }
 
 export function handleGitBlame(context: RCEContext): RCEHandlerReturns {
@@ -1159,12 +1384,15 @@ export function handleGitBlame(context: RCEContext): RCEHandlerReturns {
         return actionHandlerFailure('The provided file path is not allowed.', 'Access to targeted file disallowed');
     }
 
-    return repo.blame(absolutePath).then((blame: string) => {
-        return actionHandlerSuccess(`Blame attribution for ${filePath}:\n${blame}`, `Sent blame for ${filePath}`);
-    }, (erm: string) => {
-        logOutput('ERROR', `Error getting blame attribs for ${filePath}: ${erm}`);
-        return actionHandlerFailure('Failed to get blame attribution.', PROMISE_REJECTION_STRING);
-    });
+    return repo.blame(absolutePath).then(
+        (blame: string) => {
+            return actionHandlerSuccess(`Blame attribution for ${filePath}:\n${blame}`, `Sent blame for ${filePath}`);
+        },
+        (erm: string) => {
+            logOutput('ERROR', `Error getting blame attribs for ${filePath}: ${erm}`);
+            return actionHandlerFailure('Failed to get blame attribution.', PROMISE_REJECTION_STRING);
+        },
+    );
 }
 
 /**
@@ -1178,12 +1406,15 @@ export function handleTagHEAD(context: RCEContext): RCEHandlerReturns {
     const name: string = actionData.params.name;
     const upstream: string = actionData.params.upstream ?? 'HEAD';
 
-    return repo.tag(name, upstream).then(() => {
-        return actionHandlerSuccess(`Tag ${name} created for ${upstream}.`, `Tag "${name}" created`);
-    }, (erm: string) => {
-        logOutput('ERROR', `Error trying to tag: ${erm}`);
-        return actionHandlerFailure('There was an error during tagging.', PROMISE_REJECTION_STRING);
-    });
+    return repo.tag(name, upstream).then(
+        () => {
+            return actionHandlerSuccess(`Tag ${name} created for ${upstream}.`, `Tag "${name}" created`);
+        },
+        (erm: string) => {
+            logOutput('ERROR', `Error trying to tag: ${erm}`);
+            return actionHandlerFailure('There was an error during tagging.', PROMISE_REJECTION_STRING);
+        },
+    );
 }
 
 export function handleDeleteTag(context: RCEContext): RCEHandlerReturns {
@@ -1191,12 +1422,15 @@ export function handleDeleteTag(context: RCEContext): RCEHandlerReturns {
     assert(repo);
     const name: string = actionData.params.name;
 
-    return repo.deleteTag(name).then(() => {
-        return actionHandlerSuccess(`Deleted tag ${name}`, `Tag "${name}" deleted`);
-    }, (erm: string) => {
-        logOutput('ERROR', `Failed to delete tag ${name}: ${erm}`);
-        return actionHandlerFailure(`Couldn't delete tag "${name}"`, PROMISE_REJECTION_STRING);
-    });
+    return repo.deleteTag(name).then(
+        () => {
+            return actionHandlerSuccess(`Deleted tag ${name}`, `Tag "${name}" deleted`);
+        },
+        (erm: string) => {
+            logOutput('ERROR', `Failed to delete tag ${name}: ${erm}`);
+            return actionHandlerFailure(`Couldn't delete tag "${name}"`, PROMISE_REJECTION_STRING);
+        },
+    );
 }
 
 /*
@@ -1210,23 +1444,35 @@ export function handleFetchGitCommits(context: RCEContext): RCEHandlerReturns {
     const remoteName: string = actionData.params.remoteName;
     const branchName: string = actionData.params.branchName;
 
-    return repo.fetch(remoteName, branchName).then(() => {
-        return actionHandlerSuccess(`Fetched commits from ${remoteName ? 'remote ' + remoteName : 'default remote'}${branchName ? `, branch "${branchName}"` : ''}.`, `Fetched from ${remoteName || 'default remote'}`);
-    }, (erm: string) => {
-        logOutput('ERROR', `Failed to fetch commits: ${erm}`);
-        return actionHandlerFailure(`Failed to fetch commits from remote "${remoteName}"`, PROMISE_REJECTION_STRING);
-    });
+    return repo.fetch(remoteName, branchName).then(
+        () => {
+            return actionHandlerSuccess(
+                `Fetched commits from ${remoteName ? 'remote ' + remoteName : 'default remote'}${branchName ? `, branch "${branchName}"` : ''}.`,
+                `Fetched from ${remoteName || 'default remote'}`,
+            );
+        },
+        (erm: string) => {
+            logOutput('ERROR', `Failed to fetch commits: ${erm}`);
+            return actionHandlerFailure(
+                `Failed to fetch commits from remote "${remoteName}"`,
+                PROMISE_REJECTION_STRING,
+            );
+        },
+    );
 }
 
 export function handlePullGitCommits(): RCEHandlerReturns {
     assert(repo);
 
-    return repo.pull().then(() => {
-        return actionHandlerSuccess('Pulled commits from remote.', 'Pulled commits');
-    }, (erm: string) => {
-        logOutput('ERROR', `Failed to pull commits: ${erm}`);
-        return actionHandlerFailure(`Failed to pull commits from remote: ${erm}`, PROMISE_REJECTION_STRING);
-    });
+    return repo.pull().then(
+        () => {
+            return actionHandlerSuccess('Pulled commits from remote.', 'Pulled commits');
+        },
+        (erm: string) => {
+            logOutput('ERROR', `Failed to pull commits: ${erm}`);
+            return actionHandlerFailure(`Failed to pull commits from remote: ${erm}`, PROMISE_REJECTION_STRING);
+        },
+    );
 }
 
 export function handlePushGitCommits(context: RCEContext): RCEHandlerReturns {
@@ -1238,12 +1484,21 @@ export function handlePushGitCommits(context: RCEContext): RCEHandlerReturns {
 
     const forcePushMode: ForcePushMode | undefined = forcePush === true ? ForcePushMode.Force : undefined;
 
-    return repo.push(remoteName, branchName, true, forcePushMode).then(() => {
-        return actionHandlerSuccess(`Pushed commits${remoteName ? ` to remote "${remoteName}"` : ''}${branchName ? `, branch "${branchName}"` : ''}.${forcePush === true ? ' (forced push)' : ''}`, `Pushed to ${remoteName || 'remote'}${forcePush ? ' (forced)' : ''}`);
-    }, (erm: string) => {
-        logOutput('ERROR', `Failed to push commits: ${erm}`);
-        return actionHandlerFailure(`Failed to push commits to remote "${remoteName}": ${erm}`, PROMISE_REJECTION_STRING);
-    });
+    return repo.push(remoteName, branchName, true, forcePushMode).then(
+        () => {
+            return actionHandlerSuccess(
+                `Pushed commits${remoteName ? ` to remote "${remoteName}"` : ''}${branchName ? `, branch "${branchName}"` : ''}.${forcePush === true ? ' (forced push)' : ''}`,
+                `Pushed to ${remoteName || 'remote'}${forcePush ? ' (forced)' : ''}`,
+            );
+        },
+        (erm: string) => {
+            logOutput('ERROR', `Failed to push commits: ${erm}`);
+            return actionHandlerFailure(
+                `Failed to push commits to remote "${remoteName}": ${erm}`,
+                PROMISE_REJECTION_STRING,
+            );
+        },
+    );
 }
 
 /*
@@ -1258,12 +1513,18 @@ export function handleAddGitRemote(context: RCEContext): RCEHandlerReturns {
     const remoteName: string = actionData.params.remoteName;
     const remoteUrl: string = actionData.params.remoteURL;
 
-    return repo.addRemote(remoteName, remoteUrl).then(() => {
-        return actionHandlerSuccess(`Added remote "${remoteName}" with URL: ${remoteUrl}`, `Remote "${remoteName}" added`);
-    }, (erm: string) => {
-        logOutput('ERROR', `Failed to add remote: ${erm}`);
-        return actionHandlerFailure(`Failed to add remote "${remoteName}"`, PROMISE_REJECTION_STRING);
-    });
+    return repo.addRemote(remoteName, remoteUrl).then(
+        () => {
+            return actionHandlerSuccess(
+                `Added remote "${remoteName}" with URL: ${remoteUrl}`,
+                `Remote "${remoteName}" added`,
+            );
+        },
+        (erm: string) => {
+            logOutput('ERROR', `Failed to add remote: ${erm}`);
+            return actionHandlerFailure(`Failed to add remote "${remoteName}"`, PROMISE_REJECTION_STRING);
+        },
+    );
 }
 
 export function handleRemoveGitRemote(context: RCEContext): RCEHandlerReturns {
@@ -1271,12 +1532,15 @@ export function handleRemoveGitRemote(context: RCEContext): RCEHandlerReturns {
     assert(repo);
     const remoteName: string = actionData.params.remoteName;
 
-    return repo.removeRemote(remoteName).then(() => {
-        return actionHandlerSuccess(`Removed remote "${remoteName}".`, `Remote "${remoteName}" removed`);
-    }, (erm: string) => {
-        logOutput('ERROR', `Failed to remove remote: ${erm}`);
-        return actionHandlerFailure(`Failed to remove remote "${remoteName}"`, PROMISE_REJECTION_STRING);
-    });
+    return repo.removeRemote(remoteName).then(
+        () => {
+            return actionHandlerSuccess(`Removed remote "${remoteName}".`, `Remote "${remoteName}" removed`);
+        },
+        (erm: string) => {
+            logOutput('ERROR', `Failed to remove remote: ${erm}`);
+            return actionHandlerFailure(`Failed to remove remote "${remoteName}"`, PROMISE_REJECTION_STRING);
+        },
+    );
 }
 
 export function handleRenameGitRemote(context: RCEContext): RCEHandlerReturns {
@@ -1285,10 +1549,19 @@ export function handleRenameGitRemote(context: RCEContext): RCEHandlerReturns {
     const oldRemoteName: string = actionData.params.oldRemoteName;
     const newRemoteName: string = actionData.params.newRemoteName;
 
-    return repo.renameRemote(oldRemoteName, newRemoteName).then(() => {
-        return actionHandlerSuccess(`Renamed remote "${oldRemoteName}" to "${newRemoteName}".`, `Remote "${oldRemoteName}" renamed to "${newRemoteName}"`);
-    }, (erm: string) => {
-        logOutput('ERROR', `Failed to rename remote ${oldRemoteName}: ${erm}`);
-        return actionHandlerFailure(`Failed to rename remote "${oldRemoteName}" to "${newRemoteName}"`, PROMISE_REJECTION_STRING);
-    });
+    return repo.renameRemote(oldRemoteName, newRemoteName).then(
+        () => {
+            return actionHandlerSuccess(
+                `Renamed remote "${oldRemoteName}" to "${newRemoteName}".`,
+                `Remote "${oldRemoteName}" renamed to "${newRemoteName}"`,
+            );
+        },
+        (erm: string) => {
+            logOutput('ERROR', `Failed to rename remote ${oldRemoteName}: ${erm}`);
+            return actionHandlerFailure(
+                `Failed to rename remote "${oldRemoteName}" to "${newRemoteName}"`,
+                PROMISE_REJECTION_STRING,
+            );
+        },
+    );
 }

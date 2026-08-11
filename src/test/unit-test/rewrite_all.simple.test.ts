@@ -38,5 +38,3 @@ suite('rewrite_all Action (unit)', () => {
         assert.ok(/\d+/.test(prompt));
     });
 });
-
-

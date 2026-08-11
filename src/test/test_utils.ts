@@ -17,7 +17,11 @@ export function assertProperties(actual: unknown, expected: unknown, message?: s
             assert.ok(key in actual, `Expected property "${key}" to exist in the actual object.`);
             const expectedValue: unknown = expected[key as keyof typeof expected];
             const actualValue: unknown = actual[key as keyof typeof actual];
-            assert.strictEqual(actualValue, expectedValue, `Expected property "${key}" to have value "${expectedValue}", but got "${actualValue}".`);
+            assert.strictEqual(
+                actualValue,
+                expectedValue,
+                `Expected property "${key}" to have value "${expectedValue}", but got "${actualValue}".`,
+            );
         }
     } catch (erm) {
         if (erm instanceof assert.AssertionError && message) {
@@ -70,14 +74,18 @@ export function checkWithTimeout(check: () => boolean, timeoutMs = 1000, interva
  * @param interval The interval to check to function.
  */
 export function checkNoErrorWithTimeout(check: () => void, timeoutMs = 1000, interval = 100): Promise<void> {
-    return checkWithTimeout(() => {
-        try {
-            check();
-            return true;
-        } catch {
-            return false;
-        }
-    }, timeoutMs, interval);
+    return checkWithTimeout(
+        () => {
+            try {
+                check();
+                return true;
+            } catch {
+                return false;
+            }
+        },
+        timeoutMs,
+        interval,
+    );
 }
 
 interface SetupDocumentOptions {
@@ -92,16 +100,11 @@ export async function setupDocument(text: string, options: SetupDocumentOptions 
     document ??= vscode.window.activeTextEditor?.document;
     cursorPosition ??= new vscode.Position(0, 0);
 
-    if (!document)
-        throw new Error('No active document to setup');
+    if (!document) throw new Error('No active document to setup');
     const edit = new vscode.WorkspaceEdit();
-    const fullRange = new vscode.Range(
-        document.positionAt(0),
-        document.positionAt(document.getText().length),
-    );
+    const fullRange = new vscode.Range(document.positionAt(0), document.positionAt(document.getText().length));
     edit.replace(document.uri, fullRange, text);
-    if (!await vscode.workspace.applyEdit(edit))
-        throw new Error('Failed to apply edit to document');
+    if (!(await vscode.workspace.applyEdit(edit))) throw new Error('Failed to apply edit to document');
     if (cursorPosition) {
         const editor = vscode.window.activeTextEditor!;
         editor.selection = new vscode.Selection(cursorPosition, cursorPosition);

@@ -28,5 +28,3 @@ suite('place_cursor Action', () => {
         assert.ok(prompt.includes('-1'));
     });
 });
-
-

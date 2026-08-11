@@ -26,5 +26,3 @@ suite('find_text Action', () => {
         assert.ok(prompt.includes('baz'));
     });
 });
-
-

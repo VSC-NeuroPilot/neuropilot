@@ -1,7 +1,15 @@
 import { Disposable, EventEmitter } from 'vscode';
 import { ActionData } from 'neuro-game-sdk';
 
-export type ActionStatus = 'pending' | 'success' | 'failure' | 'denied' | 'exception' | 'timeout' | 'schema' | 'cancelled';
+export type ActionStatus =
+    | 'pending'
+    | 'success'
+    | 'failure'
+    | 'denied'
+    | 'exception'
+    | 'timeout'
+    | 'schema'
+    | 'cancelled';
 
 export interface ActionsEventData {
     readonly action: string;

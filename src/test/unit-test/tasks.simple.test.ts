@@ -11,6 +11,3 @@ suite('tasks Actions', () => {
         assert.ok(typeof prompt === 'string' && prompt.length > 0);
     });
 });
-
-
-

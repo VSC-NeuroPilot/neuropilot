@@ -25,7 +25,11 @@ class PreviewFileDecorationProvider implements vscode.FileDecorationProvider, vs
         // Check if the URI itself is marked (exact string match)
         const entry = this.marked.get(uriString);
         if (entry) {
-            const dec = new vscode.FileDecoration(symbol, `(Preview) ${NEURO.currentController} wants to ${entry.prompt ?? 'uhhhh, do something with this file?'}`, new vscode.ThemeColor('neuropilot.filePreviewEffectsColour'));
+            const dec = new vscode.FileDecoration(
+                symbol,
+                `(Preview) ${NEURO.currentController} wants to ${entry.prompt ?? 'uhhhh, do something with this file?'}`,
+                new vscode.ThemeColor('neuropilot.filePreviewEffectsColour'),
+            );
             dec.propagate = true; // Propagate to parent folders
             return dec;
         }
@@ -45,7 +49,11 @@ class PreviewFileDecorationProvider implements vscode.FileDecorationProvider, vs
 
             // Check if paths are exactly equal (handles URI string differences like trailing slashes)
             if (uriPath === markedPath) {
-                const dec = new vscode.FileDecoration(symbol, `(Preview) ${NEURO.currentController} wants to ${markedEntry.prompt ?? 'uhhhh, do something with this file?'}`, new vscode.ThemeColor('neuropilot.filePreviewEffectsColour'));
+                const dec = new vscode.FileDecoration(
+                    symbol,
+                    `(Preview) ${NEURO.currentController} wants to ${markedEntry.prompt ?? 'uhhhh, do something with this file?'}`,
+                    new vscode.ThemeColor('neuropilot.filePreviewEffectsColour'),
+                );
                 dec.propagate = true; // Propagate to parent folders
                 return dec;
             }
@@ -59,7 +67,11 @@ class PreviewFileDecorationProvider implements vscode.FileDecorationProvider, vs
 
                 // Check if the marked URI is a directory (from cached Set)
                 if (this.directories.has(markedUriString)) {
-                    const dec = new vscode.FileDecoration(symbol, `(Preview) ${NEURO.currentController} wants to ${markedEntry.prompt ?? 'uhhhh, do something with this folder?'}`, new vscode.ThemeColor('neuropilot.filePreviewEffectsColour'));
+                    const dec = new vscode.FileDecoration(
+                        symbol,
+                        `(Preview) ${NEURO.currentController} wants to ${markedEntry.prompt ?? 'uhhhh, do something with this folder?'}`,
+                        new vscode.ThemeColor('neuropilot.filePreviewEffectsColour'),
+                    );
                     dec.propagate = false; // Don't propagate children up to unmarked parents
                     return dec;
                 }
@@ -71,7 +83,12 @@ class PreviewFileDecorationProvider implements vscode.FileDecorationProvider, vs
 
     // PUBLIC API: mark multiple files/folders at once
     // Returns a Disposable that unmarks the URIs when disposed
-    public mark(uris: vscode.Uri[], promptString?: string, absolutelyAllFiles = false, noChildren = false): vscode.Disposable {
+    public mark(
+        uris: vscode.Uri[],
+        promptString?: string,
+        absolutelyAllFiles = false,
+        noChildren = false,
+    ): vscode.Disposable {
         const markedUris = [...uris]; // Create a copy to capture the URIs for this marking
 
         for (const uri of uris) {
@@ -83,7 +100,7 @@ class PreviewFileDecorationProvider implements vscode.FileDecorationProvider, vs
             });
             // Precompute directory status asynchronously to avoid blocking provideFileDecoration
             vscode.workspace.fs.stat(uri).then(
-                (stat) => {
+                stat => {
                     if ((stat.type & vscode.FileType.Directory) === vscode.FileType.Directory) {
                         this.directories.add(uriString);
                         // Refresh decorations after discovering it's a directory

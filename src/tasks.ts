@@ -1,4 +1,4 @@
-/** 
+/**
  * This file's exports are not designed/intended to be used in the WebWorker build of the extension
  * This means that the web version of the extension will not have this file here (such as [VS Code for the Web](https://vscode.dev) and its [GitHub version](https://github.dev))
  * Feel free to use Node.js APIs here - they won't be a problem.
@@ -8,7 +8,15 @@ import * as vscode from 'vscode';
 
 import { NEURO } from '@/constants';
 import { logOutput, formatActionID, getFence, checkWorkspaceTrust, checkVirtualWorkspace } from '@/utils/misc';
-import { ActionHandlerResult, RCEAction, RCEHandlerReturns, actionHandlerFailure, actionHandlerSuccess, actionValidationAccept, actionValidationFailure } from '@/utils/neuro_client';
+import {
+    ActionHandlerResult,
+    RCEAction,
+    RCEHandlerReturns,
+    actionHandlerFailure,
+    actionHandlerSuccess,
+    actionValidationAccept,
+    actionValidationFailure,
+} from '@/utils/neuro_client';
 import { ACTIONS } from '@/config';
 import { notifyOnTaskFinish } from '@events/shells';
 import { addActions, getActions, removeActions } from './rce';
@@ -26,14 +34,16 @@ export const taskActions = {
         category: CATEGORY_TASKS,
         handler: handleTerminateTask,
         // TODO: Auto-switch to task output (if already opened) as preview effect
-        cancelEvents: [
-            notifyOnTaskFinish,
-        ],
+        cancelEvents: [notifyOnTaskFinish],
         promptGenerator: 'terminate the currently running task.',
         validators: {
-            sync: [checkVirtualWorkspace, checkWorkspaceTrust, () => NEURO.currentTaskExecution !== null
-                ? actionValidationAccept()
-                : actionValidationFailure('No task to terminate.'),
+            sync: [
+                checkVirtualWorkspace,
+                checkWorkspaceTrust,
+                () =>
+                    NEURO.currentTaskExecution !== null
+                        ? actionValidationAccept()
+                        : actionValidationFailure('No task to terminate.'),
             ],
         },
         registerCondition: () => checkVirtualWorkspace().success && checkWorkspaceTrust().success,
@@ -42,9 +52,7 @@ export const taskActions = {
 
 export function addTaskActions() {
     // TODO: Maybe only register once a task is running?
-    addActions([
-        taskActions.terminate_task,
-    ]);
+    addActions([taskActions.terminate_task]);
     // Tasks are registered asynchronously in reloadTasks()
 }
 
@@ -86,15 +94,13 @@ export function taskEndedHandler(event: vscode.TaskEndEvent) {
             if (event.execution === NEURO.currentTaskExecution.task) {
                 logOutput('INFO', 'Neuro task finished');
                 NEURO.currentTaskExecution = null;
-                vscode.commands.executeCommand('workbench.action.terminal.copyLastCommandOutput')
-                    .then(
-                        _ => vscode.env.clipboard.readText(),
-                    ).then(
-                        text => {
-                            const fence = getFence(text);
-                            NEURO.client?.sendContext(`Task finished! Output:\n\n${fence}\n${text}\n${fence}`);
-                        },
-                    );
+                vscode.commands
+                    .executeCommand('workbench.action.terminal.copyLastCommandOutput')
+                    .then(_ => vscode.env.clipboard.readText())
+                    .then(text => {
+                        const fence = getFence(text);
+                        NEURO.client?.sendContext(`Task finished! Output:\n\n${fence}\n${text}\n${fence}`);
+                    });
             }
         }
     }
@@ -107,7 +113,7 @@ export function reloadTasks() {
         .map(action => action.name);
     removeActions(tasks);
 
-    vscode.tasks.fetchTasks().then((tasks) => {
+    vscode.tasks.fetchTasks().then(tasks => {
         for (const task of tasks) {
             if (ACTIONS.allowRunningAllTasks === true && vscode.workspace.isTrusted) {
                 let taskdesc: string = task.detail ?? '';
@@ -129,22 +135,23 @@ export function reloadTasks() {
                     description: detail.length > 0 ? detail : task.name,
                     task,
                 });
-            }
-            else {
+            } else {
                 logOutput('INFO', `Ignoring task: ${task.name}`);
             }
         }
-        addActions(NEURO.tasks.map((task) => ({
-            name: task.id,
-            description: task.description,
-            category: CATEGORY_REGISTERED_TASKS,
-            handler: handleRunTask,
-            // TODO: Auto-switch to task output (if already opened) as preview effect
-            promptGenerator: `run the task: ${task.description}`,
-            validators: {
-                sync: [checkVirtualWorkspace, checkWorkspaceTrust],
-            },
-            registerCondition: () => checkVirtualWorkspace().success && checkWorkspaceTrust().success,
-        })));
+        addActions(
+            NEURO.tasks.map(task => ({
+                name: task.id,
+                description: task.description,
+                category: CATEGORY_REGISTERED_TASKS,
+                handler: handleRunTask,
+                // TODO: Auto-switch to task output (if already opened) as preview effect
+                promptGenerator: `run the task: ${task.description}`,
+                validators: {
+                    sync: [checkVirtualWorkspace, checkWorkspaceTrust],
+                },
+                registerCondition: () => checkVirtualWorkspace().success && checkWorkspaceTrust().success,
+            })),
+        );
     });
 }

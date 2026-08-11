@@ -12,6 +12,3 @@ suite('rce Actions', () => {
         assert.strictEqual(prompt.length, 0);
     });
 });
-
-
-

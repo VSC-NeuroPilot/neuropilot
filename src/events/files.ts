@@ -6,7 +6,7 @@ import { getWorkspaceUri } from '@/utils/misc';
 /**
  * Wrapper event to check if a specific file is created.
  * This creates the EventEmitter and returns the event, and will auto-fire if the specified file is affected.
- * 
+ *
  * @param file A relative path to the file.
  */
 export function targetedFileCreatedEvent(file: string) {
@@ -14,11 +14,14 @@ export function targetedFileCreatedEvent(file: string) {
         reason: `the file ${file} was created by ${CONNECTION.userName}.`,
         logReason: () => `the file "${file}" was created.`,
         events: [
-            [vscode.workspace.onDidCreateFiles, (data) => {
-                const workspaceUri = getWorkspaceUri();
-                const fileUri = workspaceUri?.with({ path: workspaceUri.path + '/' + file });
-                return data.files.some(f => f.fsPath === fileUri?.fsPath);
-            }],
+            [
+                vscode.workspace.onDidCreateFiles,
+                data => {
+                    const workspaceUri = getWorkspaceUri();
+                    const fileUri = workspaceUri?.with({ path: workspaceUri.path + '/' + file });
+                    return data.files.some(f => f.fsPath === fileUri?.fsPath);
+                },
+            ],
         ],
     });
 }
@@ -26,7 +29,7 @@ export function targetedFileCreatedEvent(file: string) {
 /**
  * Wrapper event to check if a specific file is deleted.
  * This creates the EventEmitter and returns the event, and will auto-fire if the specified file is affected.
- * 
+ *
  * @param file A relative path to the file.
  */
 export function targetedFileDeletedEvent(file: string) {
@@ -34,11 +37,14 @@ export function targetedFileDeletedEvent(file: string) {
         reason: `the file ${file} was deleted by ${CONNECTION.userName}.`,
         logReason: () => `the file "${file}" was created.`,
         events: [
-            [vscode.workspace.onDidDeleteFiles, (data) => {
-                const workspaceUri = getWorkspaceUri();
-                const fileUri = workspaceUri?.with({ path: workspaceUri.path + '/' + file });
-                return data.files.some(f => f.fsPath === fileUri?.fsPath);
-            }],
+            [
+                vscode.workspace.onDidDeleteFiles,
+                data => {
+                    const workspaceUri = getWorkspaceUri();
+                    const fileUri = workspaceUri?.with({ path: workspaceUri.path + '/' + file });
+                    return data.files.some(f => f.fsPath === fileUri?.fsPath);
+                },
+            ],
         ],
     });
 }

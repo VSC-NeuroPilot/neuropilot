@@ -14,21 +14,25 @@ export interface ExecutionHistoryItem extends ExecuteResult {
     timestamp: number;
 }
 
-export type ExecuteViewProviderMessage = {
-    type: 'executionResult';
-    result: ExecutionHistoryItem;
-} | {
-    type: 'updateStatus';
-    executionId: string;
-    status: ActionStatus;
-    message?: string;
-} | {
-    type: 'currentSession';
-    sessionId: string;
-} | {
-    type: 'addHistoryItem';
-    item: ExecutionHistoryItem;
-};
+export type ExecuteViewProviderMessage =
+    | {
+          type: 'executionResult';
+          result: ExecutionHistoryItem;
+      }
+    | {
+          type: 'updateStatus';
+          executionId: string;
+          status: ActionStatus;
+          message?: string;
+      }
+    | {
+          type: 'currentSession';
+          sessionId: string;
+      }
+    | {
+          type: 'addHistoryItem';
+          item: ExecutionHistoryItem;
+      };
 
 export class ExecuteViewProvider extends BaseWebviewViewProvider<Message, ExecuteViewProviderMessage> {
     private static readonly sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
@@ -59,7 +63,7 @@ export class ExecuteViewProvider extends BaseWebviewViewProvider<Message, Execut
         );
     }
 
-    protected handleMessage(_message: Message): void { }
+    protected handleMessage(_message: Message): void {}
 
     protected onViewReady(): void {
         // Send current session ID to webview
@@ -182,7 +186,7 @@ export async function addCustomExecutionHistoryItem(executeViewProvider: Execute
     const action = await vscode.window.showInputBox({
         prompt: 'Action name',
         placeHolder: 'e.g., place_cursor',
-        validateInput: (value) => value.trim() ? null : 'Action name cannot be empty',
+        validateInput: value => (value.trim() ? null : 'Action name cannot be empty'),
     });
     if (!action) return;
 
@@ -213,7 +217,7 @@ export async function addCustomExecutionHistoryItem(executeViewProvider: Execute
         prompt: 'Time offset from now in minutes (negative for past, positive for future)',
         placeHolder: 'e.g., -1440 for 1 day ago, 0 for now',
         value: '0',
-        validateInput: (value) => {
+        validateInput: value => {
             const num = parseFloat(value);
             return !isNaN(num) ? null : 'Must be a valid number';
         },

@@ -56,18 +56,20 @@ export class RCEContext<T extends JSONSchema7Object | undefined = any, K = any> 
     /**
      * Ephemeral storage.
      * Can be used to store data that needs to be accessed across different lifecycle stages of
-     * the action (validation, preview, handler), so that it doesn't need to be regenerated in 
+     * the action (validation, preview, handler), so that it doesn't need to be regenerated in
      * each stage.
      * This data does not persist across different executions.
      */
     public storage?: RCEStorage;
-    private _updateStatus: SimplifiedStatusUpdateHandler = (status: ActionStatus, message?: string) => updateActionStatus(this.data, status, message);
+    private _updateStatus: SimplifiedStatusUpdateHandler = (status: ActionStatus, message?: string) =>
+        updateActionStatus(this.data, status, message);
     /**
      * Updates the status of the action on the action execution history panel
      * @param status The new status to update to
      * @param message Message to update the status with
      */
-    readonly updateStatus: SimplifiedStatusUpdateHandler = (status: ActionStatus, message?: string) => this._updateStatus(status, message);
+    readonly updateStatus: SimplifiedStatusUpdateHandler = (status: ActionStatus, message?: string) =>
+        this._updateStatus(status, message);
 
     constructor(data: ActionData<T>, forced = false) {
         super(() => {
@@ -107,7 +109,7 @@ export class RCEContext<T extends JSONSchema7Object | undefined = any, K = any> 
         if (this.success !== null) throw new Error('Context object already destroyed!');
         this.success = success;
         this.dispose();
-    };
+    }
 
     /**
      * Clears request timers and cancel events before handler execution.

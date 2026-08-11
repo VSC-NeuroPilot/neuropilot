@@ -77,12 +77,7 @@ suite('Integration: read_changelog action', () => {
 
         // === Assert ===
         assert.ok(text?.includes('Changelog entries from 2.2.1 to 2.3.0:'), 'should show correct range');
-        const order = [
-            '## 2.2.1',
-            '## 2.2.2',
-            '## 2.2.3',
-            '## 2.3.0',
-        ];
+        const order = ['## 2.2.1', '## 2.2.2', '## 2.2.3', '## 2.3.0'];
         let lastIndex = -1;
         for (const marker of order) {
             const idx = text?.indexOf(marker) ?? -1;
@@ -116,5 +111,3 @@ suite('Integration: read_changelog action', () => {
         assert.ok(!contains('## 2.2.1'), 'should not include older than saved');
     });
 });
-
-

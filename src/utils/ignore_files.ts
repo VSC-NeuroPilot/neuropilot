@@ -97,9 +97,9 @@ export class ProfessionalIgnorer {
     }
 
     /**
-   * Refresh the global ignore patterns
-   * @param globals - Array of ignore patterns
-   */
+     * Refresh the global ignore patterns
+     * @param globals - Array of ignore patterns
+     */
     setGlobals(globals: string[]): void {
         this.globals = globals;
         this.ig = ignore(); // reset instance
@@ -108,27 +108,27 @@ export class ProfessionalIgnorer {
     }
 
     /**
-   * Check if a given relative path is ignored
-   * @param relPath - Path relative to the base directory
-   * @returns true if ignored, false otherwise
-   */
+     * Check if a given relative path is ignored
+     * @param relPath - Path relative to the base directory
+     * @returns true if ignored, false otherwise
+     */
     isIgnored(relPath: string): boolean {
         return this.ig.ignores(relPath);
     }
 
     /**
-   * Filter out ignored files/folders from a list
-   * @param files - List of relative paths
-   * @returns List of non-ignored files
-   */
+     * Filter out ignored files/folders from a list
+     * @param files - List of relative paths
+     * @returns List of non-ignored files
+     */
     filterVisible(files: string[]): string[] {
         return files.filter(file => !this.isIgnored(file));
     }
 
     /**
-   * Add extra ignore patterns on top of the current globals
-   * @param patterns - Array of ignore patterns
-   */
+     * Add extra ignore patterns on top of the current globals
+     * @param patterns - Array of ignore patterns
+     */
     addPatterns(patterns: string[]): void {
         this.ig.add(normalizePatterns(patterns));
         clearIgnoreCache();
@@ -151,9 +151,7 @@ export async function testIgnoreItemsList() {
     const visible = ignoreList.filterVisible(['src', 'node_modules', '.env']);
     console.log('Visible files:', visible); // ["src"]
 
-    vscode.window.showInformationMessage(
-        `IgnoreItemsList test finished. Visible: ${visible.join(', ')}`,
-    );
+    vscode.window.showInformationMessage(`IgnoreItemsList test finished. Visible: ${visible.join(', ')}`);
 }
 
 // Create and export a single shared instance
@@ -208,10 +206,7 @@ export async function loadIgnoreFiles(baseDir: string): Promise<void> {
  * @param targets - List of file or folder paths to check (absolute or relative to baseDir)
  * @returns The first ignored path found, or false if none match
  */
-export async function findIgnoredFile(
-    baseDir: string,
-    targets: string[],
-): Promise<string | false> {
+export async function findIgnoredFile(baseDir: string, targets: string[]): Promise<string | false> {
     await loadIgnoreFiles(baseDir);
 
     async function checkRecursive(targetPath: string): Promise<string | false> {
@@ -259,19 +254,14 @@ export async function testFindIgnoredFile() {
 
     const targets = ['src', 'node_modules', 'package-lock.json'];
     const result = await findIgnoredFile(baseDir, targets);
-    vscode.window.showInformationMessage(
-        result ? `Ignored: ${result}` : 'No ignored files found',
-    );
+    vscode.window.showInformationMessage(result ? `Ignored: ${result}` : 'No ignored files found');
 }
 
 /**
  * Find the first ignored path from a list (non-recursive).
  * @returns The first ignored file, or false if none.
  */
-export async function fastIsFileIgnored(
-    baseDir: string,
-    targets: string[],
-): Promise<string | false> {
+export async function fastIsFileIgnored(baseDir: string, targets: string[]): Promise<string | false> {
     await loadIgnoreFiles(baseDir);
 
     for (const target of targets) {
@@ -290,10 +280,7 @@ export async function fastIsFileIgnored(
  * @param targetPath - The path (absolute or relative to baseDir) to check
  * @returns true if the file is ignored, false otherwise
  */
-export async function isIgnoredFile(
-    baseDir: string,
-    targetPath: string,
-): Promise<boolean> {
+export async function isIgnoredFile(baseDir: string, targetPath: string): Promise<boolean> {
     const result = await findIgnoredFile(baseDir, [targetPath]);
     return !!result; // true if ignored, false otherwise
 }
@@ -321,11 +308,7 @@ export async function testIsIgnoredFile() {
  */
 export function fastIsItIgnored(targetPath: string): boolean {
     const relPath = toRelativePath(targetPath);
-    if (
-        relPath === ''
-        || relPath.startsWith('..')
-        || /^[a-z]:/i.test(relPath)
-    ) {
+    if (relPath === '' || relPath.startsWith('..') || /^[a-z]:/i.test(relPath)) {
         return false;
     }
 
@@ -346,10 +329,7 @@ export function fastIsItIgnored(targetPath: string): boolean {
  * @param files - Array of file or folder paths (absolute or relative to baseDir)
  * @returns A list of visible (non-ignored) files/folders
  */
-export async function getVisibleFiles(
-    baseDir: string,
-    files: string[],
-): Promise<string[]> {
+export async function getVisibleFiles(baseDir: string, files: string[]): Promise<string[]> {
     await loadIgnoreFiles(baseDir);
 
     const visible: string[] = [];
@@ -376,19 +356,14 @@ export async function testGetVisibleFiles() {
     const visible = await getVisibleFiles(baseDir, files);
 
     vscode.window.showInformationMessage(
-        visible.length
-            ? `Visible files: ${visible.join(', ')}`
-            : 'All files are ignored.',
+        visible.length ? `Visible files: ${visible.join(', ')}` : 'All files are ignored.',
     );
 }
 
 /**
  * Filter out ignored files/folders based on cached .gitignore rules.
  */
-export async function fastIsTheFilesVisible(
-    baseDir: string,
-    files: string[],
-): Promise<string[]> {
+export async function fastIsTheFilesVisible(baseDir: string, files: string[]): Promise<string[]> {
     await loadIgnoreFiles(baseDir);
 
     return files.filter(file => {

@@ -14,8 +14,7 @@ if (globalThis?.process?.env?.NEUROPILOT_TEST === 'true') {
     const originalError = console.error;
     const originalWarn = console.warn;
     const isNoise = (message: string) =>
-        message.includes('WebSocket is not open') ||
-        message.includes('DisposableStore that has already been disposed');
+        message.includes('WebSocket is not open') || message.includes('DisposableStore that has already been disposed');
     console.error = (...args) => {
         const message = args.map(String).join(' ');
         if (isNoise(message)) return;
@@ -75,5 +74,3 @@ export function run(): Promise<void> {
         })();
     });
 }
-
-

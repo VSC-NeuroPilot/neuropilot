@@ -26,5 +26,3 @@ suite('insert_text Action', () => {
         assert.ok(prompt.includes('3'));
     });
 });
-
-

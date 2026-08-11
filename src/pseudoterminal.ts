@@ -1,4 +1,4 @@
-/** 
+/**
  * This file's exports are not designed/intended to be used in the WebWorker build of the extension
  * This means that the web version of the extension will not have this file here (such as [VS Code for the Web](https://vscode.dev) and its [GitHub version](https://github.dev))
  * Feel free to use Node.js APIs here - they won't be a problem.
@@ -8,7 +8,16 @@ import * as vscode from 'vscode';
 import { spawn, ChildProcessWithoutNullStreams } from 'node:child_process';
 import { NEURO } from '@/constants';
 import { checkWorkspaceTrust, checkVirtualWorkspace, logOutput, delayAsync, getFence } from '@/utils/misc';
-import { actionValidationAccept, actionValidationFailure, ActionValidationResult, RCEAction, RCEHandlerReturns, actionHandlerFailure, actionHandlerSuccess, ActionHandlerResult } from '@/utils/neuro_client';
+import {
+    actionValidationAccept,
+    actionValidationFailure,
+    ActionValidationResult,
+    RCEAction,
+    RCEHandlerReturns,
+    actionHandlerFailure,
+    actionHandlerSuccess,
+    ActionHandlerResult,
+} from '@/utils/neuro_client';
 import { CONFIG } from '@/config';
 import { notifyOnTerminalClose } from '@events/shells';
 import { addActions } from '@/rce';
@@ -34,8 +43,7 @@ export interface TerminalSession {
 function checkLiveTerminals(context: RCEContext): ActionValidationResult {
     const shellType: string = context.data.params.shell;
     const session = NEURO.terminalRegistry.get(shellType);
-    if (!session)
-        return actionValidationFailure(`No terminal session found for shell type "${shellType}".`);
+    if (!session) return actionValidationFailure(`No terminal session found for shell type "${shellType}".`);
     return actionValidationAccept();
 }
 
@@ -47,21 +55,28 @@ export const terminalActions = {
         schema: {
             type: 'object',
             properties: {
-                command: { type: 'string', description: 'The command to run in the terminal.', examples: ['echo Hello world!', 'node dist/index.js'] },
-                shell: { type: 'string', enum: getAvailableShellProfileNames(), description: 'The shell to run the command in.' },
+                command: {
+                    type: 'string',
+                    description: 'The command to run in the terminal.',
+                    examples: ['echo Hello world!', 'node dist/index.js'],
+                },
+                shell: {
+                    type: 'string',
+                    enum: getAvailableShellProfileNames(),
+                    description: 'The shell to run the command in.',
+                },
             },
             required: ['command', 'shell'],
             additionalProperties: false,
         },
         handler: handleRunCommand,
         // TODO: Auto-switch to targeted terminal (if already started) as preview effect
-        cancelEvents: [
-            (context: RCEContext) => notifyOnTerminalClose(context.data.params?.shell),
-        ],
+        cancelEvents: [(context: RCEContext) => notifyOnTerminalClose(context.data.params?.shell)],
         validators: {
             sync: [checkVirtualWorkspace, checkWorkspaceTrust],
         },
-        promptGenerator: (context: RCEContext) => `run "${context.data.params?.command}" in the "${context.data.params?.shell}" shell.`,
+        promptGenerator: (context: RCEContext) =>
+            `run "${context.data.params?.command}" in the "${context.data.params?.shell}" shell.`,
         registerCondition: () => checkVirtualWorkspace().success && checkWorkspaceTrust().success,
     },
     kill_terminal_process: {
@@ -71,16 +86,18 @@ export const terminalActions = {
         schema: {
             type: 'object',
             properties: {
-                shell: { type: 'string', description: 'The shell to kill.', enum: getAvailableShellProfileNames() },
+                shell: {
+                    type: 'string',
+                    description: 'The shell to kill.',
+                    enum: getAvailableShellProfileNames(),
+                },
             },
             required: ['shell'],
             additionalProperties: false,
         },
         handler: handleKillTerminal,
         // TODO: Auto-switch to targeted terminal as preview effect
-        cancelEvents: [
-            (context: RCEContext) => notifyOnTerminalClose(context.data.params?.shell),
-        ],
+        cancelEvents: [(context: RCEContext) => notifyOnTerminalClose(context.data.params?.shell)],
         validators: {
             sync: [checkLiveTerminals, checkVirtualWorkspace, checkWorkspaceTrust],
         },
@@ -109,8 +126,8 @@ export function addTerminalActions() {
 }
 
 /**
-* Fetches the list of terminal configurations from the `neuropilot.terminals` setting.
-*/
+ * Fetches the list of terminal configurations from the `neuropilot.terminals` setting.
+ */
 function getCustomTerminalConfigs(): { name: string; path: string; args?: string[] }[] {
     const config = vscode.workspace.getConfiguration('neuropilot');
     const terminals = config.get<{ name: string; path: string; args?: string[] }[]>('terminals', []);
@@ -118,20 +135,20 @@ function getCustomTerminalConfigs(): { name: string; path: string; args?: string
 }
 
 /**
-* Returns the names of all available terminal profiles from the custom configuration.
-*/
+ * Returns the names of all available terminal profiles from the custom configuration.
+ */
 export function getAvailableShellProfileNames(): string[] {
     const terminalConfigs = getCustomTerminalConfigs();
-    return terminalConfigs.map((terminal) => terminal.name);
+    return terminalConfigs.map(terminal => terminal.name);
 }
 
 /**
-* Look up the shell executable and arguments for a given profile name.
-* Falls back to the first terminal in the list if the profile name is not found.
-*/
+ * Look up the shell executable and arguments for a given profile name.
+ * Falls back to the first terminal in the list if the profile name is not found.
+ */
 function getShellProfileForType(shellType: string): { shellPath: string; shellArgs?: string[] } {
     const terminalConfigs = getCustomTerminalConfigs();
-    const terminal = terminalConfigs.find((t) => t.name === shellType);
+    const terminal = terminalConfigs.find(t => t.name === shellType);
 
     if (terminal) {
         return { shellPath: terminal.path, shellArgs: terminal.args || [] };
@@ -146,9 +163,9 @@ function getShellProfileForType(shellType: string): { shellPath: string; shellAr
 }
 
 /**
-* Creates a new pseudoterminal-based session.
-* This version captures output in separate STDOUT and STDERR properties.
-*/
+ * Creates a new pseudoterminal-based session.
+ * This version captures output in separate STDOUT and STDERR properties.
+ */
 function createPseudoterminal(shellType: string, terminalName: string): TerminalSession {
     const emitter = new vscode.EventEmitter<string>();
 
@@ -197,9 +214,9 @@ function createPseudoterminal(shellType: string, terminalName: string): Terminal
 }
 
 /**
-* Returns an existing session for the given shell type or creates a new one.
-* Uses the global NEURO.terminalRegistry.
-*/
+ * Returns an existing session for the given shell type or creates a new one.
+ * Uses the global NEURO.terminalRegistry.
+ */
 function getOrCreateTerminal(shellType: string, terminalName: string): TerminalSession {
     let session = NEURO.terminalRegistry.get(shellType);
     if (!session || session.shellProcess === undefined || session.shellProcess.killed) {
@@ -213,10 +230,10 @@ function getOrCreateTerminal(shellType: string, terminalName: string): TerminalS
 }
 
 /**
-* Run command handler.
-* Checks permissions, executes the command in the requested shell,
-* captures STDOUT and STDERR, logs the output, and sends it to nwero.
-*/
+ * Run command handler.
+ * Checks permissions, executes the command in the requested shell,
+ * captures STDOUT and STDERR, logs the output, and sends it to nwero.
+ */
 export function handleRunCommand(context: RCEContext): RCEHandlerReturns {
     const { data: actionData } = context;
 
@@ -270,10 +287,17 @@ export function handleRunCommand(context: RCEContext): RCEHandlerReturns {
         logOutput('DEBUG', `Shell: ${shellPath} ${shellArgs}`);
 
         if (!shellPath || typeof shellPath !== 'string')
-            return actionHandlerFailure(`Couldn't determine executable for shell profile ${shellType}`, 'Couldn\'t determine executable for provided shell');
+            return actionHandlerFailure(
+                `Couldn't determine executable for shell profile ${shellType}`,
+                "Couldn't determine executable for provided shell",
+            );
 
         const cwd = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-        session.shellProcess = spawn(shellPath, shellArgs || [], { cwd, env: process.env, stdio: ['pipe', 'pipe', 'pipe'] });
+        session.shellProcess = spawn(shellPath, shellArgs || [], {
+            cwd,
+            env: process.env,
+            stdio: ['pipe', 'pipe', 'pipe'],
+        });
         const proc = session.shellProcess;
 
         proc.stdout.on('data', (data: Buffer) => {
@@ -292,8 +316,12 @@ export function handleRunCommand(context: RCEContext): RCEHandlerReturns {
             logOutput('ERROR', `STDERR: ${text}`);
         });
 
-        proc.on('exit', (code) => {
-            NEURO.client?.sendContext(code === null ? `The ${shellType} terminal closed with a null exit code. Someone did something to it.` : `Terminal ${shellType} exited with code ${code}.`);
+        proc.on('exit', code => {
+            NEURO.client?.sendContext(
+                code === null
+                    ? `The ${shellType} terminal closed with a null exit code. Someone did something to it.`
+                    : `Terminal ${shellType} exited with code ${code}.`,
+            );
             logOutput('INFO', `${shellType} process exited with code ${code}`);
         });
 
@@ -328,7 +356,10 @@ export function handleKillTerminal(context: RCEContext): RCEHandlerReturns {
     NEURO.terminalRegistry.delete(shellType);
 
     // Notify Neuro and the user.
-    return actionHandlerSuccess(`Terminal session for shell type "${shellType}" has been terminated.`, `Successfully killed ${shellType}`);
+    return actionHandlerSuccess(
+        `Terminal session for shell type "${shellType}" has been terminated.`,
+        `Successfully killed ${shellType}`,
+    );
 }
 
 /**
@@ -345,10 +376,12 @@ export function handleGetCurrentlyRunningShells(): ActionHandlerResult {
 
     if (runningShells.length === 0) {
         return actionHandlerFailure('No running shells found.', 'No shells open');
+    } else {
+        return actionHandlerSuccess(
+            `Currently running shells:\n${runningShells.join('\n')}`,
+            `${runningShells.length} Neuro shells running`,
+        );
     }
-    else {
-        return actionHandlerSuccess(`Currently running shells:\n${runningShells.join('\n')}`, `${runningShells.length} Neuro shells running`);
-    };
 }
 
 /**
@@ -389,7 +422,12 @@ export function emergencyTerminalShutdown() {
     if (failedShutdownCount == 0) {
         logOutput('INFO', 'Emergency shutdown complete. All terminals have been terminated.');
     } else {
-        logOutput('WARNING', `Failed to terminate ${failedShutdownCount} shells, including: ${failedShutdownTerminals}.`);
-        vscode.window.showWarningMessage(`Failed to terminate ${failedShutdownCount} terminal(s), which include these terminals: ${failedShutdownTerminals.join(', ')}.\nPlease check on them.`);
+        logOutput(
+            'WARNING',
+            `Failed to terminate ${failedShutdownCount} shells, including: ${failedShutdownTerminals}.`,
+        );
+        vscode.window.showWarningMessage(
+            `Failed to terminate ${failedShutdownCount} terminal(s), which include these terminals: ${failedShutdownTerminals.join(', ')}.\nPlease check on them.`,
+        );
     }
 }

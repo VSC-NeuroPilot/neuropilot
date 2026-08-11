@@ -1,12 +1,39 @@
 import * as vscode from 'vscode';
 import { NEURO, EXTENSIONS } from '@/constants';
-import { logOutput, createClient, onClientConnected, setVirtualCursor, showAPIMessage, disconnectClient, reconnectClient, getWorkspaceUri, getFence, simpleFileName } from '@/utils/misc';
+import {
+    logOutput,
+    createClient,
+    onClientConnected,
+    setVirtualCursor,
+    showAPIMessage,
+    disconnectClient,
+    reconnectClient,
+    getWorkspaceUri,
+    getFence,
+    simpleFileName,
+} from '@/utils/misc';
 import { completionsProvider } from '@/completions';
 import { giveCookie } from '@/functions/cookies';
-import { ACCESS, ACTIONS, checkDeprecatedSettings, CONFIG, CONNECTION, PermissionLevel, setPermissions } from '@/config';
+import {
+    ACCESS,
+    ACTIONS,
+    checkDeprecatedSettings,
+    CONFIG,
+    CONNECTION,
+    PermissionLevel,
+    setPermissions,
+} from '@/config';
 import { explainWithNeuro, fixWithNeuro, NeuroCodeActionsProvider, sendDiagnosticsDiff } from '@/lint_problems';
 import { editorChangeHandler, fileSaveListener, moveNeuroCursorHere, workspaceEditHandler } from '@/editing';
-import { emergencyDenyRequests, acceptRceRequest, denyRceRequest, revealRceNotification, clearRceRequest, getActions, reregisterAllActions } from '@/rce';
+import {
+    emergencyDenyRequests,
+    acceptRceRequest,
+    denyRceRequest,
+    revealRceNotification,
+    clearRceRequest,
+    getActions,
+    reregisterAllActions,
+} from '@/rce';
 import type { GitExtension } from '@typing/git';
 import { getGitExtension } from '@/git';
 import { openDocsOnTarget, registerDocsCommands, registerDocsLink } from './docs';
@@ -36,7 +63,10 @@ export function registerCommonCommands() {
         vscode.commands.registerCommand('neuropilot.explainWithNeuro', explainWithNeuro),
         vscode.commands.registerCommand('neuropilot.switchNeuroAPIUser', switchCurrentNeuroAPIUser),
         vscode.commands.registerCommand('neuropilot.refreshExtensionDependencyState', obtainExtensionState),
-        vscode.commands.registerCommand('neuropilot.resetTemporarilyDisabledActions', () => NEURO.tempDisabledActions = []),
+        vscode.commands.registerCommand(
+            'neuropilot.resetTemporarilyDisabledActions',
+            () => (NEURO.tempDisabledActions = []),
+        ),
         vscode.commands.registerCommand('neuropilot.readChangelog', sendChangelogOnDemand),
         vscode.commands.registerCommand('neuropilot.dev.clearMementos', clearAllMementos),
         vscode.commands.registerCommand('neuropilot.dev.addExecutionHistoryItem', () => {
@@ -53,17 +83,19 @@ export function registerCommonCommands() {
 export function setupCommonEventHandlers() {
     const handlers = [
         vscode.languages.onDidChangeDiagnostics(sendDiagnosticsDiff),
-        vscode.workspace.onDidSaveTextDocument(async (e) => {
+        vscode.workspace.onDidSaveTextDocument(async e => {
             fileSaveListener(e);
             const workspaceUri = getWorkspaceUri();
             if (workspaceUri) {
-                const isIgnoreFile = ACCESS.ignoreFiles.some(f => vscode.Uri.joinPath(workspaceUri, f).fsPath === e.fileName);
+                const isIgnoreFile = ACCESS.ignoreFiles.some(
+                    f => vscode.Uri.joinPath(workspaceUri, f).fsPath === e.fileName,
+                );
                 if (isIgnoreFile) await loadIgnoreFiles(getWorkspacePath() || '');
             }
         }),
         vscode.window.onDidChangeActiveTextEditor(editorChangeHandler),
         vscode.workspace.onDidChangeTextDocument(workspaceEditHandler),
-        vscode.workspace.onDidChangeConfiguration(async (event) => {
+        vscode.workspace.onDidChangeConfiguration(async event => {
             if (event.affectsConfiguration('files.autoSave')) {
                 NEURO.client?.sendContext('The Auto-Save setting has been modified.');
                 reregisterAllActions(true);
@@ -84,11 +116,11 @@ export function setupCommonEventHandlers() {
                 }
             }
             if (
-                event.affectsConfiguration('neuropilot.access.dotFiles')
-                || event.affectsConfiguration('neuropilot.access.externalFiles')
-                || event.affectsConfiguration('neuropilot.access.includePattern')
-                || event.affectsConfiguration('neuropilot.access.excludePattern')
-                || event.affectsConfiguration('neuropilot.permission.editActiveDocument')
+                event.affectsConfiguration('neuropilot.access.dotFiles') ||
+                event.affectsConfiguration('neuropilot.access.externalFiles') ||
+                event.affectsConfiguration('neuropilot.access.includePattern') ||
+                event.affectsConfiguration('neuropilot.access.excludePattern') ||
+                event.affectsConfiguration('neuropilot.permission.editActiveDocument')
             ) {
                 setVirtualCursor();
             }
@@ -98,11 +130,7 @@ export function setupCommonEventHandlers() {
             }
 
             if (event.affectsConfiguration('neuropilot.access.ignoreFiles')) {
-                await loadIgnoreFiles(
-                    normalizePath(
-                        getWorkspacePath() || '',
-                    ) || '',
-                );
+                await loadIgnoreFiles(normalizePath(getWorkspacePath() || '') || '');
             }
         }),
         vscode.extensions.onDidChange(obtainExtensionState),
@@ -135,11 +163,9 @@ export function setupCommonProviders() {
     NEURO.viewProviders.execute = new ExecuteViewProvider(NEURO.context!);
     const providers = [
         vscode.languages.registerInlineCompletionItemProvider({ pattern: '**' }, completionsProvider),
-        vscode.languages.registerCodeActionsProvider(
-            { scheme: 'file' },
-            new NeuroCodeActionsProvider(),
-            { providedCodeActionKinds: NeuroCodeActionsProvider.providedCodeActionKinds },
-        ),
+        vscode.languages.registerCodeActionsProvider({ scheme: 'file' }, new NeuroCodeActionsProvider(), {
+            providedCodeActionKinds: NeuroCodeActionsProvider.providedCodeActionKinds,
+        }),
         vscode.window.registerWebviewViewProvider(ActionsViewProvider.viewId, NEURO.viewProviders.actions),
         vscode.window.registerWebviewViewProvider(ImagesViewProvider.viewId, NEURO.viewProviders.images),
         vscode.window.registerWebviewViewProvider(ExecuteViewProvider.viewId, NEURO.viewProviders.execute),
@@ -201,13 +227,13 @@ export function reloadPermissions(...extraFunctions: (() => void)[]) {
 }
 
 function registerPreActionHandler() {
-    NEURO.client?.onAction((_actionData) => {
+    NEURO.client?.onAction(_actionData => {
         NEURO.actionHandled = false;
     });
 }
 
 function registerPostActionHandler() {
-    NEURO.client?.onAction((actionData) => {
+    NEURO.client?.onAction(actionData => {
         if (NEURO.actionHandled) return;
         NEURO.client?.sendActionResult(actionData.id, true, 'Unknown action');
     });
@@ -250,7 +276,9 @@ function disableAllPermissions() {
     Promise.all(promises).then(() => {
         vscode.commands.executeCommand('neuropilot.reloadPermissions'); // Reload permissions to unregister all actions
         NEURO.client?.sendContext(`${CONNECTION.userName} has turned off all permissions.`);
-        vscode.window.showInformationMessage('All permissions, all unsafe path rules and linting auto-context have been turned off, all actions have been unregistered and any terminal shells have been killed.');
+        vscode.window.showInformationMessage(
+            'All permissions, all unsafe path rules and linting auto-context have been turned off, all actions have been unregistered and any terminal shells have been killed.',
+        );
         NEURO.killSwitch = false;
     });
 }
@@ -274,7 +302,9 @@ function switchCurrentNeuroAPIUser() {
             quickPick.hide();
             return;
         }
-        vscode.workspace.getConfiguration('neuropilot').update('connection.nameOfAPI', selected, vscode.ConfigurationTarget.Global);
+        vscode.workspace
+            .getConfiguration('neuropilot')
+            .update('connection.nameOfAPI', selected, vscode.ConfigurationTarget.Global);
         quickPick.hide();
     });
     quickPick.show();
@@ -296,7 +326,9 @@ export function obtainExtensionState(): void {
 }
 
 export function deactivate() {
-    NEURO.client?.sendContext(`NeuroPilot is being deactivated, or ${CONNECTION.gameName} is closing. See you next time, ${NEURO.currentController}!`);
+    NEURO.client?.sendContext(
+        `NeuroPilot is being deactivated, or ${CONNECTION.gameName} is closing. See you next time, ${NEURO.currentController}!`,
+    );
     clearRceRequest();
 
     // Save buffered execution history items
@@ -318,7 +350,8 @@ export function getCursorDecorationRenderOptions(): vscode.DecorationRenderOptio
         before: {
             contentText: 'ᛙ',
             margin: '0 0 0 -0.25ch',
-            textDecoration: 'none; position: absolute; display: inline-block; top: 0; font-size: 200%; font-weight: bold, z-index: 1',
+            textDecoration:
+                'none; position: absolute; display: inline-block; top: 0; font-size: 200%; font-weight: bold, z-index: 1',
             color: 'rgba(255, 85, 229)',
         },
     };
@@ -346,7 +379,8 @@ export function getDiffRemovedDecorationRenderOptions(): vscode.DecorationRender
         before: {
             contentText: '▲',
             margin: '0 0 0 -0.4ch',
-            textDecoration: 'none; position: absolute; display: inline-block; top: 1.25ch; font-size: 75%, z-index: 1; -webkit-text-stroke: 1px rgba(255, 85, 229, 0.5)',
+            textDecoration:
+                'none; position: absolute; display: inline-block; top: 1.25ch; font-size: 75%, z-index: 1; -webkit-text-stroke: 1px rgba(255, 85, 229, 0.5)',
             color: 'rgba(255, 0, 0, 0.5)',
         },
     };
@@ -393,56 +427,60 @@ export function showUpdateReminder(context: vscode.ExtensionContext) {
     const askLabel = `Send ${CONNECTION.nameOfAPI} changelog`;
     const showPopup = (modal: boolean) => {
         if (!lastVersion) {
-            vscode.window.showInformationMessage(
-                `Welcome to NeuroPilot. You have just installed version ${version}.`,
-                { modal },
-                askLabel,
-                'View Changelog',
-                'View Docs',
-                'Configure NeuroPilot',
-            ).then(async selection => {
-                if (selection === 'View Changelog') {
-                    const changelogUri = vscode.Uri.joinPath(context.extensionUri, 'CHANGELOG.md');
-                    await vscode.commands.executeCommand('markdown.showPreview', changelogUri);
-                    // Re-show non-modally to avoid focus/sound
-                    showPopup(false);
-                } else if (selection === 'View Docs') {
-                    await openDocsOnTarget('NeuroPilot', docsUrl);
-                    showPopup(false);
-                } else if (selection === 'Configure NeuroPilot') {
-                    await vscode.commands.executeCommand('workbench.action.openSettings', `@ext:${id}`);
-                    showPopup(false);
-                } else if (selection === askLabel) {
-                    await vscode.commands.executeCommand('neuropilot.readChangelog');
-                    showPopup(false);
-                }
-            });
+            vscode.window
+                .showInformationMessage(
+                    `Welcome to NeuroPilot. You have just installed version ${version}.`,
+                    { modal },
+                    askLabel,
+                    'View Changelog',
+                    'View Docs',
+                    'Configure NeuroPilot',
+                )
+                .then(async selection => {
+                    if (selection === 'View Changelog') {
+                        const changelogUri = vscode.Uri.joinPath(context.extensionUri, 'CHANGELOG.md');
+                        await vscode.commands.executeCommand('markdown.showPreview', changelogUri);
+                        // Re-show non-modally to avoid focus/sound
+                        showPopup(false);
+                    } else if (selection === 'View Docs') {
+                        await openDocsOnTarget('NeuroPilot', docsUrl);
+                        showPopup(false);
+                    } else if (selection === 'Configure NeuroPilot') {
+                        await vscode.commands.executeCommand('workbench.action.openSettings', `@ext:${id}`);
+                        showPopup(false);
+                    } else if (selection === askLabel) {
+                        await vscode.commands.executeCommand('neuropilot.readChangelog');
+                        showPopup(false);
+                    }
+                });
             return;
         }
 
         if (lastVersion !== version) {
-            vscode.window.showInformationMessage(
-                `NeuroPilot updated to version ${version}. Please check the changelog and docs for important changes. You can also let ${CONNECTION.nameOfAPI} read the changes now or later from the Command Palette.`,
-                { modal },
-                askLabel,
-                'View Changelog',
-                'View Docs',
-            ).then(async selection => {
-                if (selection === 'View Changelog') {
-                    // Open local CHANGELOG.md in markdown preview
-                    const changelogUri = vscode.Uri.joinPath(context.extensionUri, 'CHANGELOG.md');
-                    await vscode.commands.executeCommand('markdown.showPreview', changelogUri);
-                    // Re-show non-modally to allow visiting both
-                    showPopup(false);
-                } else if (selection === 'View Docs') {
-                    await openDocsOnTarget('NeuroPilot', docsUrl);
-                    // Re-show non-modally to allow visiting both
-                    showPopup(false);
-                } else if (selection === askLabel) {
-                    await vscode.commands.executeCommand('neuropilot.readChangelog');
-                    showPopup(false);
-                }
-            });
+            vscode.window
+                .showInformationMessage(
+                    `NeuroPilot updated to version ${version}. Please check the changelog and docs for important changes. You can also let ${CONNECTION.nameOfAPI} read the changes now or later from the Command Palette.`,
+                    { modal },
+                    askLabel,
+                    'View Changelog',
+                    'View Docs',
+                )
+                .then(async selection => {
+                    if (selection === 'View Changelog') {
+                        // Open local CHANGELOG.md in markdown preview
+                        const changelogUri = vscode.Uri.joinPath(context.extensionUri, 'CHANGELOG.md');
+                        await vscode.commands.executeCommand('markdown.showPreview', changelogUri);
+                        // Re-show non-modally to allow visiting both
+                        showPopup(false);
+                    } else if (selection === 'View Docs') {
+                        await openDocsOnTarget('NeuroPilot', docsUrl);
+                        // Re-show non-modally to allow visiting both
+                        showPopup(false);
+                    } else if (selection === askLabel) {
+                        await vscode.commands.executeCommand('neuropilot.readChangelog');
+                        showPopup(false);
+                    }
+                });
         }
     };
     // Show as modal on first display; subsequent displays will be non-modal
@@ -509,5 +547,7 @@ export function sendCurrentFile() {
 
     logOutput('INFO', 'Sending current file to Neuro API');
     const fence = getFence(text);
-    NEURO.client?.sendContext(`${CONNECTION.userName} sent you the contents of the file ${fileName}.\n\nContent:\n\n${fence}${language}\n${text}\n${fence}`);
+    NEURO.client?.sendContext(
+        `${CONNECTION.userName} sent you the contents of the file ${fileName}.\n\nContent:\n\n${fence}${language}\n${text}\n${fence}`,
+    );
 }

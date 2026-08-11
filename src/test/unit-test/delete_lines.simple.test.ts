@@ -32,12 +32,10 @@ suite('delete_lines Action', () => {
         const prompt = editingActions.delete_lines.promptGenerator({
             data: { params: { startLine: 7, endLine: 3 } },
         } as RCEContext);
-        // Prompt generator formats only; validation handles correctness elsewhere        
+        // Prompt generator formats only; validation handles correctness elsewhere
 
         // === Assert ===
         assert.ok(typeof prompt === 'string' && prompt.length > 0, 'prompt should be a non-empty string');
         assert.ok(prompt.includes('7') && prompt.includes('3'), 'prompt should include both provided numbers');
     });
 });
-
-

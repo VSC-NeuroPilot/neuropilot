@@ -28,5 +28,3 @@ suite('delete_text Action', () => {
         assert.ok(prompt.includes('hello'));
     });
 });
-
-

@@ -60,8 +60,8 @@ export class RCECancelEvent<T = any> {
         const disposables: vscode.Disposable[] = [];
         for (const [event, predicate] of init?.events ?? []) {
             disposables.push(
-                event(async (data) => {
-                    if (predicate === null || await predicate(data)) {
+                event(async data => {
+                    if (predicate === null || (await predicate(data))) {
                         this.fire(data);
                     }
                 }),

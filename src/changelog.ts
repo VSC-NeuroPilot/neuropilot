@@ -17,20 +17,25 @@ interface ChangelogSection {
 export const changelogActions = {
     read_changelog: {
         name: 'read_changelog',
-        description: 'Get changelog entries starting from a specified version. If fromVersion is omitted, any new entries after the last read_changelog command are read.',
+        description:
+            'Get changelog entries starting from a specified version. If fromVersion is omitted, any new entries after the last read_changelog command are read.',
         category: CATEGORY_MISC,
         schema: {
             type: 'object',
             properties: {
-                fromVersion: { type: 'string', description: 'Version (e.g., 2.2.1) to start including entries from, inclusive.' },
+                fromVersion: {
+                    type: 'string',
+                    description: 'Version (e.g., 2.2.1) to start including entries from, inclusive.',
+                },
             },
             additionalProperties: false,
         },
         defaultPermission: PermissionLevel.COPILOT,
         handler: handleReadChangelog,
-        promptGenerator: (context: RCEContext) => context.data.params?.fromVersion
-            ? `read all changelog entries starting from version ${context.data.params.fromVersion} (inclusive).`
-            : 'read the latest changelog entries.',
+        promptGenerator: (context: RCEContext) =>
+            context.data.params?.fromVersion
+                ? `read all changelog entries starting from version ${context.data.params.fromVersion} (inclusive).`
+                : 'read the latest changelog entries.',
     },
 } satisfies Record<string, RCEAction>;
 
@@ -42,14 +47,20 @@ export async function readAndStructureChangelog(fromVersion?: string): Promise<A
     try {
         const { sections, latest } = await readAndParseChangelog();
         if (sections.length === 0) {
-            return actionHandlerFailure('Could not find any version entries in the changelog.', 'No version entries in changelog');
+            return actionHandlerFailure(
+                'Could not find any version entries in the changelog.',
+                'No version entries in changelog',
+            );
         }
 
         const saved = NEURO.context?.globalState.get<string>(MEMENTO_KEY);
         const { selected, startVersion, endVersion, note } = computeSelection(sections, latest, saved, fromVersion);
 
         if (selected.length === 0) {
-            return actionHandlerFailure('No matching changelog entries to send.', 'No matching changelog entries found');
+            return actionHandlerFailure(
+                'No matching changelog entries to send.',
+                'No matching changelog entries found',
+            );
         }
 
         const md = selected.map(s => `## ${s.version}\n\n${s.body.trim()}`).join('\n\n');
@@ -63,7 +74,10 @@ export async function readAndStructureChangelog(fromVersion?: string): Promise<A
         // Update memento to latest delivered
         await NEURO.context?.globalState.update(MEMENTO_KEY, endVersion);
 
-        return actionHandlerSuccess(messageParts.join('\n') + `\nPlease summarise the changelogs for ${CONNECTION.userName}.`, 'Sent requested changelog');
+        return actionHandlerSuccess(
+            messageParts.join('\n') + `\nPlease summarise the changelogs for ${CONNECTION.userName}.`,
+            'Sent requested changelog',
+        );
     } catch (erm) {
         logOutput('ERROR', `Failed to read changelog: ${erm}`);
         return actionHandlerFailure('Failed to read changelog.', EXCEPTION_THROWN_STRING);
@@ -80,7 +94,9 @@ export async function sendChangelogOnDemand() {
     if (changelog.success === 'success') {
         NEURO.client?.sendContext(changelog.message!);
     } else {
-        vscode.window.showErrorMessage(changelog.message ?? 'Reading and structuring the changelog failed, maybe check logs?');
+        vscode.window.showErrorMessage(
+            changelog.message ?? 'Reading and structuring the changelog failed, maybe check logs?',
+        );
     }
 }
 
@@ -88,7 +104,7 @@ function handleReadChangelog(context: RCEContext): Thenable<ActionHandlerResult>
     return readAndStructureChangelog(context.data.params?.fromVersion);
 }
 
-async function readAndParseChangelog(): Promise<{ sections: ChangelogSection[]; latest: string; }> {
+async function readAndParseChangelog(): Promise<{ sections: ChangelogSection[]; latest: string }> {
     const uri = vscode.Uri.joinPath(NEURO.context!.extensionUri, 'CHANGELOG.md');
     const data = await vscode.workspace.fs.readFile(uri);
     const text = new TextDecoder('utf-8').decode(data);
@@ -103,7 +119,7 @@ async function readAndParseChangelog(): Promise<{ sections: ChangelogSection[]; 
 
 function parseChangelog(text: string): ChangelogSection[] {
     const headerRegex = /^##\s+(\d+\.\d+\.\d+)\s*$/gm;
-    const matches: { version: string; index: number; }[] = [];
+    const matches: { version: string; index: number }[] = [];
     let m: RegExpExecArray | null;
     while ((m = headerRegex.exec(text)) !== null) {
         matches.push({ version: m[1], index: m.index });

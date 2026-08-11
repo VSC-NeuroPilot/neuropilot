@@ -5,7 +5,7 @@ import { getWorkspaceUri } from '@/utils/misc';
 /**
  * Wrapper event to check if a specific file no longer has any linting issues.
  * This creates the EventEmitter and returns the event, and will auto-fire if the specified file is affected.
- * 
+ *
  * @param file An absolute path to the file.
  */
 export function targetedFileLintingResolvedEvent(file: string): RCECancelEvent {
@@ -17,19 +17,22 @@ export function targetedFileLintingResolvedEvent(file: string): RCECancelEvent {
     return new RCECancelEvent<vscode.DiagnosticChangeEvent>({
         reason: `the file ${file} no longer has linting issues.`,
         events: [
-            [vscode.languages.onDidChangeDiagnostics, async () => {
-                return new Promise<boolean>((resolve) => {
-                    setTimeout(() => {
-                        const currentDiagnostics = vscode.languages.getDiagnostics(fileUri);
+            [
+                vscode.languages.onDidChangeDiagnostics,
+                async () => {
+                    return new Promise<boolean>(resolve => {
+                        setTimeout(() => {
+                            const currentDiagnostics = vscode.languages.getDiagnostics(fileUri);
 
-                        // Check if we had issues before but now have none
-                        const shouldFire = previousDiagnostics.length > 0 && currentDiagnostics.length === 0;
+                            // Check if we had issues before but now have none
+                            const shouldFire = previousDiagnostics.length > 0 && currentDiagnostics.length === 0;
 
-                        previousDiagnostics = currentDiagnostics;
-                        resolve(shouldFire);
-                    }, 0);
-                });
-            }],
+                            previousDiagnostics = currentDiagnostics;
+                            resolve(shouldFire);
+                        }, 0);
+                    });
+                },
+            ],
         ],
     });
 }
@@ -37,7 +40,7 @@ export function targetedFileLintingResolvedEvent(file: string): RCECancelEvent {
 /**
  * Wrapper event to check if a specific folder no longer has any linting issues.
  * This creates the EventEmitter and returns the event, and will auto-fire if any file in the folder is affected.
- * 
+ *
  * @param folder An absolute path to the folder.
  */
 export function targetedFolderLintingResolvedEvent(folder: string): RCECancelEvent {
@@ -58,43 +61,46 @@ export function targetedFolderLintingResolvedEvent(folder: string): RCECancelEve
     return new RCECancelEvent<vscode.DiagnosticChangeEvent>({
         reason: `the folder ${folder} no longer has any linting issues.`,
         events: [
-            [vscode.languages.onDidChangeDiagnostics, async (event) => {
-                const changedUris = (event as vscode.DiagnosticChangeEvent).uris;
-                const hasRelevantChanges = changedUris.some(uri => uri.fsPath.startsWith(folderUri.fsPath));
+            [
+                vscode.languages.onDidChangeDiagnostics,
+                async event => {
+                    const changedUris = (event as vscode.DiagnosticChangeEvent).uris;
+                    const hasRelevantChanges = changedUris.some(uri => uri.fsPath.startsWith(folderUri.fsPath));
 
-                if (!hasRelevantChanges) {
-                    return false;
-                }
+                    if (!hasRelevantChanges) {
+                        return false;
+                    }
 
-                return new Promise<boolean>((resolve) => {
-                    setTimeout(() => {
-                        let folderNowClean = false;
+                    return new Promise<boolean>(resolve => {
+                        setTimeout(() => {
+                            let folderNowClean = false;
 
-                        for (const uri of changedUris) {
-                            if (uri.fsPath.startsWith(folderUri.fsPath)) {
-                                const currentDiagnostics = vscode.languages.getDiagnostics(uri);
-                                const previousDiagnostics = previousDiagnosticsMap.get(uri.fsPath) || [];
+                            for (const uri of changedUris) {
+                                if (uri.fsPath.startsWith(folderUri.fsPath)) {
+                                    const currentDiagnostics = vscode.languages.getDiagnostics(uri);
+                                    const previousDiagnostics = previousDiagnosticsMap.get(uri.fsPath) || [];
 
-                                // Update our tracking
-                                if (currentDiagnostics.length === 0) {
-                                    previousDiagnosticsMap.delete(uri.fsPath);
-                                } else {
-                                    previousDiagnosticsMap.set(uri.fsPath, currentDiagnostics);
-                                }
+                                    // Update our tracking
+                                    if (currentDiagnostics.length === 0) {
+                                        previousDiagnosticsMap.delete(uri.fsPath);
+                                    } else {
+                                        previousDiagnosticsMap.set(uri.fsPath, currentDiagnostics);
+                                    }
 
-                                // Check if file was cleaned
-                                if (previousDiagnostics.length > 0 && currentDiagnostics.length === 0) {
-                                    folderNowClean = true;
+                                    // Check if file was cleaned
+                                    if (previousDiagnostics.length > 0 && currentDiagnostics.length === 0) {
+                                        folderNowClean = true;
+                                    }
                                 }
                             }
-                        }
 
-                        // Check if entire folder is now clean
-                        const shouldFire = folderNowClean && previousDiagnosticsMap.size === 0;
-                        resolve(shouldFire);
-                    }, 0);
-                });
-            }],
+                            // Check if entire folder is now clean
+                            const shouldFire = folderNowClean && previousDiagnosticsMap.size === 0;
+                            resolve(shouldFire);
+                        }, 0);
+                    });
+                },
+            ],
         ],
     });
 }
@@ -109,26 +115,29 @@ export function workspaceLintingResolvedEvent(): RCECancelEvent {
     return new RCECancelEvent({
         reason: 'the workspace no longer has any linting issues.',
         events: [
-            [vscode.languages.onDidChangeDiagnostics, async () => {
-                return new Promise<boolean>((resolve) => {
-                    setTimeout(() => {
-                        const currentDiagnostics = vscode.languages.getDiagnostics();
+            [
+                vscode.languages.onDidChangeDiagnostics,
+                async () => {
+                    return new Promise<boolean>(resolve => {
+                        setTimeout(() => {
+                            const currentDiagnostics = vscode.languages.getDiagnostics();
 
-                        // Filter out empty diagnostic arrays and count actual issues
-                        const totalIssues = currentDiagnostics.reduce((count, [, diagnostics]) => {
-                            return count + diagnostics.length;
+                            // Filter out empty diagnostic arrays and count actual issues
+                            const totalIssues = currentDiagnostics.reduce((count, [, diagnostics]) => {
+                                return count + diagnostics.length;
+                            }, 0);
+
+                            const hasDiagnostics = totalIssues > 0;
+
+                            // Fire if we had diagnostics before but now have none
+                            const shouldFire = hadDiagnostics && !hasDiagnostics;
+
+                            hadDiagnostics = hasDiagnostics;
+                            resolve(shouldFire);
                         }, 0);
-
-                        const hasDiagnostics = totalIssues > 0;
-
-                        // Fire if we had diagnostics before but now have none
-                        const shouldFire = hadDiagnostics && !hasDiagnostics;
-
-                        hadDiagnostics = hasDiagnostics;
-                        resolve(shouldFire);
-                    }, 0);
-                });
-            }],
+                    });
+                },
+            ],
         ],
     });
 }

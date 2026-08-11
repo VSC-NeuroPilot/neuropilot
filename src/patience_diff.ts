@@ -4,7 +4,7 @@
  * program: "patienceDiff" algorithm implemented in javascript.
  * author: Jonathan Trent
  * version: 2.0
- * 
+ *
  * Converted to TypeScript by Pasu4.
  *
  * use:  patienceDiff( aLines[], bLines[], diffPlusFlag )
@@ -59,7 +59,6 @@ interface LinkedIndexPair {
 }
 
 export function patienceDiff(aLines: string[], bLines: string[], diffPlusFlag = false): PatienceDiff {
-
     //
     // findUnique finds all unique values in arr[lo..hi], inclusive.  This
     // function is used in preparation for determining the longest common
@@ -109,7 +108,14 @@ export function patienceDiff(aLines: string[], bLines: string[], diffPlusFlag = 
     // the matching unique lines.
     //
 
-    function uniqueCommon(aArray: string[], aLo: number, aHi: number, bArray: string[], bLo: number, bHi: number): Map<string, LinkedIndexPair> {
+    function uniqueCommon(
+        aArray: string[],
+        aLo: number,
+        aHi: number,
+        bArray: string[],
+        bLo: number,
+        bHi: number,
+    ): Map<string, LinkedIndexPair> {
         const ma: Map<string, number | LinkedIndexPair> = findUnique(aArray, aLo, aHi);
         const mb = findUnique(bArray, bLo, bHi);
 
@@ -275,7 +281,13 @@ export function patienceDiff(aLines: string[], bLines: string[], diffPlusFlag = 
     // none found, at which point the subsequence is dumped to the result.
     //
 
-    function recurseLCS(aLo: number, aHi: number, bLo: number, bHi: number, uniqueCommonMap: Map<string, LinkedIndexPair> | undefined = undefined): void {
+    function recurseLCS(
+        aLo: number,
+        aHi: number,
+        bLo: number,
+        bHi: number,
+        uniqueCommonMap: Map<string, LinkedIndexPair> | undefined = undefined,
+    ): void {
         const x = longestCommonSubsequence(uniqueCommonMap || uniqueCommon(aLines, aLo, aHi, bLines, bLo, bHi));
 
         if (x.length === 0) {
@@ -287,7 +299,7 @@ export function patienceDiff(aLines: string[], bLines: string[], diffPlusFlag = 
 
             let i;
             for (i = 0; i < x.length - 1; i++) {
-                addSubMatch(x[i].indexA, x[i + 1].indexA - 1, x[i].indexB,	x[i + 1].indexB - 1);
+                addSubMatch(x[i].indexA, x[i + 1].indexA - 1, x[i].indexB, x[i + 1].indexB - 1);
             }
 
             if (x[i].indexA <= aHi || x[i].indexB <= bHi) {
@@ -317,7 +329,6 @@ export function patienceDiff(aLines: string[], bLines: string[], diffPlusFlag = 
         lineCountInserted: inserted,
         lineCountMoved: 0,
     };
-
 }
 
 /**
@@ -395,5 +406,4 @@ export function patienceDiffPlus(aLines: string[], bLines: string[]): PatienceDi
     } while (0 < difference.lineCountMoved - lastLineCountMoved);
 
     return difference;
-
 }

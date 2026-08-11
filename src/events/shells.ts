@@ -49,8 +49,6 @@ export function notifyOnTerminalClose(terminal: string): RCECancelEvent | null {
 export function notifyOnTaskFinish(): RCECancelEvent {
     return new RCECancelEvent({
         reason: 'the task finished.',
-        events: [
-            [vscode.tasks.onDidEndTask, null],
-        ],
+        events: [[vscode.tasks.onDidEndTask, null]],
     });
 }
