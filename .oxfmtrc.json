@@ -13,5 +13,7 @@
   "bracketSpacing": true,
   "bracketSameLine": true,
   "proseWrap": "preserve",
-  "printWidth": 120
+  "printWidth": 120,
+  "sortPackageJson": false,
+  "sortImports": true,
 }

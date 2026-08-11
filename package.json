@@ -798,6 +798,9 @@
 	"sideEffects": [
 		"src/test/**"
 	],
+	"nano-staged": {
+		"*.{ts,tsx}": ["pn lint", "pn fmt"]
+	},
 	"scripts": {
 		"preinstall": "node ./scripts/check-malicious-packages.js",
 		"version:changesets": "changeset version --global-changelog",
@@ -865,6 +868,7 @@
 		"esbuild-plugin-polyfill-node": "^0.3.0",
 		"husky": "^9.1.7",
 		"mocha": "^11.7.6",
+		"nano-staged": "^1.0.2",
 		"npm-run-all2": "^9.0.2",
 		"ovsx": "^1.0.2",
 		"oxfmt": "^0.60.0",
