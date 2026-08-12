@@ -15,5 +15,5 @@
   "proseWrap": "preserve",
   "printWidth": 120,
   "sortPackageJson": false,
-  "sortImports": true,
+  "sortImports": false,
 }
