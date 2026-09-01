@@ -19,10 +19,10 @@
  */
 //@ts-check
 
-const fs = require('fs');
-const path = require('path');
-const { Validator } = require('jsonschema');
-const yaml = require('yaml');
+import fs from 'fs';
+import path from 'path';
+import { Validator } from 'jsonschema';
+import yaml from 'yaml';
 
 /**
  * Load and validate a compromise configuration file

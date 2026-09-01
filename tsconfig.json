@@ -8,7 +8,8 @@
     ],
     "compilerOptions": {
         "noEmit": true,
-        "types": ["node"]
+        "types": ["node"],
+        "allowJs": true
     },
     "exclude": ["project-files", "media", "out", "playground/**"]
 }
