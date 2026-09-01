@@ -258,6 +258,7 @@ export async function acceptRceRequest(): Promise<void> {
             case 'retry': {
                 activeContext.updateStatus('failure', result.historyNote);
                 NEURO.client?.sendContext(result.message ?? 'Action failed. Please retry the action.');
+                // TODO: retry action force?
                 activeContext.done(false);
                 break;
             }
@@ -851,6 +852,7 @@ export async function RCEActionHandler(actionData: ActionData) {
                 context.clearPreHandlerResources();
                 const result = action.handler(context);
                 if (isThenable(result)) {
+                    const force = NEURO.currentActionForce;
                     clearActionForce();
                     sendResult(); // TODO: Add a small "Running the action" result to send to Neuro?
 
@@ -860,8 +862,14 @@ export async function RCEActionHandler(actionData: ActionData) {
                     // TODO: Add handling for forces on retry
                     context.updateStatus(status, statusMessage);
                     if (contextMessage)
-                        NEURO.client?.sendContext(contextMessage);
+                        sendResult(contextMessage, resolvedResult.success === 'retry');
                     context.done(resolvedResult.success === 'success');
+                    if (resolvedResult.success === 'retry' && force) {
+                        const forceAttempt = tryForceActions(force);
+                        if (!forceAttempt) {
+                            throw new Error("Couldn't reforce an action on an action that needed to be retry!");
+                        }
+                    }
                 } else {
                     const resolvedResult = result as ActionHandlerResult;
                     const { status, statusMessage, contextMessage } = processResult(resolvedResult);
