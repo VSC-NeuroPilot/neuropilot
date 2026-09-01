@@ -5,14 +5,18 @@
  */
 // @ts-check
 import js from '@eslint/js';
-import { globalIgnores } from 'eslint/config';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { defineConfig, globalIgnores } from 'eslint/config';
 import tseslint from 'typescript-eslint';
 import stylistic from '@stylistic/eslint-plugin';
 import eslintPluginUnicorn from 'eslint-plugin-unicorn';
 import globals from 'globals';
 import jsdoc from 'eslint-plugin-jsdoc';
 
-export default tseslint.config(
+const tsconfigRootDir = path.dirname(fileURLToPath(import.meta.url));
+
+export default defineConfig(
     {
         files: ['**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
         ignores: [
@@ -104,7 +108,7 @@ export default tseslint.config(
         },
         languageOptions: {
             parserOptions: {
-                tsconfigRootDir: import.meta.dirname,
+                tsconfigRootDir: tsconfigRootDir,
                 projectService: true,
             },
         },
@@ -167,7 +171,7 @@ export default tseslint.config(
                 ...globals.node,
             },
             parserOptions: {
-                tsconfigRootDir: import.meta.dirname,
+                tsconfigRootDir: tsconfigRootDir,
             },
         },
     },

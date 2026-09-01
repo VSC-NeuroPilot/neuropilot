@@ -2,9 +2,13 @@
     "references": [
         { "path": "./tsconfig.app.json" },
         { "path": "./tsconfig.web.json" },
+        { "path": "./tsconfig.node.json" },
         { "path": "./tsconfig.webview.json" },
         { "path": "./test-tsconfigs/tsconfig.app.json" },
         { "path": "./test-tsconfigs/tsconfig.web.json" }
     ],
+    "compilerOptions": {
+        "noEmit": true
+    },
     "exclude": ["project-files", "media", "dist", "playground/**", "scripts"]
 }
