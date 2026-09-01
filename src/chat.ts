@@ -5,7 +5,14 @@ import { filterFileContents, logOutput, simpleFileName } from '@/utils/misc';
 import { CONFIG, CONNECTION, PermissionLevel } from '@/config';
 import assert from 'node:assert';
 import { JSONSchema7 } from 'json-schema';
-import { actionHandlerFailure, actionHandlerSuccess, actionValidationAccept, actionValidationFailure, RCEAction, RCEHandlerReturns } from './utils/neuro_client';
+import {
+    actionHandlerFailure,
+    actionHandlerSuccess,
+    actionValidationAccept,
+    actionValidationFailure,
+    RCEAction,
+    RCEHandlerReturns,
+} from './utils/neuro_client';
 import { RCEContext } from './context/rce';
 import { abortActionForce, addActions, registerAction, tryForceActions } from '@/rce';
 
@@ -34,7 +41,7 @@ const NEURO_PARTICIPANTS: Participant[] = [
 interface NeuroChatResult extends vscode.ChatResult {
     metadata: {
         command: string;
-    }
+    };
 }
 
 interface NeuroChatContext {
@@ -80,12 +87,11 @@ export const chatAction: RCEAction = {
     handler: handleChat,
     validators: {
         sync: [
-            () => NEURO.currentActionForce // This is done before the action force is cleared
-                ? actionValidationAccept()
-                : actionValidationFailure('Not currently waiting for a chat response'),
-            () => requestCancelled
-                ? actionValidationFailure('Request was cancelled')
-                : actionValidationAccept(),
+            () =>
+                NEURO.currentActionForce // This is done before the action force is cleared
+                    ? actionValidationAccept()
+                    : actionValidationFailure('Not currently waiting for a chat response'),
+            () => (requestCancelled ? actionValidationFailure('Request was cancelled') : actionValidationAccept()),
         ],
     },
     promptGenerator: null, // Only ever run in Autopilot mode
@@ -194,11 +200,7 @@ export function registerChatParticipant() {
     }
 }
 
-async function requestChatResponse(
-    prompt: string,
-    state: string,
-    token: vscode.CancellationToken,
-): Promise<string> {
+async function requestChatResponse(prompt: string, state: string, token: vscode.CancellationToken): Promise<string> {
     logOutput('INFO', 'Requesting chat response from Neuro');
 
     requestCancelled = false;
@@ -223,7 +225,7 @@ async function requestChatResponse(
 
     const timeoutMs = CONFIG.timeout || 10000;
     const timeout = new Promise<string>((_, reject) => setTimeout(() => reject('Request timed out'), timeoutMs));
-    const response = new Promise<string>((resolve) => {
+    const response = new Promise<string>(resolve => {
         const interval = setInterval(() => {
             if (!NEURO.currentActionForce) {
                 clearInterval(interval);
@@ -248,7 +250,10 @@ async function requestChatResponse(
 export function cancelChatRequest() {
     requestCancelled = true;
     if (!NEURO.client) return;
-    if (NEURO.currentActionForce?.actionNames.length === 1 && NEURO.currentActionForce.actionNames[0] === chatAction.name) {
+    if (
+        NEURO.currentActionForce?.actionNames.length === 1 &&
+        NEURO.currentActionForce.actionNames[0] === chatAction.name
+    ) {
         abortActionForce();
     }
 }

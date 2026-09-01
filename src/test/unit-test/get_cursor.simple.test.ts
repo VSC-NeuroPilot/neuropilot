@@ -11,5 +11,3 @@ suite('get_cursor Action', () => {
         assert.ok(typeof prompt === 'string' && prompt.length > 0);
     });
 });
-
-

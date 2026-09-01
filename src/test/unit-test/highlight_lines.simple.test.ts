@@ -16,5 +16,3 @@ suite('highlight_lines Action', () => {
         assert.ok(prompt.includes('3'));
     });
 });
-
-

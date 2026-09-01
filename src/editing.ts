@@ -2,8 +2,37 @@ import * as vscode from 'vscode';
 import { ActionData } from 'neuro-game-sdk';
 
 import { NEURO } from '@/constants';
-import { DiffRangeType, escapeRegExp, getDiffRanges, getFence, getPositionContext, getProperty, getVirtualCursor, showDiffRanges, isPathNeuroSafe, logOutput, setVirtualCursor, simpleFileName, substituteMatch, clearDecorations, formatContext, filterFileContents, positionFromIndex, indexFromPosition, NeuroPositionContext } from '@/utils/misc';
-import { actionValidationAccept, actionValidationFailure, ActionValidationResult, RCEAction, actionValidationRetry, RCEHandlerReturns, actionHandlerSuccess, actionHandlerFailure } from '@/utils/neuro_client';
+import {
+    DiffRangeType,
+    escapeRegExp,
+    getDiffRanges,
+    getFence,
+    getPositionContext,
+    getProperty,
+    getVirtualCursor,
+    showDiffRanges,
+    isPathNeuroSafe,
+    logOutput,
+    setVirtualCursor,
+    simpleFileName,
+    substituteMatch,
+    clearDecorations,
+    formatContext,
+    filterFileContents,
+    positionFromIndex,
+    indexFromPosition,
+    NeuroPositionContext,
+} from '@/utils/misc';
+import {
+    actionValidationAccept,
+    actionValidationFailure,
+    ActionValidationResult,
+    RCEAction,
+    actionValidationRetry,
+    RCEHandlerReturns,
+    actionHandlerSuccess,
+    actionHandlerFailure,
+} from '@/utils/neuro_client';
 import { CONFIG, CONNECTION } from '@/config';
 import { createCursorPositionChangedEvent } from '@events/cursor';
 import { RCECancelEvent } from '@events/utils';
@@ -24,14 +53,26 @@ const STATUS_NO_ACCESS = 'No access to file';
 const STATUS_NO_MATCHES_FOUND = 'No matches found';
 
 type MatchOptions = 'firstInFile' | 'lastInFile' | 'firstAfterCursor' | 'lastBeforeCursor' | 'allInFile';
-const MATCH_OPTIONS: MatchOptions[] = ['firstInFile', 'lastInFile', 'firstAfterCursor', 'lastBeforeCursor', 'allInFile'] as const;
+const MATCH_OPTIONS: MatchOptions[] = [
+    'firstInFile',
+    'lastInFile',
+    'firstAfterCursor',
+    'lastBeforeCursor',
+    'allInFile',
+] as const;
 const POSITION_SCHEMA: RCEAction['schema'] = {
     type: 'object',
-    description: 'Position parameters if you want to move your cursor or use a location other than the current location.',
+    description:
+        'Position parameters if you want to move your cursor or use a location other than the current location.',
     properties: {
         line: { type: 'integer', description: 'The line number for the position to target.' },
         column: { type: 'integer', description: 'The column number for the position to target.' },
-        type: { type: 'string', enum: ['relative', 'absolute'], description: 'Whether or not to use the position relative to your cursor or the absolute position in the file. Additionally, if set to "relative", line & column numbers are zero-based, else if set to "absolute", they are one-based.' },
+        type: {
+            type: 'string',
+            enum: ['relative', 'absolute'],
+            description:
+                'Whether or not to use the position relative to your cursor or the absolute position in the file. Additionally, if set to "relative", line & column numbers are zero-based, else if set to "absolute", they are one-based.',
+        },
     },
     additionalProperties: false,
     required: ['line', 'column', 'type'],
@@ -45,8 +86,16 @@ const LINE_RANGE_SCHEMA: RCEAction['schema'] = {
     type: 'object',
     description: 'The line range to target.',
     properties: {
-        startLine: { type: 'integer', minimum: 1, description: 'The one-based line number to start from.' },
-        endLine: { type: 'integer', minimum: 1, description: 'The one-based line number to end at.' },
+        startLine: {
+            type: 'integer',
+            minimum: 1,
+            description: 'The one-based line number to start from.',
+        },
+        endLine: {
+            type: 'integer',
+            minimum: 1,
+            description: 'The one-based line number to end at.',
+        },
     },
     additionalProperties: false,
     required: ['startLine', 'endLine'],
@@ -75,7 +124,9 @@ function createStringValidator(paramPaths: string[], maxLength = 100000) {
 
             // Check character limit if parameter exists
             if (value !== undefined && value.length > maxLength) {
-                return actionValidationRetry(`${path} is too large, send less than ${maxLength.toLocaleString()} characters.`);
+                return actionValidationRetry(
+                    `${path} is too large, send less than ${maxLength.toLocaleString()} characters.`,
+                );
             }
         }
 
@@ -95,14 +146,12 @@ function createPositionValidator(path = '') {
         const position = getProperty(actionData.params, path) as Position | undefined;
 
         // If position is undefined, it is not required by the schema (otherwise the schema check would fail first)
-        if (position === undefined)
-            return actionValidationAccept();
+        if (position === undefined) return actionValidationAccept();
 
         const document = vscode.window.activeTextEditor?.document;
         if (document === undefined)
             return actionValidationFailure(CONTEXT_NO_ACTIVE_DOCUMENT, STATUS_NO_ACTIVE_DOCUMENT);
-        if (!isPathNeuroSafe(document.fileName))
-            return actionValidationFailure(CONTEXT_NO_ACCESS, STATUS_NO_ACCESS);
+        if (!isPathNeuroSafe(document.fileName)) return actionValidationFailure(CONTEXT_NO_ACCESS, STATUS_NO_ACCESS);
 
         let { line, column } = position;
         const type = position.type;
@@ -115,7 +164,8 @@ function createPositionValidator(path = '') {
             column += cursor.character;
 
             basedLine = line + 1;
-        } else { // type === 'absolute'
+        } else {
+            // type === 'absolute'
             basedLine = line;
             line -= 1;
             column -= 1;
@@ -123,13 +173,19 @@ function createPositionValidator(path = '') {
 
         // Additional checks for better feedback
         if (type === 'absolute' && (position.line === 0 || position.column === 0))
-            return actionValidationRetry('Line and column numbers are one-based, so the first line and column are 1, not 0.');
+            return actionValidationRetry(
+                'Line and column numbers are one-based, so the first line and column are 1, not 0.',
+            );
 
         // Check if the line and column are in-bounds
         if (line >= document.lineCount || line < 0)
-            return actionValidationRetry(`Line ${basedLine} is out of bounds, the last line of the document is ${document.lineCount}.`);
+            return actionValidationRetry(
+                `Line ${basedLine} is out of bounds, the last line of the document is ${document.lineCount}.`,
+            );
         if (column > document.lineAt(line).text.length || column < 0)
-            return actionValidationRetry(`Column ${column + 1} is out of bounds, the last column of line ${basedLine} is ${document.lineAt(line).text.length + 1}.`);
+            return actionValidationRetry(
+                `Column ${column + 1} is out of bounds, the last column of line ${basedLine} is ${document.lineAt(line).text.length + 1}.`,
+            );
 
         return actionValidationAccept();
     };
@@ -137,10 +193,8 @@ function createPositionValidator(path = '') {
 
 function checkCurrentFile(): ActionValidationResult {
     const document = vscode.window.activeTextEditor?.document;
-    if (document === undefined)
-        return actionValidationFailure(CONTEXT_NO_ACTIVE_DOCUMENT);
-    if (!isPathNeuroSafe(document.fileName))
-        return actionValidationFailure(CONTEXT_NO_ACCESS);
+    if (document === undefined) return actionValidationFailure(CONTEXT_NO_ACTIVE_DOCUMENT);
+    if (!isPathNeuroSafe(document.fileName)) return actionValidationFailure(CONTEXT_NO_ACCESS);
 
     return actionValidationAccept();
 }
@@ -175,7 +229,9 @@ function createLineRangeValidator(path = '') {
         }
 
         if (startLine > document.lineCount || endLine > document.lineCount) {
-            return actionValidationRetry(`Line range ${startLine}-${endLine} is out of bounds. File has ${document.lineCount} lines.`);
+            return actionValidationRetry(
+                `Line range ${startLine}-${endLine} is out of bounds. File has ${document.lineCount} lines.`,
+            );
         }
 
         return actionValidationAccept();
@@ -191,9 +247,7 @@ function createLineRangeValidator(path = '') {
 function validateRegex(key: string, useKey?: string) {
     return ({ data: actionData }: RCEContext): ActionValidationResult => {
         const find = getProperty(actionData.params, key) as string | undefined;
-        const useRegex = useKey
-            ? getProperty(actionData.params, useKey) ?? false
-            : true;
+        const useRegex = useKey ? (getProperty(actionData.params, useKey) ?? false) : true;
 
         if (find === undefined) {
             // If it is undefined it is not required
@@ -217,18 +271,16 @@ function validateRegex(key: string, useKey?: string) {
     };
 }
 
-const cancelOnDidChangeTextDocument = () => new RCECancelEvent({
-    reason: 'the active document was changed.',
-    events: [
-        [vscode.workspace.onDidChangeTextDocument, null],
-    ],
-});
-const cancelOnDidChangeActiveTextEditor = () => new RCECancelEvent({
-    reason: 'you\'ve switched files.',
-    events: [
-        [vscode.window.onDidChangeActiveTextEditor, null],
-    ],
-});
+const cancelOnDidChangeTextDocument = () =>
+    new RCECancelEvent({
+        reason: 'the active document was changed.',
+        events: [[vscode.workspace.onDidChangeTextDocument, null]],
+    });
+const cancelOnDidChangeActiveTextEditor = () =>
+    new RCECancelEvent({
+        reason: "you've switched files.",
+        events: [[vscode.window.onDidChangeActiveTextEditor, null]],
+    });
 
 const commonCancelEvents: ((context: RCEContext) => RCECancelEvent)[] = [
     cancelOnDidChangeTextDocument,
@@ -243,11 +295,19 @@ const commonCancelEventsWithCursor: ((context: RCEContext) => RCECancelEvent)[] 
 /**
  * Common function used to show previews for finding-related actions.
  */
-export function previewFindFunctions(actionData: ActionData, type: 'find' | 'delete' | 'replace'): { dispose: () => unknown } {
+export function previewFindFunctions(
+    actionData: ActionData,
+    type: 'find' | 'delete' | 'replace',
+): { dispose: () => unknown } {
     const lineRange = actionData.params?.lineRange;
     const highlights: { dispose: () => unknown }[] = [];
     if (lineRange) {
-        highlights.push(previewLineHighlights(lineRange, `${type} some text in this area. This does not mean all text here will be replaced.`));
+        highlights.push(
+            previewLineHighlights(
+                lineRange,
+                `${type} some text in this area. This does not mean all text here will be replaced.`,
+            ),
+        );
     }
 
     // TODO: Implement highlighting on text matches? Not sure if this feasible at all.
@@ -257,7 +317,7 @@ export function previewFindFunctions(actionData: ActionData, type: 'find' | 'del
 /**
  * Common function used to create highlighted lines for previews
  */
-export function previewLineHighlights(lineRange: { startLine: number, endLine: number }, prompt: string) {
+export function previewLineHighlights(lineRange: { startLine: number; endLine: number }, prompt: string) {
     const editor = vscode.window.activeTextEditor!;
     const lineRangeHighlight = createPreviewHighlight();
 
@@ -279,38 +339,43 @@ export function previewLineHighlights(lineRange: { startLine: number, endLine: n
 /**
  * Common function used to show previews for cursor movement actions
  */
-export function previewCursorMovement(positionParam: { line: number, column: number, type: 'absolute' | 'relative' }, prompt: string) {
+export function previewCursorMovement(
+    positionParam: { line: number; column: number; type: 'absolute' | 'relative' },
+    prompt: string,
+) {
     let line = positionParam.line;
     let column = positionParam.column;
     if (positionParam.type === 'relative') {
         const cursor = getVirtualCursor()!;
         line += cursor.line;
         column += cursor.character;
-    }
-    else {
+    } else {
         line -= 1;
         column -= 1;
     }
     const disposable = createPreviewCursor();
     const position = new vscode.Position(line, column);
-    vscode.window.activeTextEditor!.setDecorations(disposable, [{
-        range: new vscode.Range(position, position),
-        hoverMessage: `(Preview) ${NEURO.currentController} wants to ${prompt}`,
-    }] as const);
+    vscode.window.activeTextEditor!.setDecorations(disposable, [
+        {
+            range: new vscode.Range(position, position),
+            hoverMessage: `(Preview) ${NEURO.currentController} wants to ${prompt}`,
+        },
+    ] as const);
     return disposable;
 }
 
 export const editingActions = {
     move_cursor_position: {
         name: 'move_cursor_position',
-        description: 'Move your cursor in the current file to the specified position. Line and column numbers are one-based for "absolute" and zero-based for "relative".',
+        description:
+            'Move your cursor in the current file to the specified position. Line and column numbers are one-based for "absolute" and zero-based for "relative".',
         category: CATEGORY_EDITING,
         schema: {
             ...POSITION_SCHEMA,
             description: undefined,
         },
         handler: handlePlaceCursor,
-        preview: (context) => previewCursorMovement(context.data.params, 'move her cursor to this position.'),
+        preview: context => previewCursorMovement(context.data.params, 'move her cursor to this position.'),
         validators: {
             sync: [checkCurrentFile, createPositionValidator()],
         },
@@ -333,12 +398,13 @@ export const editingActions = {
     },
     insert_text: {
         name: 'insert_text',
-        description: 'Insert code at the specified position.'
-            + ' Line and column numbers are one-based for "absolute" and zero-based for "relative".'
-            + ' If no position is specified, your cursor\'s current position will be used.'
-            + ' Remember to add indents after newlines where appropriate.'
-            + ' After inserting, your cursor will be placed at the end of the inserted text.'
-            + ' Also make sure you use new lines and indentation appropriately.',
+        description:
+            'Insert code at the specified position.' +
+            ' Line and column numbers are one-based for "absolute" and zero-based for "relative".' +
+            " If no position is specified, your cursor's current position will be used." +
+            ' Remember to add indents after newlines where appropriate.' +
+            ' After inserting, your cursor will be placed at the end of the inserted text.' +
+            ' Also make sure you use new lines and indentation appropriately.',
         category: CATEGORY_EDITING,
         schema: {
             type: 'object',
@@ -350,9 +416,9 @@ export const editingActions = {
             additionalProperties: false,
         },
         handler: handleInsertText,
-        preview: (context) => {
+        preview: context => {
             const positionParam = context.data.params.position;
-            if (!positionParam) return { dispose: () => { } };
+            if (!positionParam) return { dispose: () => {} };
             else return previewCursorMovement(positionParam, 'insert text at this position.');
         },
         cancelEvents: [
@@ -385,11 +451,12 @@ export const editingActions = {
     },
     insert_lines: {
         name: 'insert_lines',
-        description: 'Insert code below a certain line.'
-            + ' Defaults to your current cursor\'s location'
-            + ' The insertUnder parameter is one-based, not zero-based.'
-            + ' Remember to add indents after newlines where appropriate.'
-            + ' Your cursor will be moved to the end of the inserted line.', // TODO: Clarify cursor stuff again
+        description:
+            'Insert code below a certain line.' +
+            " Defaults to your current cursor's location" +
+            ' The insertUnder parameter is one-based, not zero-based.' +
+            ' Remember to add indents after newlines where appropriate.' +
+            ' Your cursor will be moved to the end of the inserted line.', // TODO: Clarify cursor stuff again
         category: CATEGORY_EDITING,
         schema: {
             type: 'object',
@@ -408,19 +475,18 @@ export const editingActions = {
             required: ['text'],
         },
         handler: handleInsertLines,
-        preview: (context) => {
+        preview: context => {
             const length = (context.data.params.text as string).split('\n').length;
             let line: number | undefined = context.data.params.insertUnder;
             if (!line) {
                 line = getVirtualCursor()!.line;
             } else {
                 line -= 1;
-            };
+            }
             const editor = vscode.window.activeTextEditor!;
             const disposable = createPreviewHighlight();
 
-            if (line >= editor.document.lineCount)
-                line = editor.document.lineCount - 1;
+            if (line >= editor.document.lineCount) line = editor.document.lineCount - 1;
 
             const startPosition = new vscode.Position(line, 0);
             const endPosition = new vscode.Position(line, editor.document.lineAt(line).text.length);
@@ -452,27 +518,47 @@ export const editingActions = {
     },
     replace_text: {
         name: 'replace_text',
-        description: 'Replace text in the active document.'
-            + ' If you set "useRegex" to true, you can use a Regex in the "find" parameter and a substitution pattern in the "replaceWith" parameter.'
-            + ' This will place your cursor at the end of the replaced text, unless you replaced multiple instances.',
+        description:
+            'Replace text in the active document.' +
+            ' If you set "useRegex" to true, you can use a Regex in the "find" parameter and a substitution pattern in the "replaceWith" parameter.' +
+            ' This will place your cursor at the end of the replaced text, unless you replaced multiple instances.',
         category: CATEGORY_EDITING,
         schema: {
             type: 'object',
             properties: {
-                find: { type: 'string', description: 'The search text or RegEx pattern to search for text to replace.' },
-                replaceWith: { type: 'string', description: 'The text to replace the search result(s) with. If using RegEx, you can use substitution patterns here.' },
-                useRegex: { type: 'boolean', description: 'Whether or not the pattern(s) are RegEx patterns.' },
-                match: { type: 'string', enum: MATCH_OPTIONS, description: 'The method to match text to replace.' },
+                find: {
+                    type: 'string',
+                    description: 'The search text or RegEx pattern to search for text to replace.',
+                },
+                replaceWith: {
+                    type: 'string',
+                    description:
+                        'The text to replace the search result(s) with. If using RegEx, you can use substitution patterns here.',
+                },
+                useRegex: {
+                    type: 'boolean',
+                    description: 'Whether or not the pattern(s) are RegEx patterns.',
+                },
+                match: {
+                    type: 'string',
+                    enum: MATCH_OPTIONS,
+                    description: 'The method to match text to replace.',
+                },
                 lineRange: LINE_RANGE_SCHEMA,
             },
             additionalProperties: false,
             required: ['find', 'replaceWith', 'match'],
         },
         handler: handleReplaceText,
-        preview: (context) => previewFindFunctions(context.data, 'replace'),
+        preview: context => previewFindFunctions(context.data, 'replace'),
         cancelEvents: [cancelOnDidChangeActiveTextEditor],
         validators: {
-            sync: [checkCurrentFile, createStringValidator(['find', 'replaceWith']), createLineRangeValidator('lineRange'), validateRegex('find', 'useRegex')],
+            sync: [
+                checkCurrentFile,
+                createStringValidator(['find', 'replaceWith']),
+                createLineRangeValidator('lineRange'),
+                validateRegex('find', 'useRegex'),
+            ],
         },
         promptGenerator: (context: RCEContext) => {
             const actionData = context.data;
@@ -511,27 +597,43 @@ export const editingActions = {
     },
     delete_text: {
         name: 'delete_text',
-        description: 'Delete text in the active document.'
-            + ' If you set "useRegex" to true, you can use a Regex in the "find" parameter.'
-            + ' This will place your cursor where the deleted text was, unless you deleted multiple instances.'
-            + ' Line numbers are one-based.',
+        description:
+            'Delete text in the active document.' +
+            ' If you set "useRegex" to true, you can use a Regex in the "find" parameter.' +
+            ' This will place your cursor where the deleted text was, unless you deleted multiple instances.' +
+            ' Line numbers are one-based.',
         category: CATEGORY_EDITING,
         schema: {
             type: 'object',
             properties: {
-                find: { type: 'string', description: 'The glob/RegEx pattern to search for text to delete.' },
-                useRegex: { type: 'boolean', description: 'Whether or not the find pattern is a RegEx pattern.' },
-                match: { type: 'string', enum: MATCH_OPTIONS, description: 'The method to match text to delete.' },
+                find: {
+                    type: 'string',
+                    description: 'The glob/RegEx pattern to search for text to delete.',
+                },
+                useRegex: {
+                    type: 'boolean',
+                    description: 'Whether or not the find pattern is a RegEx pattern.',
+                },
+                match: {
+                    type: 'string',
+                    enum: MATCH_OPTIONS,
+                    description: 'The method to match text to delete.',
+                },
                 lineRange: LINE_RANGE_SCHEMA,
             },
             required: ['find', 'match'],
             additionalProperties: false,
         },
         handler: handleDeleteText,
-        preview: (context) => previewFindFunctions(context.data, 'delete'),
+        preview: context => previewFindFunctions(context.data, 'delete'),
         cancelEvents: [cancelOnDidChangeActiveTextEditor],
         validators: {
-            sync: [checkCurrentFile, createStringValidator(['find']), createLineRangeValidator('lineRange'), validateRegex('find', 'useRegex')],
+            sync: [
+                checkCurrentFile,
+                createStringValidator(['find']),
+                createLineRangeValidator('lineRange'),
+                validateRegex('find', 'useRegex'),
+            ],
         },
         promptGenerator: (context: RCEContext) => {
             const actionData = context.data;
@@ -573,30 +675,53 @@ export const editingActions = {
     },
     find_text: {
         name: 'find_text',
-        description: 'Find text in the active document.'
-            + ' If you set "useRegex" to true, you can use a Regex in the "find" parameter.'
-            + ' This will place your cursor directly before or after the found text (depending on "moveCursor"), unless you searched for multiple instances.'
-            + ' Set "highlight" to true to highlight the found text, if you want to draw insert_turtle_here\'s or Chat\'s attention to it.'
-            + ' If you search for multiple matches, the numbers at the start of each line are the one-based line numbers and not part of the code.',
+        description:
+            'Find text in the active document.' +
+            ' If you set "useRegex" to true, you can use a Regex in the "find" parameter.' +
+            ' This will place your cursor directly before or after the found text (depending on "moveCursor"), unless you searched for multiple instances.' +
+            ' Set "highlight" to true to highlight the found text, if you want to draw insert_turtle_here\'s or Chat\'s attention to it.' +
+            ' If you search for multiple matches, the numbers at the start of each line are the one-based line numbers and not part of the code.',
         category: CATEGORY_EDITING,
         schema: {
             type: 'object',
             properties: {
-                find: { type: 'string', description: 'The search text or RegEx pattern to search for text to replace.' },
-                useRegex: { type: 'boolean', description: 'Whether or not the find pattern is a RegEx pattern.' },
-                match: { type: 'string', enum: MATCH_OPTIONS, description: 'The method to find matching texts.' },
+                find: {
+                    type: 'string',
+                    description: 'The search text or RegEx pattern to search for text to replace.',
+                },
+                useRegex: {
+                    type: 'boolean',
+                    description: 'Whether or not the find pattern is a RegEx pattern.',
+                },
+                match: {
+                    type: 'string',
+                    enum: MATCH_OPTIONS,
+                    description: 'The method to find matching texts.',
+                },
                 lineRange: LINE_RANGE_SCHEMA,
-                moveCursor: { type: 'string', enum: ['start', 'end'], description: 'If there is only one match, where should your cursor move relative to that match?' },
-                highlight: { type: 'boolean', description: 'Set to true to highlight all matches.' },
+                moveCursor: {
+                    type: 'string',
+                    enum: ['start', 'end'],
+                    description: 'If there is only one match, where should your cursor move relative to that match?',
+                },
+                highlight: {
+                    type: 'boolean',
+                    description: 'Set to true to highlight all matches.',
+                },
             },
             required: ['find', 'match'],
             additionalProperties: false,
         },
         handler: handleFindText,
-        preview: (context) => previewFindFunctions(context.data, 'find'),
+        preview: context => previewFindFunctions(context.data, 'find'),
         cancelEvents: [cancelOnDidChangeActiveTextEditor],
         validators: {
-            sync: [checkCurrentFile, createStringValidator(['find']), createLineRangeValidator('lineRange'), validateRegex('find', 'useRegex')],
+            sync: [
+                checkCurrentFile,
+                createStringValidator(['find']),
+                createLineRangeValidator('lineRange'),
+                validateRegex('find', 'useRegex'),
+            ],
         },
         promptGenerator: (context: RCEContext) => {
             const actionData = context.data;
@@ -641,9 +766,10 @@ export const editingActions = {
     },
     undo: {
         name: 'undo',
-        description: 'Undo the last change made to the active document.'
-            + ' Where your cursor will be moved cannot be determined.' // It will move to the real cursor but thats kinda useless for her to know
-            + ' If this doesn\'t work, tell insert_turtle_here to focus your VS Code window.',
+        description:
+            'Undo the last change made to the active document.' +
+            ' Where your cursor will be moved cannot be determined.' + // It will move to the real cursor but thats kinda useless for her to know
+            " If this doesn't work, tell insert_turtle_here to focus your VS Code window.",
         category: CATEGORY_EDITING,
         handler: handleUndo,
         cancelEvents: commonCancelEvents,
@@ -659,12 +785,11 @@ export const editingActions = {
         handler: handleSave,
         cancelEvents: [
             ...commonCancelEvents,
-            () => new RCECancelEvent({
-                reason: 'the active document was saved.',
-                events: [
-                    [vscode.workspace.onDidSaveTextDocument, null],
-                ],
-            }),
+            () =>
+                new RCECancelEvent({
+                    reason: 'the active document was saved.',
+                    events: [[vscode.workspace.onDidSaveTextDocument, null]],
+                }),
         ],
         validators: {
             sync: [checkCurrentFile],
@@ -712,21 +837,25 @@ export const editingActions = {
     },
     rewrite_lines: {
         name: 'rewrite_lines',
-        description: 'Rewrite everything in the specified line range.'
-            + ' After rewriting, your cursor will be placed at the end of the last inserted line.'
-            + ' Line numbers are one-based.',
+        description:
+            'Rewrite everything in the specified line range.' +
+            ' After rewriting, your cursor will be placed at the end of the last inserted line.' +
+            ' Line numbers are one-based.',
         category: CATEGORY_EDITING,
         schema: {
             type: 'object',
             properties: {
                 ...LINE_RANGE_SCHEMA.properties,
-                content: { type: 'string', description: 'The content to replace the selected range of lines with.' },
+                content: {
+                    type: 'string',
+                    description: 'The content to replace the selected range of lines with.',
+                },
             },
             required: [...LINE_RANGE_SCHEMA.required!, 'content'],
             additionalProperties: false,
         },
         handler: handleRewriteLines,
-        preview: (context) => previewLineHighlights(context.data.params, 'rewrite these lines.'),
+        preview: context => previewLineHighlights(context.data.params, 'rewrite these lines.'),
         cancelEvents: commonCancelEvents,
         validators: {
             sync: [checkCurrentFile, createLineRangeValidator(), createStringValidator(['content'])],
@@ -739,13 +868,14 @@ export const editingActions = {
     },
     delete_lines: {
         name: 'delete_lines',
-        description: 'Delete everything in the specified line range.'
-            + ' After deleting, your cursor will be placed at the end of the line before the deleted lines, if possible.'
-            + ' Line numbers are one-based.',
+        description:
+            'Delete everything in the specified line range.' +
+            ' After deleting, your cursor will be placed at the end of the line before the deleted lines, if possible.' +
+            ' Line numbers are one-based.',
         category: CATEGORY_EDITING,
         schema: LINE_RANGE_SCHEMA,
         handler: handleDeleteLines,
-        preview: (context) => previewLineHighlights(context.data.params, 'delete these lines.'),
+        preview: context => previewLineHighlights(context.data.params, 'delete these lines.'),
         cancelEvents: commonCancelEvents,
         validators: {
             sync: [checkCurrentFile, createLineRangeValidator()],
@@ -756,10 +886,11 @@ export const editingActions = {
     },
     highlight_lines: {
         name: 'highlight_lines',
-        description: 'Highlight the specified lines.'
-            + ' Can be used to draw insert_turtle_here\'s or Chat\'s attention towards something.'
-            + ' This will not move your cursor.'
-            + ' Line numbers are one-based.',
+        description:
+            'Highlight the specified lines.' +
+            " Can be used to draw insert_turtle_here's or Chat's attention towards something." +
+            ' This will not move your cursor.' +
+            ' Line numbers are one-based.',
         category: CATEGORY_EDITING,
         schema: LINE_RANGE_SCHEMA,
         handler: handleHighlightLines,
@@ -767,12 +898,14 @@ export const editingActions = {
         validators: {
             sync: [checkCurrentFile, createLineRangeValidator()],
         },
-        promptGenerator: (context: RCEContext) => `highlight lines ${context.data.params.startLine}-${context.data.params.endLine}.`,
+        promptGenerator: (context: RCEContext) =>
+            `highlight lines ${context.data.params.startLine}-${context.data.params.endLine}.`,
     },
     get_user_selection: {
         name: 'get_user_selection',
-        description: 'Get insert_turtle_here\'s current selection and the text surrounding it.'
-            + ' This will not move your own cursor.',
+        description:
+            "Get insert_turtle_here's current selection and the text surrounding it." +
+            ' This will not move your own cursor.',
         category: CATEGORY_EDITING,
         handler: handleGetUserSelection,
         // No preview effect needed, intended preview effect is the user cursor
@@ -783,16 +916,23 @@ export const editingActions = {
     },
     replace_user_selection: {
         name: 'replace_user_selection',
-        description: 'Replace insert_turtle_here\'s current selection with the provided text.'
-            + ' If insert_turtle_here has no selection, this will insert the text at insert_turtle_here\'s current cursor position.'
-            + ' After replacing/inserting, your cursor will be placed at the end of the inserted text.'
-            + ' If "requireSelectionUnchanged" is true, the action will be automatically cancelled if insert_turtle_here\'s selection changes or has changed since it was last obtained.',
+        description:
+            "Replace insert_turtle_here's current selection with the provided text." +
+            " If insert_turtle_here has no selection, this will insert the text at insert_turtle_here's current cursor position." +
+            ' After replacing/inserting, your cursor will be placed at the end of the inserted text.' +
+            ' If "requireSelectionUnchanged" is true, the action will be automatically cancelled if insert_turtle_here\'s selection changes or has changed since it was last obtained.',
         category: CATEGORY_EDITING,
         schema: {
             type: 'object',
             properties: {
-                content: { type: 'string', description: 'The content to replace insert_turtle_here\'s selection with.' },
-                requireSelectionUnchanged: { type: 'boolean', description: 'Does your change require that insert_turtle_here keeps his selection unchanged?' },
+                content: {
+                    type: 'string',
+                    description: "The content to replace insert_turtle_here's selection with.",
+                },
+                requireSelectionUnchanged: {
+                    type: 'boolean',
+                    description: 'Does your change require that insert_turtle_here keeps his selection unchanged?',
+                },
             },
             required: ['content', 'requireSelectionUnchanged'],
         },
@@ -814,11 +954,16 @@ export const editingActions = {
             sync: [
                 checkCurrentFile,
                 createStringValidator(['content']),
-                (context: RCEContext) => { // Validate that the selection is known and unchanged if required
-                    if (!context.data.params.requireSelectionUnchanged)
-                        return actionValidationAccept();
-                    if (NEURO.lastKnownUserSelection === null || NEURO.lastKnownUserSelection !== vscode.window.activeTextEditor?.selection)
-                        return actionValidationFailure(`${CONNECTION.userName}'s selection has changed since it was last obtained.`);
+                (context: RCEContext) => {
+                    // Validate that the selection is known and unchanged if required
+                    if (!context.data.params.requireSelectionUnchanged) return actionValidationAccept();
+                    if (
+                        NEURO.lastKnownUserSelection === null ||
+                        NEURO.lastKnownUserSelection !== vscode.window.activeTextEditor?.selection
+                    )
+                        return actionValidationFailure(
+                            `${CONNECTION.userName}'s selection has changed since it was last obtained.`,
+                        );
                     return actionValidationAccept();
                 },
             ],
@@ -831,7 +976,8 @@ export const editingActions = {
     },
     edit_with_diff: {
         name: 'edit_with_diff',
-        description: 'Write a diff patch to apply to the file.' +
+        description:
+            'Write a diff patch to apply to the file.' +
             ' The diff patch must be written in a pseudo-search-replace-diff format.' +
             ' `>>>>>> SEARCH` and `<<<<<< REPLACE` will be used to tell what to search and what to replace,' +
             ' with `======` delimiting between the two.' +
@@ -842,8 +988,18 @@ export const editingActions = {
         schema: {
             type: 'object',
             properties: {
-                diff: { type: 'string', description: 'The diff patch to apply. Must follow a pseudo-search-replace-diff format.', examples: ['>>>>>> SEARCH\ndef turtle():\n    return "Vedal"\n======\ndef turtle():\n    return "insert_turtle_here"\n<<<<<< REPLACE'] },
-                moveCursor: { type: 'boolean', description: 'Whether or not to move the cursor to the end of the patch replacement.', default: false },
+                diff: {
+                    type: 'string',
+                    description: 'The diff patch to apply. Must follow a pseudo-search-replace-diff format.',
+                    examples: [
+                        '>>>>>> SEARCH\ndef turtle():\n    return "Vedal"\n======\ndef turtle():\n    return "insert_turtle_here"\n<<<<<< REPLACE',
+                    ],
+                },
+                moveCursor: {
+                    type: 'boolean',
+                    description: 'Whether or not to move the cursor to the end of the patch replacement.',
+                    default: false,
+                },
             },
             required: ['diff'],
             additionalProperties: false,
@@ -851,27 +1007,31 @@ export const editingActions = {
         handler: handleDiffPatch,
         // TODO: I'm not sure if or how this action would have a preview effect, like would it work if a big highlight range was added to the targted text?
         validators: {
-            sync: [checkCurrentFile, (context: RCEContext) => {
-                const patch = parseDiffPatch(context.data.params.diff);
-                if (!patch) {
-                    return actionValidationFailure('Invalid diff format. Expected format:\n\n```\n>>>>>> SEARCH\n[code to find]\n======\n[replacement code]\n<<<<<< REPLACE\n```');
-                }
+            sync: [
+                checkCurrentFile,
+                (context: RCEContext) => {
+                    const patch = parseDiffPatch(context.data.params.diff);
+                    if (!patch) {
+                        return actionValidationFailure(
+                            'Invalid diff format. Expected format:\n\n```\n>>>>>> SEARCH\n[code to find]\n======\n[replacement code]\n<<<<<< REPLACE\n```',
+                        );
+                    }
 
-                const { search } = patch;
+                    const { search } = patch;
 
-                if (search.length === 0) {
-                    return actionValidationFailure('Search content cannot be empty.');
-                }
+                    if (search.length === 0) {
+                        return actionValidationFailure('Search content cannot be empty.');
+                    }
 
-                const document = vscode.window.activeTextEditor?.document;
-                if (document === undefined)
-                    return actionValidationFailure(CONTEXT_NO_ACTIVE_DOCUMENT);
-                const fileContent = filterFileContents(document.getText());
-                if (!fileContent.includes(filterFileContents(search)))
-                    return actionValidationFailure('The search content was not found in the current document.');
+                    const document = vscode.window.activeTextEditor?.document;
+                    if (document === undefined) return actionValidationFailure(CONTEXT_NO_ACTIVE_DOCUMENT);
+                    const fileContent = filterFileContents(document.getText());
+                    if (!fileContent.includes(filterFileContents(search)))
+                        return actionValidationFailure('The search content was not found in the current document.');
 
-                return actionValidationAccept();
-            }],
+                    return actionValidationAccept();
+                },
+            ],
         },
         cancelEvents: commonCancelEvents,
         promptGenerator: (context: RCEContext) => {
@@ -927,8 +1087,7 @@ export function handlePlaceCursor(context: RCEContext): RCEHandlerReturns {
 
         basedLine = line + 1;
         basedColumn = column + 1;
-    }
-    else {
+    } else {
         basedLine = line;
         basedColumn = column;
 
@@ -941,7 +1100,10 @@ export function handlePlaceCursor(context: RCEContext): RCEHandlerReturns {
     const cursorContext = getPositionContext(document, cursorPosition);
     logOutput('INFO', `Placed ${NEURO.currentController}'s virtual cursor at (${basedLine}:${basedColumn}).`);
 
-    return actionHandlerSuccess(`Cursor placed at (${basedLine}:${basedColumn})\n\n${formatContext(cursorContext)}`, `Cursor placed at (${basedLine}:${basedColumn})`);
+    return actionHandlerSuccess(
+        `Cursor placed at (${basedLine}:${basedColumn})\n\n${formatContext(cursorContext)}`,
+        `Cursor placed at (${basedLine}:${basedColumn})`,
+    );
 }
 
 export function handleGetCursor(): RCEHandlerReturns {
@@ -958,7 +1120,10 @@ export function handleGetCursor(): RCEHandlerReturns {
     const relativePath = vscode.workspace.asRelativePath(document.uri);
     logOutput('INFO', `Sending cursor position to ${NEURO.currentController}`);
 
-    return actionHandlerSuccess(`In file ${relativePath}.\n\n${formatContext(cursorContext)}`, `Retrieved cursor at line ${cursorPosition.line + 1}, column ${cursorPosition.character + 1}`);
+    return actionHandlerSuccess(
+        `In file ${relativePath}.\n\n${formatContext(cursorContext)}`,
+        `Retrieved cursor at line ${cursorPosition.line + 1}, column ${cursorPosition.character + 1}`,
+    );
 }
 
 export function handleInsertText(context: RCEContext): RCEHandlerReturns {
@@ -970,11 +1135,12 @@ export function handleInsertText(context: RCEContext): RCEHandlerReturns {
     let line: number;
     let column: number;
 
-    if (!position) position = {
-        line: cursor.line + 1,
-        column: cursor.character + 1,
-        type: 'absolute',
-    };
+    if (!position)
+        position = {
+            line: cursor.line + 1,
+            column: cursor.character + 1,
+            type: 'absolute',
+        };
 
     const document = vscode.window.activeTextEditor?.document;
     if (document === undefined) {
@@ -987,7 +1153,8 @@ export function handleInsertText(context: RCEContext): RCEHandlerReturns {
     if (position.type === 'relative') {
         line = cursor.line + position.line;
         column = cursor.character + position.column;
-    } else { // position.type === 'absolute'
+    } else {
+        // position.type === 'absolute'
         line = position.line - 1;
         column = position.column - 1;
     }
@@ -1008,10 +1175,16 @@ export function handleInsertText(context: RCEContext): RCEHandlerReturns {
                 range: new vscode.Range(insertStart, insertEnd),
                 type: DiffRangeType.Added,
             });
-            const cursorContext = getPositionContext(document, { cursorPosition: insertEnd, position: insertStart, position2: insertEnd });
-            return actionHandlerSuccess(`Inserted text into document and moved your cursor\n\n${formatContext(cursorContext)}`, `Inserted ${text.length} characters`);
-        }
-        else {
+            const cursorContext = getPositionContext(document, {
+                cursorPosition: insertEnd,
+                position: insertStart,
+                position2: insertEnd,
+            });
+            return actionHandlerSuccess(
+                `Inserted text into document and moved your cursor\n\n${formatContext(cursorContext)}`,
+                `Inserted ${text.length} characters`,
+            );
+        } else {
             return actionHandlerFailure('Failed to insert text', 'Failed to insert text');
         }
     });
@@ -1025,7 +1198,8 @@ export function handleInsertLines(context: RCEContext): RCEHandlerReturns {
      */
     const cursor = getVirtualCursor()!;
     let text: string = '\n' + actionData.params.text;
-    let insertLocation: number = actionData.params.insertUnder !== undefined ? actionData.params.insertUnder - 1 : cursor.line;
+    let insertLocation: number =
+        actionData.params.insertUnder !== undefined ? actionData.params.insertUnder - 1 : cursor.line;
 
     const document = vscode.window.activeTextEditor?.document;
     if (document === undefined) {
@@ -1057,10 +1231,16 @@ export function handleInsertLines(context: RCEContext): RCEHandlerReturns {
                 range: new vscode.Range(insertStart, insertEnd),
                 type: DiffRangeType.Added,
             });
-            const cursorContext = getPositionContext(document, { cursorPosition: insertEnd, position: insertStart, position2: insertEnd });
-            return actionHandlerSuccess(`Inserted text lines into document\n\n${formatContext(cursorContext)}`, `Inserted ${text.split('\n').length} lines`);
-        }
-        else {
+            const cursorContext = getPositionContext(document, {
+                cursorPosition: insertEnd,
+                position: insertStart,
+                position2: insertEnd,
+            });
+            return actionHandlerSuccess(
+                `Inserted text lines into document\n\n${formatContext(cursorContext)}`,
+                `Inserted ${text.split('\n').length} lines`,
+            );
+        } else {
             return actionHandlerFailure('Failed to insert text lines', 'Failed to insert text lines');
         }
     });
@@ -1095,10 +1275,20 @@ export function handleReplaceText(context: RCEContext): RCEHandlerReturns {
     for (const m of matches) {
         try {
             const replacement = useRegex ? substituteMatch(m, replaceWith) : replaceWith;
-            edit.replace(document.uri, new vscode.Range(positionFromIndex(originalText, m.index), positionFromIndex(originalText, m.index + m[0].length)), replacement);
+            edit.replace(
+                document.uri,
+                new vscode.Range(
+                    positionFromIndex(originalText, m.index),
+                    positionFromIndex(originalText, m.index + m[0].length),
+                ),
+                replacement,
+            );
         } catch (erm) {
             logOutput('ERROR', `Error while substituting match: ${erm}`);
-            return actionHandlerFailure(erm instanceof Error ? erm.message : 'Unknown error while substituting match', 'Error while substituting match');
+            return actionHandlerFailure(
+                erm instanceof Error ? erm.message : 'Unknown error while substituting match',
+                'Error while substituting match',
+            );
         }
     }
     return vscode.workspace.applyEdit(edit).then(success => {
@@ -1109,22 +1299,39 @@ export function handleReplaceText(context: RCEContext): RCEHandlerReturns {
             if (matches.length === 1) {
                 // Single match
                 const startPosition = positionFromIndex(newText, matches[0].index);
-                const endPosition = positionFromIndex(newText, matches[0].index + substituteMatch(matches[0], replaceWith).length);
+                const endPosition = positionFromIndex(
+                    newText,
+                    matches[0].index + substituteMatch(matches[0], replaceWith).length,
+                );
                 setVirtualCursor(endPosition);
-                const diffRanges = getDiffRanges(startPosition, matches[0][0], filterFileContents(document.getText(new vscode.Range(startPosition, endPosition))));
+                const diffRanges = getDiffRanges(
+                    startPosition,
+                    matches[0][0],
+                    filterFileContents(document.getText(new vscode.Range(startPosition, endPosition))),
+                );
                 showDiffRanges(vscode.window.activeTextEditor!, ...diffRanges);
-                const cursorContext = getPositionContext(document, { cursorPosition: endPosition, position: startPosition, position2: endPosition });
-                return actionHandlerSuccess(`Replaced text in document\n\n${formatContext(cursorContext)}`, `Replaced ${matches.length} occurrence`);
-            }
-            else {
+                const cursorContext = getPositionContext(document, {
+                    cursorPosition: endPosition,
+                    position: startPosition,
+                    position2: endPosition,
+                });
+                return actionHandlerSuccess(
+                    `Replaced text in document\n\n${formatContext(cursorContext)}`,
+                    `Replaced ${matches.length} occurrence`,
+                );
+            } else {
                 // Multiple matches
                 const diffRanges = getDiffRanges(new vscode.Position(0, 0), originalText, newText);
                 showDiffRanges(vscode.window.activeTextEditor!, ...diffRanges);
-                const cursorContext = getPositionContext(document, { cursorPosition: getVirtualCursor()! });
-                return actionHandlerSuccess(`Deleted ${matches.length} occurrences from the document\n\n${formatContext(cursorContext)}`, `Replaced ${matches.length} occurrences`);
+                const cursorContext = getPositionContext(document, {
+                    cursorPosition: getVirtualCursor()!,
+                });
+                return actionHandlerSuccess(
+                    `Deleted ${matches.length} occurrences from the document\n\n${formatContext(cursorContext)}`,
+                    `Replaced ${matches.length} occurrences`,
+                );
             }
-        }
-        else {
+        } else {
             return actionHandlerFailure('Failed to replace text', 'Failed to replace text');
         }
     });
@@ -1157,7 +1364,13 @@ export function handleDeleteText(context: RCEContext): RCEHandlerReturns {
 
     const edit = new vscode.WorkspaceEdit();
     for (const m of matches) {
-        edit.delete(document.uri, new vscode.Range(positionFromIndex(originalText, m.index), positionFromIndex(originalText, m.index + m[0].length)));
+        edit.delete(
+            document.uri,
+            new vscode.Range(
+                positionFromIndex(originalText, m.index),
+                positionFromIndex(originalText, m.index + m[0].length),
+            ),
+        );
     }
     return vscode.workspace.applyEdit(edit).then(success => {
         if (success) {
@@ -1174,17 +1387,23 @@ export function handleDeleteText(context: RCEContext): RCEHandlerReturns {
                     removedText: matches[0][0],
                 });
                 const cursorContext = getPositionContext(document, position);
-                return actionHandlerSuccess(`Deleted text from document\n\n${formatContext(cursorContext)}`, `Deleted ${matches.length} occurrence`);
-            }
-            else {
+                return actionHandlerSuccess(
+                    `Deleted text from document\n\n${formatContext(cursorContext)}`,
+                    `Deleted ${matches.length} occurrence`,
+                );
+            } else {
                 // Multiple matches
                 const diffRanges = getDiffRanges(new vscode.Position(0, 0), originalText, newText);
                 showDiffRanges(vscode.window.activeTextEditor!, ...diffRanges);
-                const cursorContext = getPositionContext(document, { cursorPosition: getVirtualCursor()! });
-                return actionHandlerSuccess(`Deleted ${matches.length} occurrences from the document\n\n${formatContext(cursorContext)}`, `Deleted ${matches.length} occurrences`);
+                const cursorContext = getPositionContext(document, {
+                    cursorPosition: getVirtualCursor()!,
+                });
+                return actionHandlerSuccess(
+                    `Deleted ${matches.length} occurrences from the document\n\n${formatContext(cursorContext)}`,
+                    `Deleted ${matches.length} occurrences`,
+                );
             }
-        }
-        else {
+        } else {
             return actionHandlerFailure('Failed to delete text', 'Failed to delete text');
         }
     });
@@ -1224,17 +1443,21 @@ export function handleFindText(context: RCEContext): RCEHandlerReturns {
         if (actionData.params?.moveCursor) setVirtualCursor(moveCursor === 'start' ? startPosition : endPosition);
         if (highlight) {
             const range = new vscode.Range(startPosition, endPosition);
-            vscode.window.activeTextEditor!.setDecorations(NEURO.highlightDecorationType!, [{
-                range,
-                hoverMessage: `**Highlighted by ${CONNECTION.nameOfAPI} via finding text**`,
-            }]);
+            vscode.window.activeTextEditor!.setDecorations(NEURO.highlightDecorationType!, [
+                {
+                    range,
+                    hoverMessage: `**Highlighted by ${CONNECTION.nameOfAPI} via finding text**`,
+                },
+            ]);
             vscode.window.activeTextEditor!.revealRange(range, vscode.TextEditorRevealType.InCenterIfOutsideViewport);
         }
         const cursorContext = getPositionContext(document, startPosition);
         logOutput('INFO', `Placed cursor at (${endPosition.line + 1}:${endPosition.character + 1})`);
-        return actionHandlerSuccess(`Found match ${actionData.params?.moveCursor ? 'and placed your cursor ' : ''}at (${endPosition.line + 1}:${endPosition.character + 1})\n\n${formatContext(cursorContext)}`, 'Found 1 match');
-    }
-    else {
+        return actionHandlerSuccess(
+            `Found match ${actionData.params?.moveCursor ? 'and placed your cursor ' : ''}at (${endPosition.line + 1}:${endPosition.character + 1})\n\n${formatContext(cursorContext)}`,
+            'Found 1 match',
+        );
+    } else {
         // Multiple matches
         const positions = matches.map(m => positionFromIndex(documentText, m.index));
         const lines = positions.map(p => document.lineAt(p.line).text);
@@ -1243,15 +1466,26 @@ export function handleFindText(context: RCEContext): RCEHandlerReturns {
         logOutput('INFO', `Found ${positions.length} matches`);
         // const text = lines.map((line, i) => `L. ${(positions[i].line + 1).toString().padStart(padding)}: ${line}`).join('\n');
         if (highlight) {
-            vscode.window.activeTextEditor!.setDecorations(NEURO.highlightDecorationType!, matches.map((match, i) => ({
-                range: new vscode.Range(positions[i], positionFromIndex(documentText, match.index + match[0].length)),
-                hoverMessage: `**Highlighted by ${CONNECTION.nameOfAPI} via finding text**`,
-            })));
+            vscode.window.activeTextEditor!.setDecorations(
+                NEURO.highlightDecorationType!,
+                matches.map((match, i) => ({
+                    range: new vscode.Range(
+                        positions[i],
+                        positionFromIndex(documentText, match.index + match[0].length),
+                    ),
+                    hoverMessage: `**Highlighted by ${CONNECTION.nameOfAPI} via finding text**`,
+                })),
+            );
         }
         const lineNumberContextFormat = CONFIG.lineNumberContextFormat || '{n}|';
-        const text = lines.map((line, i) => lineNumberContextFormat.replace('{n}', (positions[i].line + 1).toString()) + line).join('\n');
+        const text = lines
+            .map((line, i) => lineNumberContextFormat.replace('{n}', (positions[i].line + 1).toString()) + line)
+            .join('\n');
         const fence = getFence(text);
-        return actionHandlerSuccess(`Found ${positions.length} matches:\n\n${fence}\n${text}\n${fence}`, `Found ${positions.length} matches`);
+        return actionHandlerSuccess(
+            `Found ${positions.length} matches:\n\n${fence}\n${text}\n${fence}`,
+            `Found ${positions.length} matches`,
+        );
     }
 }
 
@@ -1272,9 +1506,12 @@ export function handleUndo(): RCEHandlerReturns {
             // We don't keep track of the virtual cursor position in the undo stack, so we reset it to the real cursor position
             const cursorContext = getPositionContext(document, vscode.window.activeTextEditor!.selection.active);
             setVirtualCursor(vscode.window.activeTextEditor!.selection.active);
-            return actionHandlerSuccess(`Undid last action in document\n\n${formatContext(cursorContext)}`, 'Undid last action');
+            return actionHandlerSuccess(
+                `Undid last action in document\n\n${formatContext(cursorContext)}`,
+                'Undid last action',
+            );
         },
-        (erm) => {
+        erm => {
             logOutput('ERROR', `Failed to undo last action: ${erm}`);
             return actionHandlerFailure('Failed to undo last action', 'Failed to undo');
         },
@@ -1294,7 +1531,7 @@ export function handleSave(): RCEHandlerReturns {
     logOutput('INFO', `${NEURO.currentController} is saving the current document.`);
 
     return document.save().then(
-        (saved) => {
+        saved => {
             if (saved) {
                 logOutput('INFO', 'Document saved successfully.');
                 NEURO.saving = false;
@@ -1328,10 +1565,7 @@ export function handleRewriteAll(context: RCEContext): RCEHandlerReturns {
     const originalText = document.getText();
 
     const edit = new vscode.WorkspaceEdit();
-    const fullRange = new vscode.Range(
-        document.positionAt(0),
-        document.positionAt(document.getText().length),
-    );
+    const fullRange = new vscode.Range(document.positionAt(0), document.positionAt(document.getText().length));
     edit.replace(document.uri, fullRange, content);
 
     return vscode.workspace.applyEdit(edit).then(success => {
@@ -1350,7 +1584,10 @@ export function handleRewriteAll(context: RCEContext): RCEHandlerReturns {
             showDiffRanges(vscode.window.activeTextEditor!, ...diffRanges);
 
             const cursorContext = getPositionContext(document, startPosition);
-            return actionHandlerSuccess(`Rewrote entire file ${relativePath} with ${lineCount} line${lineCount === 1 ? '' : 's'} of content\n\n${formatContext(cursorContext)}`, `Rewrote entire file with ${lineCount} lines`);
+            return actionHandlerSuccess(
+                `Rewrote entire file ${relativePath} with ${lineCount} line${lineCount === 1 ? '' : 's'} of content\n\n${formatContext(cursorContext)}`,
+                `Rewrote entire file with ${lineCount} lines`,
+            );
         } else {
             return actionHandlerFailure('Failed to rewrite document content', 'Failed to rewrite document');
         }
@@ -1374,9 +1611,10 @@ export function handleDeleteLines(context: RCEContext): RCEHandlerReturns {
     const startPosition = new vscode.Position(startLine - 1, 0);
     const endLineZero = endLine - 1;
     // Include the trailing newline by ending at the start of the line after endLine when possible
-    const endPosition = endLineZero + 1 < document.lineCount
-        ? new vscode.Position(endLineZero + 1, 0)
-        : new vscode.Position(endLineZero, document.lineAt(endLineZero).text.length);
+    const endPosition =
+        endLineZero + 1 < document.lineCount
+            ? new vscode.Position(endLineZero + 1, 0)
+            : new vscode.Position(endLineZero, document.lineAt(endLineZero).text.length);
     const originalText = document.getText(new vscode.Range(startPosition, endPosition));
     edit.delete(document.uri, new vscode.Range(startPosition, endPosition));
 
@@ -1396,13 +1634,22 @@ export function handleDeleteLines(context: RCEContext): RCEHandlerReturns {
                 // Move cursor to end of line before the deleted lines
                 const targetLineZero = Math.max(0, startLine - 2); // 0-based line before deleted block
                 if (targetLineZero < documentPost.lineCount) {
-                    const cursorPosition = new vscode.Position(targetLineZero, documentPost.lineAt(targetLineZero).text.length);
+                    const cursorPosition = new vscode.Position(
+                        targetLineZero,
+                        documentPost.lineAt(targetLineZero).text.length,
+                    );
                     setVirtualCursor(cursorPosition);
                     cursorContext = getPositionContext(documentPost, cursorPosition);
-                    logOutput('INFO', `Deleted lines ${startLine}-${endLine} and moved cursor to end of line ${targetLineZero + 1}`);
+                    logOutput(
+                        'INFO',
+                        `Deleted lines ${startLine}-${endLine} and moved cursor to end of line ${targetLineZero + 1}`,
+                    );
                 } else if (documentPost.lineCount > 0) {
                     // Fallback: place cursor at the end of the document
-                    const cursorPosition = new vscode.Position(documentPost.lineCount - 1, documentPost.lineAt(documentPost.lineCount - 1).text.length);
+                    const cursorPosition = new vscode.Position(
+                        documentPost.lineCount - 1,
+                        documentPost.lineAt(documentPost.lineCount - 1).text.length,
+                    );
                     setVirtualCursor(cursorPosition);
                     cursorContext = getPositionContext(documentPost, cursorPosition);
                     logOutput('INFO', `Deleted lines ${startLine}-${endLine} and moved cursor to end of document`);
@@ -1420,7 +1667,10 @@ export function handleDeleteLines(context: RCEContext): RCEHandlerReturns {
                 type: DiffRangeType.Removed,
                 removedText: originalText,
             });
-            return actionHandlerSuccess(`Deleted lines ${startLine}-${endLine} in file ${relativePath}\n\n${formatContext(cursorContext)}`, `Deleted lines ${startLine}-${endLine}`);
+            return actionHandlerSuccess(
+                `Deleted lines ${startLine}-${endLine} in file ${relativePath}\n\n${formatContext(cursorContext)}`,
+                `Deleted lines ${startLine}-${endLine}`,
+            );
         } else {
             return actionHandlerFailure('Failed to delete lines', 'Failed to delete lines');
         }
@@ -1462,14 +1712,31 @@ export function handleRewriteLines(context: RCEContext): RCEHandlerReturns {
                 documentPost.lineCount - 1,
                 Math.max(0, startLine - 1 + (logicalLines - 1)),
             );
-            const cursorPosition = new vscode.Position(lastInsertedLineZero, documentPost.lineAt(lastInsertedLineZero).text.length);
+            const cursorPosition = new vscode.Position(
+                lastInsertedLineZero,
+                documentPost.lineAt(lastInsertedLineZero).text.length,
+            );
             setVirtualCursor(cursorPosition);
             // No need to filter content here, as both texts are directly from the document
-            const diffRanges = getDiffRanges(startPosition, originalText, document.getText(new vscode.Range(startPosition, cursorPosition)));
+            const diffRanges = getDiffRanges(
+                startPosition,
+                originalText,
+                document.getText(new vscode.Range(startPosition, cursorPosition)),
+            );
             showDiffRanges(vscode.window.activeTextEditor!, ...diffRanges);
-            const cursorContext = getPositionContext(documentPost, { cursorPosition: cursorPosition, position: startPosition, position2: cursorPosition });
-            logOutput('INFO', `Rewrote lines ${startLine}-${endLine} with ${logicalLines} line${logicalLines === 1 ? '' : 's'} of content and moved cursor to end of line ${lastInsertedLineZero + 1}`);
-            return actionHandlerSuccess(`Rewrote lines ${startLine}-${endLine} in file ${relativePath}\n\n${formatContext(cursorContext)}`, `Rewrote lines ${startLine}-${endLine}`);
+            const cursorContext = getPositionContext(documentPost, {
+                cursorPosition: cursorPosition,
+                position: startPosition,
+                position2: cursorPosition,
+            });
+            logOutput(
+                'INFO',
+                `Rewrote lines ${startLine}-${endLine} with ${logicalLines} line${logicalLines === 1 ? '' : 's'} of content and moved cursor to end of line ${lastInsertedLineZero + 1}`,
+            );
+            return actionHandlerSuccess(
+                `Rewrote lines ${startLine}-${endLine} in file ${relativePath}\n\n${formatContext(cursorContext)}`,
+                `Rewrote lines ${startLine}-${endLine}`,
+            );
         } else {
             return actionHandlerFailure('Failed to rewrite lines', 'Failed to rewrite lines');
         }
@@ -1495,13 +1762,18 @@ export function handleHighlightLines(context: RCEContext): RCEHandlerReturns {
 
     const range = new vscode.Range(startPosition, endPosition);
 
-    editor!.setDecorations(NEURO.highlightDecorationType!, [{
-        range,
-        hoverMessage: `**Highlighted manually by ${CONNECTION.nameOfAPI}**`,
-    }]);
+    editor!.setDecorations(NEURO.highlightDecorationType!, [
+        {
+            range,
+            hoverMessage: `**Highlighted manually by ${CONNECTION.nameOfAPI}**`,
+        },
+    ]);
     editor!.revealRange(range, vscode.TextEditorRevealType.InCenterIfOutsideViewport);
 
-    return actionHandlerSuccess(`Highlighted lines ${startLine}-${endLine}.`, `Highlighted lines ${startLine}-${endLine}`);
+    return actionHandlerSuccess(
+        `Highlighted lines ${startLine}-${endLine}.`,
+        `Highlighted lines ${startLine}-${endLine}`,
+    );
 }
 
 export function handleDiffPatch(context: RCEContext): RCEHandlerReturns {
@@ -1526,7 +1798,10 @@ export function handleDiffPatch(context: RCEContext): RCEHandlerReturns {
     const filteredText = filterFileContents(document.getText());
     const searchIndex = filteredText.indexOf(search);
     if (searchIndex === -1) {
-        return actionHandlerFailure(`Search text not found in the document:\n\n${getFence(search)}\n${search}\n${getFence(search)}`, 'Search text not found');
+        return actionHandlerFailure(
+            `Search text not found in the document:\n\n${getFence(search)}\n${search}\n${getFence(search)}`,
+            'Search text not found',
+        );
     }
     const startPosition = positionFromIndex(filteredText, searchIndex);
     const endPosition = positionFromIndex(filteredText, searchIndex + search.length);
@@ -1534,7 +1809,10 @@ export function handleDiffPatch(context: RCEContext): RCEHandlerReturns {
     // Check for multiple occurrences
     const secondOccurrence = filteredText.indexOf(search, searchIndex + 1);
     if (secondOccurrence !== -1) {
-        return actionHandlerFailure(`Multiple occurrences of search text found. Please use a longer search term for a unique match:\n\n${getFence(search)}\n${search}\n${getFence(search)}`, 'Multiple occurrences found');
+        return actionHandlerFailure(
+            `Multiple occurrences of search text found. Please use a longer search term for a unique match:\n\n${getFence(search)}\n${search}\n${getFence(search)}`,
+            'Multiple occurrences found',
+        );
     }
 
     // Perform the replacement
@@ -1572,7 +1850,10 @@ export function handleDiffPatch(context: RCEContext): RCEHandlerReturns {
 
             const { linesAdded, linesRemoved } = countLineDifferences(parsedDiff.search, parsedDiff.replace);
 
-            return actionHandlerSuccess(`Applied diff patch successfully\n\n${formatContext(cursorContext)}`, `Applied diff patch [+${linesAdded} | -${linesRemoved}]`);
+            return actionHandlerSuccess(
+                `Applied diff patch successfully\n\n${formatContext(cursorContext)}`,
+                `Applied diff patch [+${linesAdded} | -${linesRemoved}]`,
+            );
         } else {
             return actionHandlerFailure('Failed to apply diff patch', 'Failed to apply diff patch');
         }
@@ -1606,7 +1887,10 @@ function handleGetUserSelection(): RCEHandlerReturns {
         ? ''
         : `\n\n${CONNECTION.userName}'s selection contains:\n\n${fence}\n${selectedText}\n${fence}`;
 
-    return actionHandlerSuccess(`${preamble}\n\n${formatContext(cursorContext)}${postamble}`, `Cursor selection for ${CONNECTION.userName} formatted and sent to ${CONNECTION.nameOfAPI}.`);
+    return actionHandlerSuccess(
+        `${preamble}\n\n${formatContext(cursorContext)}${postamble}`,
+        `Cursor selection for ${CONNECTION.userName} formatted and sent to ${CONNECTION.nameOfAPI}.`,
+    );
 }
 
 export function handleReplaceUserSelection(context: RCEContext): RCEHandlerReturns {
@@ -1643,7 +1927,10 @@ export function handleReplaceUserSelection(context: RCEContext): RCEHandlerRetur
             });
 
             NEURO.lastKnownUserSelection = editor.selection;
-            return actionHandlerSuccess(`Replaced ${CONNECTION.userName}'s selection in the document\n\n${formatContext(cursorContext)}`, 'Replaced user selection');
+            return actionHandlerSuccess(
+                `Replaced ${CONNECTION.userName}'s selection in the document\n\n${formatContext(cursorContext)}`,
+                'Replaced user selection',
+            );
         } else {
             return actionHandlerFailure('Failed to replace selection', 'Failed to replace selection');
         }
@@ -1673,21 +1960,28 @@ export function fileSaveListener(e: vscode.TextDocument) {
  * @param lineRange The line range to limit results to. If not specified, defaults to the entire text.
  * @returns The matches found in the text based on the match option.
  */
-function findAndFilter(regex: RegExp, text: string, cursorOffset: number, match: string, lineRange: LineRange | undefined = undefined): RegExpExecArray[] {
+function findAndFilter(
+    regex: RegExp,
+    text: string,
+    cursorOffset: number,
+    match: string,
+    lineRange: LineRange | undefined = undefined,
+): RegExpExecArray[] {
     const matchIterator = text.matchAll(regex);
     let matches: RegExpStringIterator<RegExpExecArray> | RegExpExecArray[];
 
     if (lineRange) {
         const startPosition = new vscode.Position(lineRange.startLine - 1, 0);
-        const endPosition = new vscode.Position(lineRange.endLine - 1, text.split(/\r?\n/g)[lineRange.endLine - 1].length);
+        const endPosition = new vscode.Position(
+            lineRange.endLine - 1,
+            text.split(/\r?\n/g)[lineRange.endLine - 1].length,
+        );
         const minIndex = indexFromPosition(text, startPosition);
         const maxIndex = indexFromPosition(text, endPosition);
         matches = [];
-        for (const m of matchIterator)
-            matches.push(m);
+        for (const m of matchIterator) matches.push(m);
         matches = matches.filter(m => m.index >= minIndex && m.index <= maxIndex);
-    }
-    else {
+    } else {
         matches = matchIterator;
     }
 
@@ -1695,31 +1989,25 @@ function findAndFilter(regex: RegExp, text: string, cursorOffset: number, match:
 
     switch (match) {
         case 'firstInFile':
-            for (const m of matches)
-                return [m];
+            for (const m of matches) return [m];
             return [];
 
         case 'lastInFile':
-            for (const m of matches)
-                result = [m];
+            for (const m of matches) result = [m];
             return result;
 
         case 'firstAfterCursor':
-            for (const m of matches)
-                if (m.index >= cursorOffset)
-                    return [m];
+            for (const m of matches) if (m.index >= cursorOffset) return [m];
             return [];
 
         case 'lastBeforeCursor':
             for (const m of matches)
-                if (m.index < cursorOffset)
-                    result = [m];
+                if (m.index < cursorOffset) result = [m];
                 else break;
             return result;
 
         case 'allInFile':
-            for (const m of matches)
-                result.push(m);
+            for (const m of matches) result.push(m);
             return result;
 
         default:
@@ -1733,8 +2021,7 @@ let editorChangeHandlerTimeout: NodeJS.Timeout | undefined;
  * @param editor The active text editor.
  */
 export function editorChangeHandler(editor: vscode.TextEditor | undefined) {
-    if (editorChangeHandlerTimeout)
-        clearTimeout(editorChangeHandlerTimeout);
+    if (editorChangeHandlerTimeout) clearTimeout(editorChangeHandlerTimeout);
 
     // Remove last known selection
     NEURO.lastKnownUserSelection = null;
@@ -1743,12 +2030,9 @@ export function editorChangeHandler(editor: vscode.TextEditor | undefined) {
         // Set cursor
         const uri = editor.document.uri;
         if (!NEURO.cursorOffsets.has(uri)) {
-            if (isPathNeuroSafe(uri.fsPath))
-                setVirtualCursor(editor.selection.active);
-            else
-                setVirtualCursor(null);
-        }
-        else {
+            if (isPathNeuroSafe(uri.fsPath)) setVirtualCursor(editor.selection.active);
+            else setVirtualCursor(null);
+        } else {
             setVirtualCursor();
         }
 
@@ -1758,15 +2042,12 @@ export function editorChangeHandler(editor: vscode.TextEditor | undefined) {
             const cursor = getVirtualCursor()!;
             const context = getPositionContext(editor.document, cursor);
             let text = `Switched to file ${file}.`;
-            if (CONFIG.sendContentsOnFileChange)
-                text += `\n\n${formatContext(context)}`;
+            if (CONFIG.sendContentsOnFileChange) text += `\n\n${formatContext(context)}`;
             NEURO.client?.sendContext(text);
+        } else {
+            NEURO.client?.sendContext("Switched to a file you're not allowed to edit.");
         }
-        else {
-            NEURO.client?.sendContext('Switched to a file you\'re not allowed to edit.');
-        }
-    }
-    else {
+    } else {
         // Switching editors first triggers this event with an undefined editor and then with the new editor
         // Delay sending the context to wait for a second event
         editorChangeHandlerTimeout = setTimeout(() => {
@@ -1779,7 +2060,7 @@ export function editorChangeHandler(editor: vscode.TextEditor | undefined) {
 /**
  * Moves the virtual cursor when the text document changes.
  * @param event The editing event.
- * @returns 
+ * @returns
  */
 export async function workspaceEditHandler(event: vscode.TextDocumentChangeEvent) {
     if (event.contentChanges.length === 0) return;
@@ -1808,8 +2089,7 @@ export async function workspaceEditHandler(event: vscode.TextDocumentChangeEvent
         if (endOffset > cursorOffset) {
             // Change includes the cursor, place it at the end of the change
             setVirtualCursor(event.document.positionAt(change.rangeOffset + change.text.length));
-        }
-        else {
+        } else {
             // Change is before the cursor, move it by the change length
             const delta = change.text.length - change.rangeLength;
             setVirtualCursor(event.document.positionAt(cursorOffset + delta));
@@ -1876,7 +2156,10 @@ export async function handleSendSelectionToNeuro(): Promise<void> {
  * Code action provider for sending selection to Neuro.
  */
 class SendSelectionToNeuroCodeActionProvider implements vscode.CodeActionProvider {
-    provideCodeActions(document: vscode.TextDocument, range: vscode.Range | vscode.Selection): vscode.CodeAction[] | undefined {
+    provideCodeActions(
+        document: vscode.TextDocument,
+        range: vscode.Range | vscode.Selection,
+    ): vscode.CodeAction[] | undefined {
         if (range.isEmpty || !isPathNeuroSafe(document.fileName)) return;
         const action = new vscode.CodeAction('Send selection to Neuro', vscode.CodeActionKind.QuickFix);
         action.command = {
@@ -1893,11 +2176,9 @@ class SendSelectionToNeuroCodeActionProvider implements vscode.CodeActionProvide
 export function registerSendSelectionToNeuro(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand('neuropilot.sendSelectionToNeuro', handleSendSelectionToNeuro),
-        vscode.languages.registerCodeActionsProvider(
-            { scheme: 'file' },
-            new SendSelectionToNeuroCodeActionProvider(),
-            { providedCodeActionKinds: [vscode.CodeActionKind.QuickFix] },
-        ),
+        vscode.languages.registerCodeActionsProvider({ scheme: 'file' }, new SendSelectionToNeuroCodeActionProvider(), {
+            providedCodeActionKinds: [vscode.CodeActionKind.QuickFix],
+        }),
     );
 }
 
@@ -1908,7 +2189,10 @@ interface DiffPatch {
 
 function parseDiffPatch(diff: string): DiffPatch | null {
     // Remove the outer code block markers if present
-    const cleanDiff = diff.replace(/^```[\s\S]*?\n/, '').replace(/\n```$/, '').trim();
+    const cleanDiff = diff
+        .replace(/^```[\s\S]*?\n/, '')
+        .replace(/\n```$/, '')
+        .trim();
 
     // Look for the pattern: >>>>>> SEARCH ... ======= ... <<<<<< REPLACE
     const searchStartPattern = /^>>>>>> SEARCH\s*?\r?\n/m;
@@ -1924,8 +2208,7 @@ function parseDiffPatch(diff: string): DiffPatch | null {
     }
 
     // Ensure they appear in the correct order
-    if (searchStartMatch.index >= delimiterMatch.index ||
-        delimiterMatch.index >= replaceEndMatch.index) {
+    if (searchStartMatch.index >= delimiterMatch.index || delimiterMatch.index >= replaceEndMatch.index) {
         return null;
     }
 
@@ -1947,7 +2230,10 @@ function parseDiffPatch(diff: string): DiffPatch | null {
  * @param replace The replacement text
  * @returns Object containing lines added, removed, and a description string
  */
-function countLineDifferences(search: string, replace: string): {
+function countLineDifferences(
+    search: string,
+    replace: string,
+): {
     linesAdded: number;
     linesRemoved: number;
     description: string;

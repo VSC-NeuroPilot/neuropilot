@@ -5,7 +5,15 @@ import globToRegExp from 'glob-to-regexp';
 import { fileTypeFromBuffer } from 'file-type';
 
 import { NEURO } from '@/constants';
-import { ACCESS, CONFIG, CONNECTION, CursorPositionContextStyle, getPermissionLevel, PermissionLevel, setPermissionLevel } from '@/config';
+import {
+    ACCESS,
+    CONFIG,
+    CONNECTION,
+    CursorPositionContextStyle,
+    getPermissionLevel,
+    PermissionLevel,
+    setPermissionLevel,
+} from '@/config';
 
 import { fastIsItIgnored } from './ignore_files';
 import { unregisterAllActions } from '@/rce';
@@ -36,7 +44,15 @@ export function logOutput(tag: OutputTag, message: string) {
         return;
     }
     const ms = Date.now() % 1000;
-    const time = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }) + '.' + ms.toString().padStart(3, '0');
+    const time =
+        new Date().toLocaleTimeString('en-US', {
+            hour12: false,
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+        }) +
+        '.' +
+        ms.toString().padStart(3, '0');
     const prefix = `${time} [${tag}] `;
     for (const line of message.split('\n')) {
         NEURO.outputChannel.appendLine(prefix + line);
@@ -51,12 +67,12 @@ export function createClient() {
     if (testFlag === true || globalThis?.process?.env?.NEUROPILOT_TEST === 'true') {
         if (!NEURO.client) {
             NEURO.client = {
-                sendContext: () => { },
-                disconnect: () => { },
-                registerActions: () => { },
-                unregisterActions: () => { },
-                sendActionResult: () => { },
-                onAction: () => { },
+                sendContext: () => {},
+                disconnect: () => {},
+                registerActions: () => {},
+                unregisterActions: () => {},
+                sendActionResult: () => {},
+                onAction: () => {},
             } as unknown as NeuroClient;
         }
         return;
@@ -107,7 +123,10 @@ function attemptConnection(currentAttempt: number, maxAttempts: number, interval
             // Only auto-reconnect if it wasn't a manual disconnection
             if (shouldAutoReconnect) {
                 if (currentAttempt < maxAttempts) {
-                    logOutput('INFO', `Attempting to reconnect (${currentAttempt + 1}/${maxAttempts}) in ${interval}ms...`);
+                    logOutput(
+                        'INFO',
+                        `Attempting to reconnect (${currentAttempt + 1}/${maxAttempts}) in ${interval}ms...`,
+                    );
                     retryTimeout = setTimeout(() => {
                         retryTimeout = null;
                         attemptConnection(currentAttempt + 1, maxAttempts, interval);
@@ -128,14 +147,26 @@ function attemptConnection(currentAttempt: number, maxAttempts: number, interval
         };
 
         NEURO.client.sendContext(
-            turtleSafari(vscode.workspace.getConfiguration('neuropilot').get('connection.initialContext', 'Someone tell the NeuroPilot devs that there\'s a problem with their extension.')),
+            turtleSafari(
+                vscode.workspace
+                    .getConfiguration('neuropilot')
+                    .get(
+                        'connection.initialContext',
+                        "Someone tell the NeuroPilot devs that there's a problem with their extension.",
+                    ),
+            ),
         );
 
         if (getPermissionLevel(changelogActions.read_changelog.name) !== PermissionLevel.OFF) {
-            NEURO.client.sendContext(`It appears that you have the ability to get changelogs yourself. You should try running the read_changelog action or asking ${CONNECTION.userName} to send it to you via a command, then summarise what it says!`, false);
-        }
-        else {
-            NEURO.client.sendContext(`You don't seem to have the ability to get changelogs yourself. Nonetheless, you should still try and ask ${CONNECTION.userName} to send it via the "NeuroPilot: Ask Neuro to read changelog" command, and then summarise the info.`, false);
+            NEURO.client.sendContext(
+                `It appears that you have the ability to get changelogs yourself. You should try running the read_changelog action or asking ${CONNECTION.userName} to send it to you via a command, then summarise what it says!`,
+                false,
+            );
+        } else {
+            NEURO.client.sendContext(
+                `You don't seem to have the ability to get changelogs yourself. Nonetheless, you should still try and ask ${CONNECTION.userName} to send it via the "NeuroPilot: Ask Neuro to read changelog" command, and then summarise the info.`,
+                false,
+            );
         }
 
         for (const handler of clientConnectedHandlers) {
@@ -164,7 +195,7 @@ export async function disconnectClient() {
     shouldAutoReconnect = false;
     if (NEURO.client) {
         NEURO.client.disconnect();
-        if (!await waitFor(() => !NEURO.connected, 100, 5000)) {
+        if (!(await waitFor(() => !NEURO.connected, 100, 5000))) {
             logOutput('ERROR', 'Client took too long to disconnect');
             vscode.window.showErrorMessage('Client could not disconnect.');
         }
@@ -190,10 +221,8 @@ export function onClientConnected(handler: () => void) {
 export function simpleFileName(fileName: string): string {
     const rootFolder = vscode.workspace.workspaceFolders?.[0].uri.fsPath.replace(/\\/, '/');
     const result = fileName.replace(/\\/g, '/');
-    if (rootFolder && result.startsWith(rootFolder))
-        return result.substring(rootFolder.length);
-    else
-        return result.substring(result.lastIndexOf('/') + 1);
+    if (rootFolder && result.startsWith(rootFolder)) return result.substring(rootFolder.length);
+    else return result.substring(result.lastIndexOf('/') + 1);
 }
 
 /**
@@ -237,7 +266,10 @@ interface NeuroPositionContextOptions {
  * @param options The options for getting the context. If passed a {@link vscode.Position}, it is used as `cursorPosition`, `position` and `position2`.
  * @returns The context around the specified range. The amount of lines before and after the range is configurable in the settings.
  */
-export function getPositionContext(document: vscode.TextDocument, options: NeuroPositionContextOptions | vscode.Position): NeuroPositionContext {
+export function getPositionContext(
+    document: vscode.TextDocument,
+    options: NeuroPositionContextOptions | vscode.Position,
+): NeuroPositionContext {
     const beforeContextLength = CONFIG.beforeContext;
     const afterContextLength = CONFIG.afterContext;
 
@@ -248,9 +280,13 @@ export function getPositionContext(document: vscode.TextDocument, options: Neuro
     if (options.position2 === undefined) {
         options.position2 = options.position;
     }
-    if (options.position === undefined || options.position2 === undefined) { // Second check is redundant but the compiler wants it
+    if (options.position === undefined || options.position2 === undefined) {
+        // Second check is redundant but the compiler wants it
         options.position = new vscode.Position(0, 0);
-        options.position2 = new vscode.Position(document.lineCount - 1, document.lineAt(document.lineCount - 1).text.length);
+        options.position2 = new vscode.Position(
+            document.lineCount - 1,
+            document.lineAt(document.lineCount - 1).text.length,
+        );
     }
     if (options.position2.isBefore(options.position)) {
         // Swap the positions if position2 is before position
@@ -264,8 +300,15 @@ export function getPositionContext(document: vscode.TextDocument, options: Neuro
 
     // If the cursor is defined and inside the range, split the context into before and after the cursor
     if (options.cursorPosition && options.cursorPosition.line >= startLine && options.cursorPosition.line <= endLine) {
-        const contextBefore = document.getText(new vscode.Range(new vscode.Position(startLine, 0), options.cursorPosition));
-        const contextAfter = document.getText(new vscode.Range(options.cursorPosition, new vscode.Position(endLine, document.lineAt(endLine).text.length)));
+        const contextBefore = document.getText(
+            new vscode.Range(new vscode.Position(startLine, 0), options.cursorPosition),
+        );
+        const contextAfter = document.getText(
+            new vscode.Range(
+                options.cursorPosition,
+                new vscode.Position(endLine, document.lineAt(endLine).text.length),
+            ),
+        );
         return {
             contextBefore: filterFileContents(contextBefore),
             contextAfter: filterFileContents(contextAfter),
@@ -277,7 +320,12 @@ export function getPositionContext(document: vscode.TextDocument, options: Neuro
     }
 
     // If the cursor is not defined or not inside the range, return the entire context in contextBefore
-    const contextBefore = document.getText(new vscode.Range(new vscode.Position(startLine, 0), new vscode.Position(endLine, document.lineAt(endLine).text.length)));
+    const contextBefore = document.getText(
+        new vscode.Range(
+            new vscode.Position(startLine, 0),
+            new vscode.Position(endLine, document.lineAt(endLine).text.length),
+        ),
+    );
     return {
         contextBefore: filterFileContents(contextBefore),
         contextAfter: '',
@@ -290,9 +338,7 @@ export function getPositionContext(document: vscode.TextDocument, options: Neuro
 
 export function formatActionID(name: string): string {
     // Action IDs must be snake_case
-    return name
-        .replace(/[^a-zA-Z0-9_]+/g, '_')
-        .toLowerCase();
+    return name.replace(/[^a-zA-Z0-9_]+/g, '_').toLowerCase();
 }
 
 export function normalizePath(path: string): string {
@@ -326,7 +372,7 @@ export function combineGlobLines(lines: string[]): string {
     const result = lines
         .map(line => normalizePath(line.trim()))
         .filter(line => line.length > 0)
-        .flatMap(line => line.includes('/') ? line : [`**/${line}`, `**/${line}/**`]) // If the line does not contain a slash, match it in any folder
+        .flatMap(line => (line.includes('/') ? line : [`**/${line}`, `**/${line}/**`])) // If the line does not contain a slash, match it in any folder
         .join(',');
     return `{${result}}`;
 }
@@ -335,7 +381,7 @@ export function combineGlobLinesToRegExp(lines: string[]): RegExp {
     const result = lines
         .map(line => normalizePath(line.trim()))
         .filter(line => line.length > 0)
-        .flatMap(line => line.includes('/') ? line : [`**/${line}`, `**/${line}/**`]) // If the line does not contain a slash, match it in any folder
+        .flatMap(line => (line.includes('/') ? line : [`**/${line}`, `**/${line}/**`])) // If the line does not contain a slash, match it in any folder
         .map(line => globToRegExp(line, { extended: true, globstar: true }).source)
         .join('|');
     return new RegExp(result);
@@ -381,25 +427,27 @@ export function isPathNeuroSafe(path: string, checkPatterns = true): boolean {
 
     const ignored = rootFolder ? fastIsItIgnored(normalizedPath) : false;
 
-    return rootFolder !== undefined
+    return (
+        rootFolder !== undefined &&
         // Prevent access to the workspace folder itself
-        && (ACCESS.externalFiles || normalizedPath !== rootFolder)
+        (ACCESS.externalFiles || normalizedPath !== rootFolder) &&
         // Prevent access to paths outside the workspace
-        && (ACCESS.externalFiles || normalizedPath.startsWith(rootFolder))
+        (ACCESS.externalFiles || normalizedPath.startsWith(rootFolder)) &&
         // Prevent access to special files and folders (e.g. .vscode) (excluding '..' because that is handled below) (also excluding ./ because that is just the current folder)
-        && (ACCESS.dotFiles || !normalizedPath.match(/\/\.(?!\.?(\/|$))/))
+        (ACCESS.dotFiles || !normalizedPath.match(/\/\.(?!\.?(\/|$))/)) &&
         // Prevent access to parent folders
-        && (ACCESS.externalFiles || !normalizedPath.match(/\/\.\.(\/|$)/))
+        (ACCESS.externalFiles || !normalizedPath.match(/\/\.\.(\/|$)/)) &&
         // Prevent access to home directory (probably doesn't work but just in case)
-        && (ACCESS.externalFiles || !normalizedPath.includes('~'))
+        (ACCESS.externalFiles || !normalizedPath.includes('~')) &&
         // Prevent access to environment variables (probably doesn't work but just in case)
-        && (ACCESS.environmentVariables || !normalizedPath.includes('$'))
+        (ACCESS.environmentVariables || !normalizedPath.includes('$')) &&
         // Check against include pattern
-        && includeRegExp.test(normalizedPath)
+        includeRegExp.test(normalizedPath) &&
         // Check against exclude pattern
-        && !excludeRegExp.test(normalizedPath)
+        !excludeRegExp.test(normalizedPath) &&
         // Check if the path is ignored by .gitignore (if so, it's likely a library, or something large and not necessarily needed to be viewed by the user or Neuro).
-        && !ignored;
+        !ignored
+    );
 }
 
 export const delayAsync = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -429,46 +477,35 @@ export function substituteMatch(match: RegExpExecArray, replacement: string): st
         if (substitutions[i][0] === '$&') {
             // Full match
             result += match[0];
-        }
-        else if (substitutions[i][0] === '$`' || substitutions[i][0] === '$\'' || substitutions[i][0] === '$_') {
+        } else if (substitutions[i][0] === '$`' || substitutions[i][0] === "$'" || substitutions[i][0] === '$_') {
             // Text before or after the match
             throw new Error('Substitution with text outside the match is not supported.');
-        }
-        else if (substitutions[i][0] === '$+') {
+        } else if (substitutions[i][0] === '$+') {
             // Last capture group
-            if (match.length === 0)
-                throw new Error('No capture groups in the match');
+            if (match.length === 0) throw new Error('No capture groups in the match');
             result += match[match.length - 1];
-        }
-        else if (substitutions[i][0] === '$$') {
+        } else if (substitutions[i][0] === '$$') {
             // Escaped dollar sign
             result += '$';
-        }
-        else if (substitutions[i][0].startsWith('$<') || substitutions[i][0].startsWith('${')) {
+        } else if (substitutions[i][0].startsWith('$<') || substitutions[i][0].startsWith('${')) {
             const name = substitutions[i][0].slice(2, -1);
             if (/^\d+$/.test(name)) {
                 // Numbered group
                 const index = parseInt(name);
-                if (index >= match.length)
-                    throw new Error(`Capture group ${index} does not exist in the match`);
+                if (index >= match.length) throw new Error(`Capture group ${index} does not exist in the match`);
                 result += match[index];
-            }
-            else {
+            } else {
                 // Named group
                 const content = match.groups?.[name];
-                if (content === undefined)
-                    throw new Error(`Capture group "${name}" does not exist in the match`);
+                if (content === undefined) throw new Error(`Capture group "${name}" does not exist in the match`);
                 result += content;
             }
-        }
-        else if (/^\$\d+$/.test(substitutions[i][0])) {
+        } else if (/^\$\d+$/.test(substitutions[i][0])) {
             // Numbered group
             const index = parseInt(substitutions[i][0].slice(1));
-            if (index >= match.length)
-                throw new Error(`Capture group ${index} does not exist in the match`);
+            if (index >= match.length) throw new Error(`Capture group ${index} does not exist in the match`);
             result += match[index];
-        }
-        else {
+        } else {
             // No substitution, just append the string
             result += substitutions[i][0];
         }
@@ -513,9 +550,8 @@ export function setVirtualCursor(position?: vscode.Position | null) {
         return;
     }
 
-    let offset = position !== undefined
-        ? editor.document.offsetAt(position)
-        : NEURO.cursorOffsets.get(editor.document.uri);
+    let offset =
+        position !== undefined ? editor.document.offsetAt(position) : NEURO.cursorOffsets.get(editor.document.uri);
 
     if (offset === null) {
         // Some setting changed that made the file Neuro-safe
@@ -567,11 +603,9 @@ export function getVirtualCursor(): vscode.Position | null | undefined {
         // Virtual cursor should always be set by onDidChangeActiveTextEditor
         logOutput('ERROR', 'No last known position available');
         return undefined;
-    }
-    else if (result === null) {
+    } else if (result === null) {
         return null;
-    }
-    else {
+    } else {
         return editor.document.positionAt(result);
     }
 }
@@ -615,7 +649,10 @@ export function getDiffRanges(startPosition: vscode.Position, original: string, 
                 const currentStartPosition = positionFromIndex(modified, currentStartOffset);
                 const currentEndPosition = positionFromIndex(modified, currentStartOffset + currentLength);
                 result.push({
-                    range: new vscode.Range(translatePosition(startPosition, currentStartPosition), translatePosition(startPosition, currentEndPosition)),
+                    range: new vscode.Range(
+                        translatePosition(startPosition, currentStartPosition),
+                        translatePosition(startPosition, currentEndPosition),
+                    ),
                     type: currentType,
                     removedText: currentRemovedText,
                 });
@@ -629,24 +666,22 @@ export function getDiffRanges(startPosition: vscode.Position, original: string, 
         }
 
         // If the token was removed (token exists in original but not in modified)
-        if (token.bIndex === -1) { // token.aIndex !== -1
+        if (token.bIndex === -1) {
+            // token.aIndex !== -1
             // Added + Removed = Modified
-            if (currentType === DiffRangeType.Added)
-                currentType = DiffRangeType.Modified;
-            else if (currentType === undefined)
-                currentType = DiffRangeType.Removed;
+            if (currentType === DiffRangeType.Added) currentType = DiffRangeType.Modified;
+            else if (currentType === undefined) currentType = DiffRangeType.Removed;
 
             currentRemovedText += token.line;
             continue;
         }
 
         // If the token was added (token exists in modified but not in original)
-        if (token.aIndex === -1) { // token.bIndex !== -1
+        if (token.aIndex === -1) {
+            // token.bIndex !== -1
             // Removed + Added = Modified
-            if (currentType === DiffRangeType.Removed)
-                currentType = DiffRangeType.Modified;
-            else if (currentType === undefined)
-                currentType = DiffRangeType.Added;
+            if (currentType === DiffRangeType.Removed) currentType = DiffRangeType.Modified;
+            else if (currentType === undefined) currentType = DiffRangeType.Added;
 
             currentLength += token.line.length;
             continue;
@@ -658,7 +693,10 @@ export function getDiffRanges(startPosition: vscode.Position, original: string, 
         const currentStartPosition = positionFromIndex(modified, currentStartOffset);
         const currentEndPosition = positionFromIndex(modified, currentStartOffset + currentLength);
         result.push({
-            range: new vscode.Range(translatePosition(startPosition, currentStartPosition), translatePosition(startPosition, currentEndPosition)),
+            range: new vscode.Range(
+                translatePosition(startPosition, currentStartPosition),
+                translatePosition(startPosition, currentEndPosition),
+            ),
             type: currentType,
             removedText: currentRemovedText,
         });
@@ -675,26 +713,42 @@ export function showDiffRanges(editor: vscode.TextEditor, ...ranges: DiffRange[]
     const languageId = editor.document.languageId;
     const user = CONNECTION.nameOfAPI;
 
-    editor.setDecorations(NEURO.diffAddedDecorationType!, addedRanges.map(range => ({
-        range: range.range,
-        hoverMessage: `**Added by ${user}**`,
-    } satisfies vscode.DecorationOptions)));
+    editor.setDecorations(
+        NEURO.diffAddedDecorationType!,
+        addedRanges.map(
+            range =>
+                ({
+                    range: range.range,
+                    hoverMessage: `**Added by ${user}**`,
+                }) satisfies vscode.DecorationOptions,
+        ),
+    );
 
-    editor.setDecorations(NEURO.diffModifiedDecorationType!, modifiedRanges.map(range => {
-        const fence = getFence(range.removedText!);
-        return {
-            range: range.range,
-            hoverMessage: range.removedText ? `**Modified by ${user}, original:**\n\n${fence}${languageId}\n${range.removedText}\n${fence}` : undefined,
-        } satisfies vscode.DecorationOptions;
-    }));
+    editor.setDecorations(
+        NEURO.diffModifiedDecorationType!,
+        modifiedRanges.map(range => {
+            const fence = getFence(range.removedText!);
+            return {
+                range: range.range,
+                hoverMessage: range.removedText
+                    ? `**Modified by ${user}, original:**\n\n${fence}${languageId}\n${range.removedText}\n${fence}`
+                    : undefined,
+            } satisfies vscode.DecorationOptions;
+        }),
+    );
 
-    editor.setDecorations(NEURO.diffRemovedDecorationType!, removedRanges.map(range => {
-        const fence = getFence(range.removedText!);
-        return {
-            range: range.range,
-            hoverMessage: range.removedText ? `**Removed by ${user}, original:**\n\n${fence}${languageId}\n${range.removedText}\n${fence}` : undefined,
-        } satisfies vscode.DecorationOptions;
-    }));
+    editor.setDecorations(
+        NEURO.diffRemovedDecorationType!,
+        removedRanges.map(range => {
+            const fence = getFence(range.removedText!);
+            return {
+                range: range.range,
+                hoverMessage: range.removedText
+                    ? `**Removed by ${user}, original:**\n\n${fence}${languageId}\n${range.removedText}\n${fence}`
+                    : undefined,
+            } satisfies vscode.DecorationOptions;
+        }),
+    );
 }
 
 export function clearDecorations(editor: vscode.TextEditor) {
@@ -721,8 +775,7 @@ export function checkWorkspaceTrust(): ActionValidationResult {
 export function getProperty(obj: unknown, path: string): unknown {
     const keys = path.split('.');
     let current: unknown = obj;
-    if (path === '')
-        return current;
+    if (path === '') return current;
 
     for (const key of keys) {
         if (typeof current === 'object' && current !== null && key in current) {
@@ -749,25 +802,35 @@ export function checkVirtualWorkspace(): ActionValidationResult {
  * Checks if the Uint8Array buffer is plaintext or binary.
  */
 export async function isBinary(input: Uint8Array): Promise<boolean> {
-    return await fileTypeFromBuffer(input) ? true : false;
+    return (await fileTypeFromBuffer(input)) ? true : false;
 }
 
 /**
  * Shows a disconnect message with options for quickly connecting to the Neuro API.
  */
-export async function showAPIMessage(type: 'disconnect' | 'failed' | 'connected' | 'error' | 'disabled', customMessage?: string) {
+export async function showAPIMessage(
+    type: 'disconnect' | 'failed' | 'connected' | 'error' | 'disabled',
+    customMessage?: string,
+) {
     try {
         switch (type) {
             case 'connected': {
                 const message = customMessage || 'Connected to Neuro API.';
-                const option = await vscode.window.showInformationMessage(message, 'Disconnect', 'Change Auto-connect settings');
+                const option = await vscode.window.showInformationMessage(
+                    message,
+                    'Disconnect',
+                    'Change Auto-connect settings',
+                );
                 if (option) {
                     switch (option) {
                         case 'Disconnect':
                             vscode.commands.executeCommand('neuropilot.disconnect');
                             break;
                         case 'Change Auto-connect settings':
-                            vscode.commands.executeCommand('workbench.action.openSettings', 'neuropilot.connection.autoConnect');
+                            vscode.commands.executeCommand(
+                                'workbench.action.openSettings',
+                                'neuropilot.connection.autoConnect',
+                            );
                             break;
                     }
                 }
@@ -782,7 +845,10 @@ export async function showAPIMessage(type: 'disconnect' | 'failed' | 'connected'
                             vscode.commands.executeCommand('neuropilot.reconnect');
                             break;
                         case 'Change Auto-connect settings':
-                            vscode.commands.executeCommand('workbench.action.openSettings', 'neuropilot.connection.autoConnect');
+                            vscode.commands.executeCommand(
+                                'workbench.action.openSettings',
+                                'neuropilot.connection.autoConnect',
+                            );
                             break;
                     }
                 }
@@ -790,14 +856,21 @@ export async function showAPIMessage(type: 'disconnect' | 'failed' | 'connected'
             }
             case 'disconnect': {
                 const message = customMessage || 'Disconnected from Neuro API.';
-                const option = await vscode.window.showWarningMessage(message, 'Reconnect', 'Change Auto-connect settings');
+                const option = await vscode.window.showWarningMessage(
+                    message,
+                    'Reconnect',
+                    'Change Auto-connect settings',
+                );
                 if (option) {
                     switch (option) {
                         case 'Reconnect':
                             vscode.commands.executeCommand('neuropilot.reconnect');
                             break;
                         case 'Change Auto-connect settings':
-                            vscode.commands.executeCommand('workbench.action.openSettings', 'neuropilot.connection.autoConnect');
+                            vscode.commands.executeCommand(
+                                'workbench.action.openSettings',
+                                'neuropilot.connection.autoConnect',
+                            );
                             break;
                     }
                 }
@@ -805,14 +878,21 @@ export async function showAPIMessage(type: 'disconnect' | 'failed' | 'connected'
             }
             case 'error': {
                 const message = customMessage || 'Error on the Neuro API, please check logs.';
-                const option = await vscode.window.showErrorMessage(message, 'Reconnect', 'Change Auto-connect settings');
+                const option = await vscode.window.showErrorMessage(
+                    message,
+                    'Reconnect',
+                    'Change Auto-connect settings',
+                );
                 if (option) {
                     switch (option) {
                         case 'Reconnect':
                             vscode.commands.executeCommand('neuropilot.reconnect');
                             break;
                         case 'Change Auto-connect settings':
-                            vscode.commands.executeCommand('workbench.action.openSettings', 'neuropilot.connection.autoConnect');
+                            vscode.commands.executeCommand(
+                                'workbench.action.openSettings',
+                                'neuropilot.connection.autoConnect',
+                            );
                             break;
                     }
                 }
@@ -820,14 +900,21 @@ export async function showAPIMessage(type: 'disconnect' | 'failed' | 'connected'
             }
             case 'disabled': {
                 const message = customMessage || 'Disabled connecting to the Neuro API.';
-                const option = await vscode.window.showWarningMessage(message, 'Connect', 'Change Auto-connect settings');
+                const option = await vscode.window.showWarningMessage(
+                    message,
+                    'Connect',
+                    'Change Auto-connect settings',
+                );
                 if (option) {
                     switch (option) {
                         case 'Connect':
                             vscode.commands.executeCommand('neuropilot.reconnect');
                             break;
                         case 'Change Auto-connect settings':
-                            vscode.commands.executeCommand('workbench.action.openSettings', 'neuropilot.connection.autoConnect');
+                            vscode.commands.executeCommand(
+                                'workbench.action.openSettings',
+                                'neuropilot.connection.autoConnect',
+                            );
                             break;
                     }
                 }
@@ -856,12 +943,17 @@ export async function waitFor(predicate: () => boolean, interval: number, timeou
  * @param overrideCursorStyle If provided, overrides the cursor style setting for this context.
  * @returns The formatted context.
  */
-export function formatContext(context: NeuroPositionContext, overrideCursorStyle: CursorPositionContextStyle | undefined = undefined): string {
+export function formatContext(
+    context: NeuroPositionContext,
+    overrideCursorStyle: CursorPositionContextStyle | undefined = undefined,
+): string {
     const fence = getFence(context.contextBefore + context.contextAfter);
     const rawContextBefore = context.contextBefore;
     const rawContextAfter = context.contextAfter;
     const lineNumberContextFormat = CONFIG.lineNumberContextFormat;
-    const lineNumberNote = lineNumberContextFormat.includes('{n}') ? 'Note that line numbers are not part of the source code. ' : '';
+    const lineNumberNote = lineNumberContextFormat.includes('{n}')
+        ? 'Note that line numbers are not part of the source code. '
+        : '';
 
     let n = 1;
     let contextArray = [];
@@ -885,20 +977,19 @@ export function formatContext(context: NeuroPositionContext, overrideCursorStyle
     const contextAfter = contextArray.join('\n');
 
     let effectiveCursorStyle = overrideCursorStyle ?? CONFIG.cursorPositionContextStyle;
-    if (!context.cursorDefined && effectiveCursorStyle === 'both')
-        effectiveCursorStyle = 'lineAndColumn';
-    if (!context.cursorDefined && effectiveCursorStyle === 'inline')
-        effectiveCursorStyle = 'off';
+    if (!context.cursorDefined && effectiveCursorStyle === 'both') effectiveCursorStyle = 'lineAndColumn';
+    if (!context.cursorDefined && effectiveCursorStyle === 'inline') effectiveCursorStyle = 'off';
 
     const cursor = getVirtualCursor()!;
-    const cursorText = ['inline', 'both'].includes(effectiveCursorStyle) && context.cursorDefined
-        ? '<<<|>>>'
-        : '';
+    const cursorText = ['inline', 'both'].includes(effectiveCursorStyle) && context.cursorDefined ? '<<<|>>>' : '';
     const cursorNote =
-        effectiveCursorStyle === 'inline' ? 'Your cursor\'s position is denoted by `<<<|>>>`. '
-        : effectiveCursorStyle === 'lineAndColumn' ? `Your cursor is at ${cursor.line + 1}:${cursor.character + 1}. `
-        : effectiveCursorStyle === 'both' ? `Your cursor is at ${cursor.line + 1}:${cursor.character + 1}, denoted by \`<<<|>>>\`. `
-        : '';
+        effectiveCursorStyle === 'inline'
+            ? "Your cursor's position is denoted by `<<<|>>>`. "
+            : effectiveCursorStyle === 'lineAndColumn'
+              ? `Your cursor is at ${cursor.line + 1}:${cursor.character + 1}. `
+              : effectiveCursorStyle === 'both'
+                ? `Your cursor is at ${cursor.line + 1}:${cursor.character + 1}, denoted by \`<<<|>>>\`. `
+                : '';
 
     return `File context for lines ${context.startLine + 1}-${context.endLine + 1} of ${context.totalLines}. ${cursorNote}${lineNumberNote}Content:\n\n${fence}\n${contextBefore}${cursorText}${contextAfter}\n${fence}`;
 }
@@ -957,26 +1048,41 @@ export function translatePosition(pos: vscode.Position, delta: vscode.Position):
  * Replaces all instances of `insert_turtle_here` in the input string with the User Name setting.
  * @param input String input to check.
  */
-export const turtleSafari = (input: string) => input.replace(/(?<!\\)insert_turtle_here/g, CONNECTION.userName).replace(/\\insert_turtle_here/g, 'insert_turtle_here');
+export const turtleSafari = (input: string) =>
+    input
+        .replace(/(?<!\\)insert_turtle_here/g, CONNECTION.userName)
+        .replace(/\\insert_turtle_here/g, 'insert_turtle_here');
 
 /**
  * Log a caught exception and surface an error to report to GitHub.
  */
 export function notifyOnCaughtException(name: string, error: Error | unknown): void {
     logOutput('ERROR', `Error occurred while executing action ${name}: ${error}`);
-    vscode.window.showErrorMessage(`${CONNECTION.nameOfAPI} tried to run the action "${name}", but an exception was thrown!`, 'View Logs', 'Disable Action for...', 'Report on GitHub').then(
-        async (v) => {
+    vscode.window
+        .showErrorMessage(
+            `${CONNECTION.nameOfAPI} tried to run the action "${name}", but an exception was thrown!`,
+            'View Logs',
+            'Disable Action for...',
+            'Report on GitHub',
+        )
+        .then(async v => {
             switch (v) {
                 case 'View Logs':
                     NEURO.outputChannel?.show();
                     break;
                 case 'Report on GitHub':
-                    vscode.env.openExternal(await vscode.env.asExternalUri(vscode.Uri.parse('https://github.com/VSC-NeuroPilot/neuropilot/issues/new', true)));
+                    vscode.env.openExternal(
+                        await vscode.env.asExternalUri(
+                            vscode.Uri.parse('https://github.com/VSC-NeuroPilot/neuropilot/issues/new', true),
+                        ),
+                    );
                     break;
                 case 'Disable Action for...': {
                     const disableFor = await vscode.window.showQuickPick(
                         ['this session', 'this entire workspace', 'this user'],
-                        { title: 'Disable action for...' },
+                        {
+                            title: 'Disable action for...',
+                        },
                     );
                     switch (disableFor) {
                         case 'this session':
@@ -989,12 +1095,12 @@ export function notifyOnCaughtException(name: string, error: Error | unknown): v
                             await setPermissionLevel(name, PermissionLevel.OFF, vscode.ConfigurationTarget.Global);
                             break;
                     }
-                    if (disableFor) logOutput('INFO', `Disabled action "${name}" for ${disableFor} due to a caught exception.`);
+                    if (disableFor)
+                        logOutput('INFO', `Disabled action "${name}" for ${disableFor} due to a caught exception.`);
                     break;
                 }
             }
-        },
-    );
+        });
 }
 
 /**
@@ -1045,11 +1151,33 @@ export function splitIdentifier(str: string): string[] {
 export function toTitleCase(str: string): string {
     const allCaps = str.toUpperCase() === str;
     const parts = splitIdentifier(str);
-    const excludedWords = ['a', 'an', 'and', 'as', 'at', 'but', 'by', 'for', 'if', 'in', 'nor', 'of', 'off', 'on', 'or', 'per', 'so', 'the', 'to', 'up', 'via', 'yet'];
+    const excludedWords = [
+        'a',
+        'an',
+        'and',
+        'as',
+        'at',
+        'but',
+        'by',
+        'for',
+        'if',
+        'in',
+        'nor',
+        'of',
+        'off',
+        'on',
+        'or',
+        'per',
+        'so',
+        'the',
+        'to',
+        'up',
+        'via',
+        'yet',
+    ];
     return parts
         .map((part, i) => {
-            if (!allCaps && part.toUpperCase() === part)
-                return part;
+            if (!allCaps && part.toUpperCase() === part) return part;
             const lowerPart = part.toLowerCase();
 
             if (i && excludedWords.includes(lowerPart)) {
@@ -1100,7 +1228,10 @@ export function hexToRgba(hex: string): { r: number; g: number; b: number; a: nu
 
     // Expand shorthand forms (#RGB, #RGBA)
     if (h.length === 3 || h.length === 4) {
-        h = h.split('').map(c => c + c).join('');
+        h = h
+            .split('')
+            .map(c => c + c)
+            .join('');
     }
 
     const r = parseInt(h.slice(0, 2), 16);

@@ -14,31 +14,39 @@ export interface ImageData {
     };
 }
 
-export type ImagesViewProviderMessage = {
-    type: 'newImage';
-    image: ImageData;
-    sets: Record<string, ImageSet>;
-} | {
-    type: 'searchResult';
-    names: string[];
-} | {
-    type: 'setList';
-    sets: string[];
-};
+export type ImagesViewProviderMessage =
+    | {
+          type: 'newImage';
+          image: ImageData;
+          sets: Record<string, ImageSet>;
+      }
+    | {
+          type: 'searchResult';
+          names: string[];
+      }
+    | {
+          type: 'setList';
+          sets: string[];
+      };
 
-export type ImagesViewMessage = {
-    type: 'randomImage' | 'randomSet' | 'searchSet';
-} | {
-    type: 'searchImage' | 'switchSet' | 'switchImage';
-    name: string;
-} | {
-    type: 'nextImage' | 'previousImage' | 'randomImageInSet';
-    current: string;
-} | {
-    type: 'viewReady';
-} | {
-    type: 'updateSets';
-};
+export type ImagesViewMessage =
+    | {
+          type: 'randomImage' | 'randomSet' | 'searchSet';
+      }
+    | {
+          type: 'searchImage' | 'switchSet' | 'switchImage';
+          name: string;
+      }
+    | {
+          type: 'nextImage' | 'previousImage' | 'randomImageInSet';
+          current: string;
+      }
+    | {
+          type: 'viewReady';
+      }
+    | {
+          type: 'updateSets';
+      };
 
 interface GallerySet {
     title: string;
@@ -89,7 +97,7 @@ export class ImagesViewProvider extends BaseWebviewViewProvider<ImagesViewMessag
 
             // Subscribe to configuration changes only once
             if (!this._configListener) {
-                this._configListener = vscode.workspace.onDidChangeConfiguration((e) => {
+                this._configListener = vscode.workspace.onDidChangeConfiguration(e => {
                     if (e.affectsConfiguration('neuropilot.cosmetic.celebrations')) {
                         this.sendUpdateToView().catch(erm =>
                             console.error('Failed to send update on config change:', erm),
@@ -199,12 +207,7 @@ export class ImagesViewProvider extends BaseWebviewViewProvider<ImagesViewMessag
      * Get a webview-safe URI for an image
      */
     private getWebviewUri(setName: string, filePath: string): vscode.Uri {
-        const imageUri = vscode.Uri.joinPath(
-            NEURO.context!.extensionUri,
-            'image-gallery',
-            setName,
-            filePath,
-        );
+        const imageUri = vscode.Uri.joinPath(NEURO.context!.extensionUri, 'image-gallery', setName, filePath);
         return this._view?.webview.asWebviewUri(imageUri) ?? imageUri;
     }
 

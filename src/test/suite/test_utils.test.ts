@@ -3,7 +3,7 @@ import * as testUtils from '../test_utils';
 import * as vscode from 'vscode';
 
 suite('Test Utils', () => {
-    test('assertProperties', async function() {
+    test('assertProperties', async function () {
         const expected = { a: 1, b: 'test', c: true };
         const actualGood1 = { a: 1, b: 'test', c: true };
         const actualGood2 = { a: 1, b: 'test', c: true, d: 'extra' }; // Extra property is allowed
@@ -13,7 +13,11 @@ suite('Test Utils', () => {
 
         testUtils.assertProperties(expected, expected, 'The same object should pass');
         testUtils.assertProperties(actualGood1, expected, 'An identical object should pass');
-        testUtils.assertProperties(actualGood2, expected, 'An otherwise correct object with extra properties should pass');
+        testUtils.assertProperties(
+            actualGood2,
+            expected,
+            'An otherwise correct object with extra properties should pass',
+        );
 
         assert.throws(() => {
             testUtils.assertProperties(actualBad1, expected, 'This should fail');
@@ -26,7 +30,7 @@ suite('Test Utils', () => {
         }, 'An object with an extra property but missing one should fail');
     });
 
-    test('checkWithTimeout: Check passes within timeout', async function() {
+    test('checkWithTimeout: Check passes within timeout', async function () {
         let checkedValue = false;
         setTimeout(() => {
             checkedValue = true;
@@ -36,7 +40,7 @@ suite('Test Utils', () => {
         assert.ok(checkedValue, 'check should be set to true before timeout');
     });
 
-    test('checkWithTimeout: Check times out', async function() {
+    test('checkWithTimeout: Check times out', async function () {
         let checkedValue = false;
         setTimeout(() => {
             checkedValue = true;
@@ -47,7 +51,7 @@ suite('Test Utils', () => {
         });
     });
 
-    test('checkNoErrorWithTimeout: Check passes within timeout', async function() {
+    test('checkNoErrorWithTimeout: Check passes within timeout', async function () {
         let checkedValue = false;
         setTimeout(() => {
             checkedValue = true;
@@ -61,7 +65,7 @@ suite('Test Utils', () => {
         assert.ok(check, 'check should succeed before timeout');
     });
 
-    test('checkNoErrorWithTimeout: Check passes within timeout', async function() {
+    test('checkNoErrorWithTimeout: Check passes within timeout', async function () {
         let checkedValue = false;
         setTimeout(() => {
             checkedValue = true;
@@ -78,13 +82,13 @@ suite('Test Utils', () => {
 });
 
 suite('File creation utils', () => {
-    teardown(async function() {
+    teardown(async function () {
         // Delete all test files created during the tests
         const testFilesDir = vscode.Uri.joinPath(vscode.workspace.workspaceFolders![0].uri, 'test_files');
         await vscode.workspace.fs.delete(testFilesDir, { recursive: true, useTrash: false });
     });
 
-    test('createTestFile', async function() {
+    test('createTestFile', async function () {
         const fileName = 'testFile.js';
         const content = 'console.log("Hello, world!");';
         const uri = await testUtils.createTestFile(fileName, content);
@@ -95,7 +99,7 @@ suite('File creation utils', () => {
         assert.strictEqual(fileContent, content, `Content of ${fileName} should match the expected content`);
     });
 
-    test('createTestDirectory', async function() {
+    test('createTestDirectory', async function () {
         const dirName = 'testDirectory';
         const uri = await testUtils.createTestDirectory(dirName);
         const stat = await vscode.workspace.fs.stat(uri);

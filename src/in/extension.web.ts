@@ -24,11 +24,7 @@ import { loadIgnoreFiles } from '@/utils/ignore_files';
 import { reregisterAllActions } from '../rce';
 
 export function activate(context: vscode.ExtensionContext) {
-    loadIgnoreFiles(
-        normalizePath(
-            getWorkspacePath() || '',
-        ) || '',
-    );
+    loadIgnoreFiles(normalizePath(getWorkspacePath() || '') || '');
 
     // Show update reminder if version changed
     showUpdateReminder(context);
@@ -69,8 +65,12 @@ export function activate(context: vscode.ExtensionContext) {
     // Create cursor decoration (web-specific)
     NEURO.cursorDecorationType = vscode.window.createTextEditorDecorationType(getCursorDecorationRenderOptions());
     NEURO.diffAddedDecorationType = vscode.window.createTextEditorDecorationType(getDiffAddedDecorationRenderOptions());
-    NEURO.diffRemovedDecorationType = vscode.window.createTextEditorDecorationType(getDiffRemovedDecorationRenderOptions());
-    NEURO.diffModifiedDecorationType = vscode.window.createTextEditorDecorationType(getDiffModifiedDecorationRenderOptions());
+    NEURO.diffRemovedDecorationType = vscode.window.createTextEditorDecorationType(
+        getDiffRemovedDecorationRenderOptions(),
+    );
+    NEURO.diffModifiedDecorationType = vscode.window.createTextEditorDecorationType(
+        getDiffModifiedDecorationRenderOptions(),
+    );
     NEURO.highlightDecorationType = vscode.window.createTextEditorDecorationType(getHighlightDecorationRenderOptions());
 
     // Set initial virtual cursor

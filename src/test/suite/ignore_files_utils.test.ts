@@ -47,16 +47,27 @@ suite('Ignore Files Utils Integration', function () {
         originalIgnoreFilesSetting = config.get<string[]>('access.ignoreFiles');
 
         await config.update('access.inheritFromIgnoreFiles', true, vscode.ConfigurationTarget.Workspace);
-        await config.update('access.ignoreFiles', [`test_files/${TEST_IGNORE_FILENAME}`], vscode.ConfigurationTarget.Workspace);
+        await config.update(
+            'access.ignoreFiles',
+            [`test_files/${TEST_IGNORE_FILENAME}`],
+            vscode.ConfigurationTarget.Workspace,
+        );
     });
 
     suiteTeardown(async function () {
         const config = vscode.workspace.getConfiguration('neuropilot');
-        await config.update('access.inheritFromIgnoreFiles', originalInheritSetting, vscode.ConfigurationTarget.Workspace);
+        await config.update(
+            'access.inheritFromIgnoreFiles',
+            originalInheritSetting,
+            vscode.ConfigurationTarget.Workspace,
+        );
         await config.update('access.ignoreFiles', originalIgnoreFilesSetting, vscode.ConfigurationTarget.Workspace);
 
         try {
-            await vscode.workspace.fs.delete(vscode.Uri.joinPath(workspaceUri, 'test_files'), { recursive: true, useTrash: false });
+            await vscode.workspace.fs.delete(vscode.Uri.joinPath(workspaceUri, 'test_files'), {
+                recursive: true,
+                useTrash: false,
+            });
         } catch {
             // ignore cleanup errors
         }
@@ -103,7 +114,11 @@ suite('Ignore Files Utils Integration', function () {
         assert.deepStrictEqual(visible, [visibleFile.fsPath], 'getVisibleFiles should return only visible paths');
 
         const fastVisible = await fastIsTheFilesVisible(baseDir, [visibleFile.fsPath, ignoredFile.fsPath]);
-        assert.deepStrictEqual(fastVisible, [visibleFile.fsPath], 'fastIsTheFilesVisible should return only visible paths');
+        assert.deepStrictEqual(
+            fastVisible,
+            [visibleFile.fsPath],
+            'fastIsTheFilesVisible should return only visible paths',
+        );
     });
 
     test('findIgnoredFile locates ignored entries recursively', async function () {
@@ -120,4 +135,3 @@ suite('Ignore Files Utils Integration', function () {
         assert.strictEqual(result, ignoredDir.fsPath, 'findIgnoredFile should return the ignored directory');
     });
 });
-

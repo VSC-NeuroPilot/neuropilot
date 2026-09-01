@@ -798,6 +798,12 @@
 	"sideEffects": [
 		"src/test/**"
 	],
+	"nano-staged": {
+		"*.{ts,tsx}": [
+			"pn lint --fix",
+			"pn fmt"
+		]
+	},
 	"scripts": {
 		"preinstall": "node ./scripts/check-malicious-packages.js",
 		"version:changesets": "changeset version --global-changelog",
@@ -806,7 +812,8 @@
 		"build": "pnpm types && pnpm vendor-codicons && node ./scripts/esbuild.mjs",
 		"compile": "cross-env NODE_ENV=0 pnpm build",
 		"package": "cross-env NODE_ENV=1 pnpm build",
-		"lint": "eslint --fix",
+		"lint": "oxlint",
+		"fmt": "oxfmt",
 		"test": "npm-run-all -s test:web test:desktop --continue-on-error",
 		"qa:test:clean": "node ./scripts/test-utils/run-all-clean.mjs",
 		"qa:test:summary": "node ./scripts/test-utils/parse-failures.mjs",
@@ -846,8 +853,6 @@
 		"test:desktop:vscode": "vscode-test --label desktopUnitTest"
 	},
 	"devDependencies": {
-		"@eslint/js": "^10.0.1",
-		"@stylistic/eslint-plugin": "^5.10.0",
 		"@types/glob-to-regexp": "^0.4.4",
 		"@types/json-schema": "^7.0.15",
 		"@types/mocha": "^10.0.10",
@@ -859,25 +864,23 @@
 		"@vscode/test-electron": "^3.1.0",
 		"@vscode/test-web": "^0.0.81",
 		"@vscode/vsce": "^3.9.2",
+		"ansis": "^4.3.1",
 		"baseline-browser-mapping": "^2.11.14",
-		"chalk": "^6.0.0",
 		"cross-env": "^10.1.0",
 		"esbuild": "^0.28.2",
 		"esbuild-plugin-polyfill-node": "^0.3.0",
-		"eslint": "^10.8.1",
-		"eslint-plugin-jsdoc": "^64.1.0",
-		"eslint-plugin-unicorn": "^73.0.0",
-		"glob": "^13.0.6",
-		"globals": "^17.11.0",
 		"husky": "^9.1.7",
 		"mocha": "^11.8.0",
-		"npm-run-all": "^4.1.5",
+		"nano-staged": "^1.0.2",
+		"npm-run-all2": "^9.0.2",
 		"ovsx": "^1.1.1",
+		"oxfmt": "^0.60.0",
+		"oxlint": "^1.80.0",
+		"oxlint-tsgolint": "^7.0.2001",
 		"playwright": "^1.62.1",
 		"ts-mockito": "^2.6.1",
 		"tsx": "^4.23.12",
 		"typescript": "npm:@typescript/typescript6@^6.0.2",
-		"typescript-eslint": "^8.67.0",
 		"yaml": "^2.9.0"
 	},
 	"dependencies": {

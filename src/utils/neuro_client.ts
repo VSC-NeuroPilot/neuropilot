@@ -29,11 +29,14 @@ export interface ActionForceParams {
      * If specified, execute all actions with the specified permission level instead of the current one.
      * If an object is provided, the keys are action names and the values are the permission levels to use for those actions.
      * If an action is not included in the object, it will not have its permission overridden.
-     * 
+     *
      * Note that at the moment, action forces will not be retried if the permission is {@link PermissionLevel.COPILOT}
      * or if the chosen action's handler is async.
      */
-    overridePermissions?: PermissionLevel.COPILOT | PermissionLevel.AUTOPILOT | Record<string, PermissionLevel.AUTOPILOT | PermissionLevel.COPILOT>;
+    overridePermissions?:
+        | PermissionLevel.COPILOT
+        | PermissionLevel.AUTOPILOT
+        | Record<string, PermissionLevel.AUTOPILOT | PermissionLevel.COPILOT>;
 }
 
 //#endregion
@@ -42,13 +45,13 @@ export interface ActionForceParams {
 
 /**
  * ActionHandler to use with constants for records of actions and their corresponding handlers.
- * 
+ *
  * You may optionally type the interface if you are sure the action will take a specific form.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface RCEAction<T extends JSONSchema7Object | undefined = any, E = any> extends Action {
-    /** 
-     * A human-friendly name for the action. If not provided, the action's name converted to Title Case will be used. 
+    /**
+     * A human-friendly name for the action. If not provided, the action's name converted to Title Case will be used.
      * @example Edit File
      * @example edit_file -> Edit File // if displayName isn't set
      */
@@ -57,12 +60,12 @@ export interface RCEAction<T extends JSONSchema7Object | undefined = any, E = an
      * An object that defines an array of functions to validate the action's "environment".
      * Validators run before requests/executions to ensure environment/input validity.
      */
-    validators?: RCEValidators<T, E>
+    validators?: RCEValidators<T, E>;
     /**
      * Cancellation events attached to the action that will be automatically set up.
      * Each cancellation event will be setup in parallel to each other.
      * If one cancellation event fires, the request is cancelled and all listeners will be disposed as soon as possible.
-     * 
+     *
      * Following VS Code's pattern, Disposables will not be awaited if async.
      * Returns from calling the `dispose()` function will not be used anywhere.
      */
@@ -70,26 +73,26 @@ export interface RCEAction<T extends JSONSchema7Object | undefined = any, E = an
     /**
      * A function that is used to preview the action's effects.
      * This function will be called while awaiting user approval, if the action is set to Copilot permission.
-     * 
+     *
      * The action must return a Disposable-like object. The disposable will not be awaited if async.
      * If your preview function does not require a dispose function to be called, return a no-op Disposable-like.
      * @example return { dispose: () => undefined } // for no-ops
      */
     preview?: (context: RCEContext<T, E>) => { dispose: () => unknown };
-    /** 
+    /**
      * The function to handle the action.
      * This function must be synchronous.
-     * 
+     *
      * An action result can be sent as either a synchronous result or asynchronous result, it will automatically be handled by RCE.
      * (see {@link RCEHandlerReturns})
      */
     handler: RCEHandler<T, E>;
-    /** 
-     * The function to generate a prompt for the action request (Copilot Mode). 
+    /**
+     * The function to generate a prompt for the action request (Copilot Mode).
      * The prompt should fit the phrasing scheme "Neuro wants to [prompt]".
-     * 
+     *
      * Only set this to `null` if the action is never intended to be used in Copilot mode.
-     * 
+     *
      * It is this way due to a potential new addition in Neuro API "v2". (not officially proposed)
      * More info (comment): https://github.com/VedalAI/neuro-game-sdk/discussions/58#discussioncomment-12938623
      */
@@ -104,14 +107,14 @@ export interface RCEAction<T extends JSONSchema7Object | undefined = any, E = an
     /**
      * Whether to automatically register the action with Neuro if all conditions are met.
      * Defaults to true.
-     * 
+     *
      * If `false`, the RCE system will never automatically register the action, and only automatically unregister if the user disables permission.
      * You need to call {@link registerAction} or {@link unregisterAction} manually.
-     * 
+     *
      * If `true`, the action will be automatically registered and unregistered based on the {@link RCEAction.registerCondition registerCondition} and current permission settings.
      * However, the conditions are not watched, so if the conditions change, the action may not be immediately registered or unregistered.
      * Call {@link reregisterAllActions} to update the registration.
-     * 
+     *
      * Note that certain events also call {@link reregisterAllActions}.
      */
     autoRegister?: boolean;
@@ -127,10 +130,10 @@ export interface RCEAction<T extends JSONSchema7Object | undefined = any, E = an
      * **This function must never throw.**
      */
     registerCondition?: () => boolean;
-    /** 
+    /**
      * Setup handlers that will be invoked to help setup the {@link RCEContext.storage} object.
      * These functions should not throw.
-     * 
+     *
      * These functions will be parallelised, so the same key should not be accessed from multiple functions.
      */
     contextSetupHook?: ((context: RCEContext<T, E>) => Thenable<void>)[];
@@ -138,22 +141,22 @@ export interface RCEAction<T extends JSONSchema7Object | undefined = any, E = an
 
 // apparently this JSDoc is really hard when trying to link to RCEAction.validators.async
 interface RCEValidators<T extends JSONSchema7Object | undefined, E> {
-    /** 
+    /**
      * Synchronous validators that will block execution of the rest of the thread.
      * As this delays the action result to Neuro, any thenables must resolve quickly so as to be effectively synchronous speed-wise.
-     * 
+     *
      * Tip: If you supply validators that ensure certain items are not nullable, you may be able to assert that they are a non-nullable value for:
-     * 
+     *
      * - {@link RCEValidators.async asynchronous validators},
      * - {@link RCEAction.promptGenerator generating the Copilot-mode prompt},
      * - {@link RCEAction.preview preview effects}, and/or
      * - {@link RCEAction.handler handling the action}.
      */
-    sync?: ((context: RCEContext<T, E>) => ActionValidationResult)[],
+    sync?: ((context: RCEContext<T, E>) => ActionValidationResult)[];
     /**
      * Asynchronous validators that will be ran in parallel to each other.
      * These will be executed after an action result, so it's perfect for long-running validators.
-     * 
+     *
      * Async validators will time out (and consequently fail) after 1 second (1000ms). It is planned that this value will be adjustable in the future.
      */
     async?: ((context: RCEContext<T, E>) => Thenable<ActionValidationResult>)[];
@@ -333,8 +336,15 @@ export function actionResultMissingParameter(parameterName: string): ActionValid
 /**
  * @deprecated Handled by the schema validator.
  */
-export function actionResultIncorrectType(parameterName: string, expectedType: string, actualType: string): ActionValidationResult {
-    logOutput('WARNING', `Action failed: "${parameterName}" must be of type "${expectedType}", but got "${actualType}".`);
+export function actionResultIncorrectType(
+    parameterName: string,
+    expectedType: string,
+    actualType: string,
+): ActionValidationResult {
+    logOutput(
+        'WARNING',
+        `Action failed: "${parameterName}" must be of type "${expectedType}", but got "${actualType}".`,
+    );
     return {
         success: false,
         message: `Action failed: "${parameterName}" must be of type "${expectedType}", but got "${actualType}".`,
@@ -371,7 +381,10 @@ export function contextNoAccess(path: string): string {
  * @deprecated Handled by the schema validator.
  */
 export function actionResultEnumFailure<T>(parameterName: string, validValues: T[], value: T): ActionValidationResult {
-    logOutput('WARNING', `Action failed: "${parameterName}" must be one of ${JSON.stringify(validValues)}, but got ${JSON.stringify(value)}.`);
+    logOutput(
+        'WARNING',
+        `Action failed: "${parameterName}" must be one of ${JSON.stringify(validValues)}, but got ${JSON.stringify(value)}.`,
+    );
     return {
         success: false,
         message: `Action failed: "${parameterName}" must be one of ${JSON.stringify(validValues)}, but got ${JSON.stringify(value)}.`,

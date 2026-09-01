@@ -29,11 +29,7 @@ import { reregisterAllActions } from '@/rce';
 import { addCompleteCodeAction } from '@/completions';
 
 export function activate(context: vscode.ExtensionContext) {
-    loadIgnoreFiles(
-        normalizePath(
-            getWorkspacePath() || '',
-        ) || '',
-    );
+    loadIgnoreFiles(normalizePath(getWorkspacePath() || '') || '');
 
     // Initialize common state
     initializeCommonState(context);
@@ -76,8 +72,12 @@ export function activate(context: vscode.ExtensionContext) {
     // Create cursor decoration (desktop-specific)
     NEURO.cursorDecorationType = vscode.window.createTextEditorDecorationType(getCursorDecorationRenderOptions());
     NEURO.diffAddedDecorationType = vscode.window.createTextEditorDecorationType(getDiffAddedDecorationRenderOptions());
-    NEURO.diffRemovedDecorationType = vscode.window.createTextEditorDecorationType(getDiffRemovedDecorationRenderOptions());
-    NEURO.diffModifiedDecorationType = vscode.window.createTextEditorDecorationType(getDiffModifiedDecorationRenderOptions());
+    NEURO.diffRemovedDecorationType = vscode.window.createTextEditorDecorationType(
+        getDiffRemovedDecorationRenderOptions(),
+    );
+    NEURO.diffModifiedDecorationType = vscode.window.createTextEditorDecorationType(
+        getDiffModifiedDecorationRenderOptions(),
+    );
     NEURO.highlightDecorationType = vscode.window.createTextEditorDecorationType(getHighlightDecorationRenderOptions());
 
     // Set initial virtual cursor
@@ -108,4 +108,3 @@ function addUnsupervisedActions() {
     addTaskActions();
     addTerminalActions();
 }
-

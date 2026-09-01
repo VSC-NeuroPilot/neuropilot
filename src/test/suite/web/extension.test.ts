@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 
 suite('Web Extension Tests', () => {
     test('Sanity Check', () => {
-        assert.strictEqual(9 + 10, 19, '9 + 10 shouldn\'t be 21, it should be 19!');
+        assert.strictEqual(9 + 10, 19, "9 + 10 shouldn't be 21, it should be 19!");
     });
 
     test('Extension activates', async () => {
@@ -18,7 +18,10 @@ suite('Web Extension Tests', () => {
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
         assert.ok(workspaceFolder, 'Workspace folder should be defined!');
         const acceptable = new Set(['test-playground', 'mount']);
-        assert.ok(acceptable.has(workspaceFolder.name), `Workspace name should be one of ${Array.from(acceptable).join(', ')}`);
+        assert.ok(
+            acceptable.has(workspaceFolder.name),
+            `Workspace name should be one of ${Array.from(acceptable).join(', ')}`,
+        );
     });
 
     // TODO: We also need a test to ensure that polyfilled modules (i.e. assert) are successfully bundled.

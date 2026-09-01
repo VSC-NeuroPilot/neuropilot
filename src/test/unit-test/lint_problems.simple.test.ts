@@ -6,7 +6,9 @@ import type { RCEContext } from '@/context/rce';
 suite('lint Actions', () => {
     test('get_file_lint_problems formats file', () => {
         // === Arrange & Act ===
-        const prompt = lintActions.get_file_lint_problems.promptGenerator({ data: { params: { file: 'src/a.ts' } } } as RCEContext);
+        const prompt = lintActions.get_file_lint_problems.promptGenerator({
+            data: { params: { file: 'src/a.ts' } },
+        } as RCEContext);
 
         // === Assert ===
         assert.ok(typeof prompt === 'string' && prompt.length > 0);
@@ -15,7 +17,9 @@ suite('lint Actions', () => {
 
     test('get_folder_lint_problems formats folder', () => {
         // === Arrange & Act ===
-        const prompt = lintActions.get_folder_lint_problems.promptGenerator({ data: { params: { folder: 'src' } } } as RCEContext);
+        const prompt = lintActions.get_folder_lint_problems.promptGenerator({
+            data: { params: { folder: 'src' } },
+        } as RCEContext);
 
         // === Assert ===
         assert.ok(typeof prompt === 'string' && prompt.length > 0);
@@ -30,5 +34,3 @@ suite('lint Actions', () => {
         assert.ok(typeof prompt === 'string' && prompt.length > 0);
     });
 });
-
-

@@ -6,7 +6,9 @@ import type { RCEContext } from '@/context/rce';
 suite('terminal Actions', () => {
     test('execute_in_terminal prompt formats command and shell', () => {
         // === Arrange & Act ===
-        const prompt = terminalActions.execute_in_terminal.promptGenerator({ data: { params: { command: 'echo hi', shell: 'bash' } } } as RCEContext);
+        const prompt = terminalActions.execute_in_terminal.promptGenerator({
+            data: { params: { command: 'echo hi', shell: 'bash' } },
+        } as RCEContext);
 
         // === Assert ===
         assert.ok(typeof prompt === 'string' && prompt.length > 0);
@@ -16,7 +18,9 @@ suite('terminal Actions', () => {
 
     test('kill_terminal_process prompt formats shell', () => {
         // === Arrange & Act ===
-        const prompt = terminalActions.kill_terminal_process.promptGenerator({ data: { params: { shell: 'pwsh' } } } as RCEContext);
+        const prompt = terminalActions.kill_terminal_process.promptGenerator({
+            data: { params: { shell: 'pwsh' } },
+        } as RCEContext);
 
         // === Assert ===
         assert.ok(typeof prompt === 'string' && prompt.length > 0);
@@ -31,5 +35,3 @@ suite('terminal Actions', () => {
         assert.ok(typeof prompt === 'string' && prompt.length > 0);
     });
 });
-
-

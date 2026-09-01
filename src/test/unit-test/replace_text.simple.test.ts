@@ -28,5 +28,3 @@ suite('replace_text Action', () => {
         assert.ok(prompt.includes('world'));
     });
 });
-
-

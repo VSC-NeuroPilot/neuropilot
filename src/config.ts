@@ -79,15 +79,8 @@ const DEPRECATED_SETTINGS: DeprecatedSetting[] = [
         old: 'currentlyAsNeuroAPI',
         new: 'connection.nameOfAPI',
     },
-    deprecatedPermission('openFiles', [
-        'get_workspace_files',
-        'open_file',
-        'read_file',
-    ]),
-    deprecatedPermission('create', [
-        'create_file',
-        'create_folder',
-    ]),
+    deprecatedPermission('openFiles', ['get_workspace_files', 'open_file', 'read_file']),
+    deprecatedPermission('create', ['create_file', 'create_folder']),
     deprecatedPermission('rename', ['rename_file_or_folder']),
     deprecatedPermission('delete', ['delete_file_or_folder']),
     deprecatedPermission('editActiveDocument', [
@@ -134,14 +127,8 @@ const DEPRECATED_SETTINGS: DeprecatedSetting[] = [
         'remove_git_remote',
         'rename_git_remote',
     ]),
-    deprecatedPermission('gitTags', [
-        'tag_head',
-        'delete_tag',
-    ]),
-    deprecatedPermission('gitConfigs', [
-        'set_git_config',
-        'get_git_config',
-    ]),
+    deprecatedPermission('gitTags', ['tag_head', 'delete_tag']),
+    deprecatedPermission('gitConfigs', ['set_git_config', 'get_git_config']),
     deprecatedPermission('gitRemotes', [
         'fetch_git_commits',
         'pull_git_commits',
@@ -150,11 +137,7 @@ const DEPRECATED_SETTINGS: DeprecatedSetting[] = [
         'remove_git_remote',
         'rename_git_remote',
     ]),
-    deprecatedPermission('editRemoteData', [
-        'add_git_remote',
-        'remove_git_remote',
-        'rename_git_remote',
-    ]),
+    deprecatedPermission('editRemoteData', ['add_git_remote', 'remove_git_remote', 'rename_git_remote']),
     deprecatedPermission('terminalAccess', [
         'execute_in_terminal',
         'kill_terminal_process',
@@ -165,11 +148,9 @@ const DEPRECATED_SETTINGS: DeprecatedSetting[] = [
         'get_folder_lint_problems',
         'get_workspace_lint_problems',
     ]),
-    deprecatedPermission('getUserSelection', [
-        'get_user_selection',
-        'replace_user_selection',
-    ]),
-    { // Must be AFTER all permissions settings
+    deprecatedPermission('getUserSelection', ['get_user_selection', 'replace_user_selection']),
+    {
+        // Must be AFTER all permissions settings
         old: 'actions.disabledActions',
         async new(target: vscode.ConfigurationTarget) {
             const cfg = vscode.workspace.getConfiguration('neuropilot');
@@ -202,8 +183,7 @@ function deprecatedPermission(oldKey: string, affectedActions: string[]): Deprec
             for (const action of affectedActions) {
                 // Take the lowest (most restrictive) permission level
                 let newLevel = configPermissionLevel;
-                if (action in permissions)
-                    newLevel = Math.min(newLevel, stringToPermissionLevel(permissions[action]));
+                if (action in permissions) newLevel = Math.min(newLevel, stringToPermissionLevel(permissions[action]));
                 permissions[action] = permissionLevelToString(newLevel);
                 logOutput('INFO', `Migrated permission for action "${action}" to level ${newLevel}`);
             }
@@ -238,7 +218,10 @@ function deprecatedAction(oldAction: string, newAction: string): DeprecatedSetti
                 permissions[newAction] = permissionLevel;
                 delete permissions[oldAction];
                 await cfg.update('actionPermissions', permissions, target);
-                logOutput('INFO', `Migrated action "${oldAction}" to "${newAction}" with permission level "${permissionLevel}"`);
+                logOutput(
+                    'INFO',
+                    `Migrated action "${oldAction}" to "${newAction}" with permission level "${permissionLevel}"`,
+                );
             }
         },
     };
@@ -289,10 +272,16 @@ export async function checkDeprecatedSettings(version: string) {
                 targetValueMap.set(vscode.ConfigurationTarget.Global, permissionsInspection.globalValue[actionName]);
             }
             if (permissionsInspection?.workspaceValue?.[actionName] !== undefined) {
-                targetValueMap.set(vscode.ConfigurationTarget.Workspace, permissionsInspection.workspaceValue[actionName]);
+                targetValueMap.set(
+                    vscode.ConfigurationTarget.Workspace,
+                    permissionsInspection.workspaceValue[actionName],
+                );
             }
             if (permissionsInspection?.workspaceFolderValue?.[actionName] !== undefined) {
-                targetValueMap.set(vscode.ConfigurationTarget.WorkspaceFolder, permissionsInspection.workspaceFolderValue[actionName]);
+                targetValueMap.set(
+                    vscode.ConfigurationTarget.WorkspaceFolder,
+                    permissionsInspection.workspaceFolderValue[actionName],
+                );
             }
         } else {
             // Normal handling for top-level settings
@@ -340,13 +329,16 @@ export async function checkDeprecatedSettings(version: string) {
             targetNames.push('Workspace Folder');
         }
 
-        const targetList = targetNames.length === 1
-            ? targetNames[0]
-            : targetNames.slice(0, -1).join(', ') + ', and ' + targetNames[targetNames.length - 1];
+        const targetList =
+            targetNames.length === 1
+                ? targetNames[0]
+                : targetNames.slice(0, -1).join(', ') + ', and ' + targetNames[targetNames.length - 1];
 
         const notif = await vscode.window.showInformationMessage(
             `You have ${totalConfigs} deprecated configuration${totalConfigs === 1 ? '' : 's'} in your ${targetList} setting${targetNames.length === 1 ? '' : 's'}. Would you like to migrate them?`,
-            'Yes', 'No', 'Don\'t show again for this update',
+            'Yes',
+            'No',
+            "Don't show again for this update",
         );
 
         if (notif) {
@@ -390,18 +382,23 @@ export async function checkDeprecatedSettings(version: string) {
                             }
                         } catch (erm) {
                             logOutput('ERROR', `Failed to migrate setting "${key}": ${erm}`);
-                            vscode.window.showErrorMessage(`Failed to migrate setting "${key}". See output for details.`);
+                            vscode.window.showErrorMessage(
+                                `Failed to migrate setting "${key}". See output for details.`,
+                            );
                         }
                     }
                     vscode.window.showInformationMessage('Configuration migration completed successfully.');
                     break;
                 case 'No':
                     break;
-                case 'Don\'t show again for this update':
+                case "Don't show again for this update":
                     if (NEURO.context) {
                         NEURO.context.globalState.update('no-migration', version);
                     } else {
-                        logOutput('ERROR', 'Couldn\'t save no-migration preference to memento, most likely because of a missing extension context.');
+                        logOutput(
+                            'ERROR',
+                            "Couldn't save no-migration preference to memento, most likely because of a missing extension context.",
+                        );
                     }
                     break;
             }
@@ -505,10 +502,12 @@ export function getPermissionLevel(actionName: string): PermissionLevel {
         return PermissionLevel.OFF;
     }
     if (NEURO.currentActionForce?.overridePermissions !== undefined) {
-        if (typeof NEURO.currentActionForce.overridePermissions === 'object' && actionName in NEURO.currentActionForce.overridePermissions) {
+        if (
+            typeof NEURO.currentActionForce.overridePermissions === 'object' &&
+            actionName in NEURO.currentActionForce.overridePermissions
+        ) {
             return NEURO.currentActionForce.overridePermissions[actionName];
-        }
-        else {
+        } else {
             // Can't be anything other than PermissionLevel, as the object case is handled above
             return NEURO.currentActionForce.overridePermissions as PermissionLevel;
         }
@@ -516,8 +515,7 @@ export function getPermissionLevel(actionName: string): PermissionLevel {
     const permissions = getAllPermissions();
     const permission = permissions[actionName];
 
-    if (permission !== undefined)
-        return permission;
+    if (permission !== undefined) return permission;
     return getAction(actionName)?.defaultPermission ?? PermissionLevel.OFF;
 }
 
@@ -528,86 +526,176 @@ export function getPermissionLevel(actionName: string): PermissionLevel {
  * @param permissions The permissions to set. Will be merged with the current workspace settings.
  * @param target The configuration target to set the permissions on. Defaults to Workspace.
  */
-export function setPermissions(permissions: Record<string, PermissionLevel>, target: vscode.ConfigurationTarget = vscode.ConfigurationTarget.Workspace): Thenable<void> {
+export function setPermissions(
+    permissions: Record<string, PermissionLevel>,
+    target: vscode.ConfigurationTarget = vscode.ConfigurationTarget.Workspace,
+): Thenable<void> {
     const configuration = vscode.workspace.getConfiguration('neuropilot');
     const inspected = configuration.inspect<Record<string, string>>('actionPermissions');
     const currentScopeValue =
-        target === vscode.ConfigurationTarget.Global ? inspected?.globalValue ?? {} :
-        target === vscode.ConfigurationTarget.Workspace ? inspected?.workspaceValue ?? {} :
-        inspected?.workspaceFolderValue ?? {};
+        target === vscode.ConfigurationTarget.Global
+            ? (inspected?.globalValue ?? {})
+            : target === vscode.ConfigurationTarget.Workspace
+              ? (inspected?.workspaceValue ?? {})
+              : (inspected?.workspaceFolderValue ?? {});
     const stringPermissions: Record<string, string> = {};
     for (const key in permissions) {
         stringPermissions[key] = permissionLevelToString(permissions[key]);
     }
-    const mergedPermissions: Record<string, string> = { ...currentScopeValue, ...stringPermissions };
+    const mergedPermissions: Record<string, string> = {
+        ...currentScopeValue,
+        ...stringPermissions,
+    };
     return configuration.update('actionPermissions', mergedPermissions, target);
 }
 
-export function setPermissionLevel(actionName: string, level: PermissionLevel, target: vscode.ConfigurationTarget = vscode.ConfigurationTarget.Workspace): Thenable<void> {
+export function setPermissionLevel(
+    actionName: string,
+    level: PermissionLevel,
+    target: vscode.ConfigurationTarget = vscode.ConfigurationTarget.Workspace,
+): Thenable<void> {
     return setPermissions({ [actionName]: level }, target);
 }
 
 class Config {
-    get beforeContext(): number { return getConfig('beforeContext')!; }
-    get afterContext(): number { return getConfig('afterContext')!; }
-    get maxCompletions(): number { return getConfig('maxCompletions')!; }
-    get completionTrigger(): string { return getConfig('completionTrigger')!; }
-    get timeout(): number { return getConfig('timeout')!; }
-    get showTimeOnTerminalStart(): boolean { return getConfig('showTimeOnTerminalStart')!; }
-    get terminalContextDelay(): number { return getConfig('terminalContextDelay')!; }
-    get sendNewLintingProblemsOn(): string { return getConfig('sendNewLintingProblemsOn')!; }
-    get sendSaveNotifications(): boolean { return getConfig('sendSaveNotifications')!; }
-    get requestExpiryTimeout(): number { return getConfig('requestExpiryTimeout')!; }
-    get cursorFollowsNeuro(): boolean { return getConfig('cursorFollowsNeuro')!; }
-    get docsURL(): string { return getConfig('docsURL')!; }
-    get defaultOpenDocsWindow(): string { return getConfig('defaultOpenDocsWindow')!; }
-    get sendContentsOnFileChange(): boolean { return getConfig('sendContentsOnFileChange')!; }
-    get cursorPositionContextStyle(): CursorPositionContextStyle { return getConfig('cursorPositionContextStyle')!; }
-    get lineNumberContextFormat(): string { return getConfig('lineNumberContextFormat')!; }
+    get beforeContext(): number {
+        return getConfig('beforeContext')!;
+    }
+    get afterContext(): number {
+        return getConfig('afterContext')!;
+    }
+    get maxCompletions(): number {
+        return getConfig('maxCompletions')!;
+    }
+    get completionTrigger(): string {
+        return getConfig('completionTrigger')!;
+    }
+    get timeout(): number {
+        return getConfig('timeout')!;
+    }
+    get showTimeOnTerminalStart(): boolean {
+        return getConfig('showTimeOnTerminalStart')!;
+    }
+    get terminalContextDelay(): number {
+        return getConfig('terminalContextDelay')!;
+    }
+    get sendNewLintingProblemsOn(): string {
+        return getConfig('sendNewLintingProblemsOn')!;
+    }
+    get sendSaveNotifications(): boolean {
+        return getConfig('sendSaveNotifications')!;
+    }
+    get requestExpiryTimeout(): number {
+        return getConfig('requestExpiryTimeout')!;
+    }
+    get cursorFollowsNeuro(): boolean {
+        return getConfig('cursorFollowsNeuro')!;
+    }
+    get docsURL(): string {
+        return getConfig('docsURL')!;
+    }
+    get defaultOpenDocsWindow(): string {
+        return getConfig('defaultOpenDocsWindow')!;
+    }
+    get sendContentsOnFileChange(): boolean {
+        return getConfig('sendContentsOnFileChange')!;
+    }
+    get cursorPositionContextStyle(): CursorPositionContextStyle {
+        return getConfig('cursorPositionContextStyle')!;
+    }
+    get lineNumberContextFormat(): string {
+        return getConfig('lineNumberContextFormat')!;
+    }
 
-    get terminals(): { name: string; path: string; args?: string[]; }[] { return getConfig('terminals')!; }
+    get terminals(): { name: string; path: string; args?: string[] }[] {
+        return getConfig('terminals')!;
+    }
 }
 
 export const CONFIG = /* @__PURE__ */ new Config();
 
 class Access {
-    get includePattern(): string[] { return getAccess<string[]>('includePattern')!; }
-    get excludePattern(): string[] { return getAccess<string[]>('excludePattern')!; }
-    get dotFiles(): boolean { return getAccess<boolean>('dotFiles')!; }
-    get externalFiles(): boolean { return getAccess<boolean>('externalFiles')!; }
-    get environmentVariables(): boolean { return getAccess<boolean>('environmentVariables')!; }
-    get inheritFromIgnoreFiles(): boolean { return getAccess<boolean>('inheritFromIgnoreFiles')!; }
-    get ignoreFiles(): string[] { return getAccess<string[]>('ignoreFiles')!; }
-    get suppressIgnoreWarning(): boolean { return getAccess<boolean>('suppressIgnoreWarning')!; }
+    get includePattern(): string[] {
+        return getAccess<string[]>('includePattern')!;
+    }
+    get excludePattern(): string[] {
+        return getAccess<string[]>('excludePattern')!;
+    }
+    get dotFiles(): boolean {
+        return getAccess<boolean>('dotFiles')!;
+    }
+    get externalFiles(): boolean {
+        return getAccess<boolean>('externalFiles')!;
+    }
+    get environmentVariables(): boolean {
+        return getAccess<boolean>('environmentVariables')!;
+    }
+    get inheritFromIgnoreFiles(): boolean {
+        return getAccess<boolean>('inheritFromIgnoreFiles')!;
+    }
+    get ignoreFiles(): string[] {
+        return getAccess<string[]>('ignoreFiles')!;
+    }
+    get suppressIgnoreWarning(): boolean {
+        return getAccess<boolean>('suppressIgnoreWarning')!;
+    }
 }
 
 export const ACCESS = /* @__PURE__ */ new Access();
 
 class Connection {
-    get websocketUrl(): string { return getConnection<string>('websocketUrl')!; }
-    get gameName(): string { return getConnection<string>('gameName')!; }
-    get initialContext(): string { return getConnection<string>('initialContext')!; }
-    get autoConnect(): boolean { return getConnection<boolean>('autoConnect')!; }
-    get retryInterval(): number { return getConnection<number>('retryInterval')!; }
-    get retryAmount(): number { return getConnection<number>('retryAmount')!; }
-    get userName(): string { return getConnection<string>('userName')!; }
-    get nameOfAPI(): string { return getConnection<string>('nameOfAPI')!; }
+    get websocketUrl(): string {
+        return getConnection<string>('websocketUrl')!;
+    }
+    get gameName(): string {
+        return getConnection<string>('gameName')!;
+    }
+    get initialContext(): string {
+        return getConnection<string>('initialContext')!;
+    }
+    get autoConnect(): boolean {
+        return getConnection<boolean>('autoConnect')!;
+    }
+    get retryInterval(): number {
+        return getConnection<number>('retryInterval')!;
+    }
+    get retryAmount(): number {
+        return getConnection<number>('retryAmount')!;
+    }
+    get userName(): string {
+        return getConnection<string>('userName')!;
+    }
+    get nameOfAPI(): string {
+        return getConnection<string>('nameOfAPI')!;
+    }
 }
 
 export const CONNECTION = /* @__PURE__ */ new Connection();
 
 class Actions {
-    get hideCopilotRequests(): boolean { return getActions<boolean>('hideCopilotRequests')!; }
-    get allowRunningAllTasks(): boolean { return getActions<boolean>('allowRunningAllTasks')!; }
-    get enableCancelEvents(): boolean { return getActions<boolean>('enableCancelEvents')!; }
-    get disablePreviewEffects(): boolean { return getActions<boolean>('disablePreviewEffects')!; }
-    get experimentalSchemas(): boolean { return getActions<boolean>('experimentalSchemas')!; }
+    get hideCopilotRequests(): boolean {
+        return getActions<boolean>('hideCopilotRequests')!;
+    }
+    get allowRunningAllTasks(): boolean {
+        return getActions<boolean>('allowRunningAllTasks')!;
+    }
+    get enableCancelEvents(): boolean {
+        return getActions<boolean>('enableCancelEvents')!;
+    }
+    get disablePreviewEffects(): boolean {
+        return getActions<boolean>('disablePreviewEffects')!;
+    }
+    get experimentalSchemas(): boolean {
+        return getActions<boolean>('experimentalSchemas')!;
+    }
 }
 
 export const ACTIONS = /* @__PURE__ */ new Actions();
 
 class Cosmetic {
-    get celebrations(): boolean { return getCosmetic('celebrations')!; }
+    get celebrations(): boolean {
+        return getCosmetic('celebrations')!;
+    }
 }
 
 export const COSMETIC = /* @__PURE__ */ new Cosmetic();

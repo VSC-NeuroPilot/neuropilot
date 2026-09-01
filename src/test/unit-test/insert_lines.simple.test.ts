@@ -27,5 +27,3 @@ suite('insert_lines Action', () => {
         assert.ok(prompt.includes('7'));
     });
 });
-
-

@@ -4,7 +4,7 @@ import { CONFIG } from '@/config';
 
 // Shared docs management
 export const docsOptions: Record<string, string> = {
-    'NeuroPilot': CONFIG.docsURL,
+    NeuroPilot: CONFIG.docsURL,
     'NeuroPilot (Local Dev Default)': 'http://127.0.0.1:4321/docs',
 };
 let docsItems: string[] = Object.keys(docsOptions);
@@ -87,12 +87,12 @@ export async function openDocsOnTarget(selectedOption: string, baseUrl: string, 
             } else {
                 logOutput('ERROR', 'Unknown target option supplied for opening docs.');
                 return;
-            };
+            }
             windowPanel.hide();
         });
         windowPanel.show();
-    }
-    else if (CONFIG.defaultOpenDocsWindow === 'alwaysBrowser') vscode.env.openExternal(await vscode.env.asExternalUri(vscode.Uri.parse(baseUrl, true)));
+    } else if (CONFIG.defaultOpenDocsWindow === 'alwaysBrowser')
+        vscode.env.openExternal(await vscode.env.asExternalUri(vscode.Uri.parse(baseUrl, true)));
     else if (CONFIG.defaultOpenDocsWindow === 'alwaysWebView') openDocsPanel(selectedOption, baseUrl, subpage);
 }
 
@@ -121,46 +121,49 @@ export function registerDocsCommands() {
         quickPick.show();
     });
 
-    const openSpecificDocsCommand = vscode.commands.registerCommand('neuropilot.openSpecificDocsPage', async (args?: { subpage?: string }) => {
-        const quickPick = vscode.window.createQuickPick();
-        quickPick.items = docsItems.map(key => ({ label: key }));
-        quickPick.placeholder = 'Select a documentation base URL';
+    const openSpecificDocsCommand = vscode.commands.registerCommand(
+        'neuropilot.openSpecificDocsPage',
+        async (args?: { subpage?: string }) => {
+            const quickPick = vscode.window.createQuickPick();
+            quickPick.items = docsItems.map(key => ({ label: key }));
+            quickPick.placeholder = 'Select a documentation base URL';
 
-        quickPick.onDidAccept(async () => {
-            const selectedOption = quickPick.selectedItems[0].label;
-            if (!selectedOption) {
-                vscode.window.showErrorMessage('No documentation option selected.');
+            quickPick.onDidAccept(async () => {
+                const selectedOption = quickPick.selectedItems[0].label;
+                if (!selectedOption) {
+                    vscode.window.showErrorMessage('No documentation option selected.');
+                    quickPick.hide();
+                    return;
+                }
+
+                const baseUrl = docsOptions[selectedOption];
+
+                let subpage: string | undefined;
+                if (args && typeof args.subpage === 'string') {
+                    subpage = args.subpage;
+                } else {
+                    subpage = await vscode.window.showInputBox({
+                        prompt: 'Enter the docs subpath (e.g., /guide, /api, etc.)',
+                        placeHolder: '/',
+                    });
+                }
+
+                if (!subpage) {
+                    vscode.window.showErrorMessage('No subpage specified.');
+                    quickPick.hide();
+                    return;
+                }
+
+                logOutput('DEBUG', `Opening ${selectedOption}'s docs at URL ${baseUrl}${subpage}`);
+
+                await openDocsOnTarget(selectedOption, baseUrl, subpage);
+
                 quickPick.hide();
-                return;
-            }
+            });
 
-            const baseUrl = docsOptions[selectedOption];
-
-            let subpage: string | undefined;
-            if (args && typeof args.subpage === 'string') {
-                subpage = args.subpage;
-            } else {
-                subpage = await vscode.window.showInputBox({
-                    prompt: 'Enter the docs subpath (e.g., /guide, /api, etc.)',
-                    placeHolder: '/',
-                });
-            }
-
-            if (!subpage) {
-                vscode.window.showErrorMessage('No subpage specified.');
-                quickPick.hide();
-                return;
-            }
-
-            logOutput('DEBUG', `Opening ${selectedOption}'s docs at URL ${baseUrl}${subpage}`);
-
-            await openDocsOnTarget(selectedOption, baseUrl, subpage);
-
-            quickPick.hide();
-        });
-
-        quickPick.show();
-    });
+            quickPick.show();
+        },
+    );
 
     return [showDocsCommand, openSpecificDocsCommand];
 }

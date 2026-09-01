@@ -1,8 +1,34 @@
 import * as vscode from 'vscode';
 
 import { EXCEPTION_THROWN_STRING, NEURO, PROMISE_REJECTION_STRING } from '@/constants';
-import { filterFileContents, formatContext, getFence, getPositionContext, getProperty, getVirtualCursor, getWorkspacePath, getWorkspaceUri, isBinary, isPathNeuroSafe, logOutput, NeuroPositionContext, normalizePath, notifyOnCaughtException, simpleFileName, stripTailSlashes } from '@/utils/misc';
-import { RCEAction, actionValidationFailure, actionValidationAccept, ActionValidationResult, actionValidationRetry, RCEHandlerReturns, actionHandlerSuccess, actionHandlerFailure } from '@/utils/neuro_client';
+import {
+    filterFileContents,
+    formatContext,
+    getFence,
+    getPositionContext,
+    getProperty,
+    getVirtualCursor,
+    getWorkspacePath,
+    getWorkspaceUri,
+    isBinary,
+    isPathNeuroSafe,
+    logOutput,
+    NeuroPositionContext,
+    normalizePath,
+    notifyOnCaughtException,
+    simpleFileName,
+    stripTailSlashes,
+} from '@/utils/misc';
+import {
+    RCEAction,
+    actionValidationFailure,
+    actionValidationAccept,
+    ActionValidationResult,
+    actionValidationRetry,
+    RCEHandlerReturns,
+    actionHandlerSuccess,
+    actionHandlerFailure,
+} from '@/utils/neuro_client';
 import { CONFIG, PermissionLevel, getPermissionLevel } from '@/config';
 import { targetedFileCreatedEvent, targetedFileDeletedEvent } from '@events/files';
 import { RCECancelEvent } from '@events/utils';
@@ -34,7 +60,7 @@ const ACTION_FAIL_NOTES = {
 async function validatePath(path: string, shouldExist: boolean, pathType: string): Promise<ActionValidationResult> {
     if (path === '') {
         return actionValidationRetry('No file path specified.', ACTION_FAIL_NOTES.noFilePath);
-    };
+    }
     const relativePath = normalizePath(path).replace(/^\/|\/$/g, '');
     const absolutePath = (getWorkspacePath() ?? '') + '/' + relativePath;
     if (!isPathNeuroSafe(absolutePath)) {
@@ -47,13 +73,19 @@ async function validatePath(path: string, shouldExist: boolean, pathType: string
 
     const doesExist = await getUriExistence(vscode.Uri.joinPath(base, relativePath));
     if (!shouldExist && doesExist) {
-        return actionValidationFailure(`${pathType} "${path}" already exists.`, ACTION_FAIL_NOTES.alreadyExists.replace('path', pathType));
+        return actionValidationFailure(
+            `${pathType} "${path}" already exists.`,
+            ACTION_FAIL_NOTES.alreadyExists.replace('path', pathType),
+        );
     } else if (shouldExist && !doesExist) {
-        return actionValidationFailure(`${pathType} "${path}" doesn't exist.`, ACTION_FAIL_NOTES.doesntExist.replace('path', pathType));
+        return actionValidationFailure(
+            `${pathType} "${path}" doesn't exist.`,
+            ACTION_FAIL_NOTES.doesntExist.replace('path', pathType),
+        );
     }
 
     return actionValidationAccept();
-};
+}
 
 async function getUriExistence(uri: vscode.Uri): Promise<boolean> {
     try {
@@ -66,7 +98,7 @@ async function getUriExistence(uri: vscode.Uri): Promise<boolean> {
 }
 
 function neuroSafeValidation(shouldExist = false) {
-    return async ({ data: actionData}: RCEContext): Promise<ActionValidationResult> => {
+    return async ({ data: actionData }: RCEContext): Promise<ActionValidationResult> => {
         let result: ActionValidationResult = actionValidationAccept();
         if (actionData.params?.filePath) {
             result = await validatePath(actionData.params.filePath, shouldExist, 'file');
@@ -88,9 +120,15 @@ async function neuroSafeDeleteValidation(context: RCEContext): Promise<ActionVal
     const relative = normalizePath(actionData.params.path).replace(/^\/|\/$/g, '');
     const stat = await vscode.workspace.fs.stat(vscode.Uri.joinPath(base, relative));
     if (stat.type === vscode.FileType.File && actionData.params.recursive)
-        return actionValidationFailure(`Cannot delete file ${actionData.params.path} with recursive.`, ACTION_FAIL_NOTES.targetedFile + ', but recursive was true');
+        return actionValidationFailure(
+            `Cannot delete file ${actionData.params.path} with recursive.`,
+            ACTION_FAIL_NOTES.targetedFile + ', but recursive was true',
+        );
     else if (stat.type === vscode.FileType.Directory && !actionData.params.recursive)
-        return actionValidationFailure(`Cannot delete directory ${actionData.params.path} without recursive.`, ACTION_FAIL_NOTES.targetedFolder + ', but recursive was false');
+        return actionValidationFailure(
+            `Cannot delete directory ${actionData.params.path} without recursive.`,
+            ACTION_FAIL_NOTES.targetedFolder + ', but recursive was false',
+        );
 
     return actionValidationAccept();
 }
@@ -101,12 +139,12 @@ async function neuroSafeRenameValidation(context: RCEContext): Promise<ActionVal
     if (!check.success) {
         check.historyNote = check.historyNote!.replace('Targeted', 'Old').replace('targeted', 'old');
         return check;
-    };
+    }
     check = await validatePath(actionData.params.newPath, false, 'directory');
     if (!check.success) {
         check.historyNote = check.historyNote!.replace('Targeted', 'New').replace('targeted', 'new');
         return check;
-    };
+    }
 
     return actionValidationAccept();
 }
@@ -123,8 +161,7 @@ async function binaryFileValidation(context: RCEContext): Promise<ActionValidati
 
     const workspaceUri = getWorkspaceUri();
 
-    if (!workspaceUri)
-        return actionValidationFailure('You are not in a workspace.', ACTION_FAIL_NOTES.noWorkspace);
+    if (!workspaceUri) return actionValidationFailure('You are not in a workspace.', ACTION_FAIL_NOTES.noWorkspace);
 
     const absolutePath = normalizePath(workspaceUri.fsPath + '/' + relativePath.replace(/^\/|\/$/g, ''));
     const uri = workspaceUri.with({ path: absolutePath });
@@ -133,7 +170,10 @@ async function binaryFileValidation(context: RCEContext): Promise<ActionValidati
     try {
         stat = await vscode.workspace.fs.stat(uri);
     } catch {
-        return actionValidationFailure('Specified file does not exist.', ACTION_FAIL_NOTES.doesntExist.replace('directory', 'file'));
+        return actionValidationFailure(
+            'Specified file does not exist.',
+            ACTION_FAIL_NOTES.doesntExist.replace('directory', 'file'),
+        );
     }
 
     // Fail if it is a directory
@@ -155,8 +195,7 @@ async function binaryFileValidation(context: RCEContext): Promise<ActionValidati
 async function validateIsAFile(context: RCEContext): Promise<ActionValidationResult> {
     const actionData = context.data;
     const filePath = actionData.params?.filePath;
-    if (!filePath)
-        return actionValidationRetry('No file path specified.', ACTION_FAIL_NOTES.noFilePath);
+    if (!filePath) return actionValidationRetry('No file path specified.', ACTION_FAIL_NOTES.noFilePath);
 
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
     if (!workspaceFolder)
@@ -164,8 +203,7 @@ async function validateIsAFile(context: RCEContext): Promise<ActionValidationRes
 
     const normalizedPath = normalizePath(filePath).replace(/^\/|\/$/g, '');
     const segments = normalizedPath.split('/').filter(Boolean);
-    if (segments.length === 0)
-        return actionValidationRetry('No file path specified.', ACTION_FAIL_NOTES.noFilePath);
+    if (segments.length === 0) return actionValidationRetry('No file path specified.', ACTION_FAIL_NOTES.noFilePath);
     const fullPath = vscode.Uri.joinPath(workspaceFolder.uri, ...segments);
 
     try {
@@ -175,8 +213,7 @@ async function validateIsAFile(context: RCEContext): Promise<ActionValidationRes
 
         if (isDirectory)
             return actionValidationFailure(`${filePath} is a directory, not a file.`, ACTION_FAIL_NOTES.targetedFolder);
-        if (!isFile)
-            return actionValidationFailure(`${filePath} is not a file.`, ACTION_FAIL_NOTES.targetedFolder);
+        if (!isFile) return actionValidationFailure(`${filePath} is not a file.`, ACTION_FAIL_NOTES.targetedFolder);
     } catch (erm: unknown) {
         if (erm instanceof vscode.FileSystemError && erm.code === 'FileNotFound')
             return actionValidationFailure(`${filePath} does not exist.`, ACTION_FAIL_NOTES.doesntExist);
@@ -204,17 +241,20 @@ function validateNotTreatingFileAsFolder(key: string) {
             return actionValidationFailure('You are not in an open workspace.', ACTION_FAIL_NOTES.noWorkspace);
         const normalizedPath = normalizePath(path).replace(/^\/|\/$/g, '');
         const segments = normalizedPath.split('/').filter(Boolean);
-        if (segments.length === 0)
-            return actionValidationRetry('No path specified.', ACTION_FAIL_NOTES.noFilePath);
+        if (segments.length === 0) return actionValidationRetry('No path specified.', ACTION_FAIL_NOTES.noFilePath);
         for (const segment of segments.slice(0, -1)) {
-            const fullPath = vscode.Uri.joinPath(workspaceFolder.uri, ...segments.slice(0, segments.indexOf(segment) + 1));
+            const fullPath = vscode.Uri.joinPath(
+                workspaceFolder.uri,
+                ...segments.slice(0, segments.indexOf(segment) + 1),
+            );
             try {
                 const stat = await vscode.workspace.fs.stat(fullPath);
                 const isDirectory = (stat.type & vscode.FileType.Directory) === vscode.FileType.Directory;
                 if (!isDirectory) {
                     return actionValidationFailure(
                         `${segments.slice(0, segments.indexOf(segment) + 1).join('/')} is not a directory.`,
-                        segments.slice(0, segments.indexOf(segment) + 1).join('/') + ' is a file, but was specified as a directory.',
+                        segments.slice(0, segments.indexOf(segment) + 1).join('/') +
+                            ' is a file, but was specified as a directory.',
                     );
                 }
             } catch {
@@ -231,9 +271,9 @@ function validateIllegalCharacters(key: string, illegalChars: string[]) {
         if (prop === undefined) {
             return actionValidationAccept();
         }
-        if (illegalChars.some((char) => prop.includes(char))) {
+        if (illegalChars.some(char => prop.includes(char))) {
             return actionValidationFailure(
-                `${key} contains illegal characters: ${illegalChars.filter((char) => prop.includes(char)).join(' ')}`,
+                `${key} contains illegal characters: ${illegalChars.filter(char => prop.includes(char)).join(' ')}`,
                 'Illegal characters in property.',
             );
         }
@@ -249,12 +289,20 @@ const commonFileEvents: ((context: RCEContext) => RCECancelEvent | null)[] = [
 export const fileActions = {
     list_files_and_folders: {
         name: 'list_files_and_folders',
-        description: 'Get a list of files in the workspace. Will not return subdirectories by default, use `recursive` to do so.',
+        description:
+            'Get a list of files in the workspace. Will not return subdirectories by default, use `recursive` to do so.',
         schema: {
             type: 'object',
             properties: {
-                folder: { type: 'string', description: 'If you want to view only a subfolder\'s contents, specify a subfolder in this property. If not specified, defaults to the workspace root.' },
-                recursive: { type: 'boolean', description: 'Set this to `true` if you want to view all subfolders\' contents as well.' },
+                folder: {
+                    type: 'string',
+                    description:
+                        "If you want to view only a subfolder's contents, specify a subfolder in this property. If not specified, defaults to the workspace root.",
+                },
+                recursive: {
+                    type: 'boolean',
+                    description: "Set this to `true` if you want to view all subfolders' contents as well.",
+                },
             },
             additionalProperties: false,
         },
@@ -268,9 +316,7 @@ export const fileActions = {
 
             const folder = context.data.params?.folder;
             const recursive = context.data.params?.recursive ?? false;
-            const folderUri = folder
-                ? vscode.Uri.joinPath(workspaceUri, folder)
-                : workspaceUri;
+            const folderUri = folder ? vscode.Uri.joinPath(workspaceUri, folder) : workspaceUri;
 
             let disposed = false;
             const disposables: vscode.Disposable[] = [];
@@ -278,19 +324,21 @@ export const fileActions = {
             if (!recursive) {
                 // Get all items in the folder and mark them individually
                 vscode.workspace.fs.readDirectory(folderUri).then(
-                    (items) => {
+                    items => {
                         if (disposed) return; // Prevent marking after dispose
                         const uris = items
                             .map(([name, _type]) => vscode.Uri.joinPath(folderUri, name))
                             .filter(uri => isPathNeuroSafe(uri.fsPath));
-                        disposables.push(filePreviewProvider.mark(uris, 'see this file\'s existence', false, true));
+                        disposables.push(filePreviewProvider.mark(uris, "see this file's existence", false, true));
                         // Also mark the directory itself
                         disposables.push(filePreviewProvider.mark([folderUri], 'list this directory', false, true));
                     },
                     () => {
                         if (disposed) return; // Prevent marking after dispose
                         // If we can't read the directory, just mark the folder itself
-                        disposables.push(filePreviewProvider.mark([folderUri], 'see this folder\'s existence', false, true));
+                        disposables.push(
+                            filePreviewProvider.mark([folderUri], "see this folder's existence", false, true),
+                        );
                     },
                 );
             } else {
@@ -308,21 +356,26 @@ export const fileActions = {
             };
         },
         validators: {
-            async: [async (context: RCEContext) => {
-                const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-                if (workspaceFolder === undefined)
-                    return actionValidationFailure('No open workspace to get files from.');
-                let folder = context.data.params?.folder as string;
-                if (folder) {
-                    folder = stripTailSlashes(folder);
-                    const relativeFolderPath = normalizePath(folder);
-                    const pathValidated = await validatePath(relativeFolderPath, true, 'folder');
-                    if (!pathValidated.success) return pathValidated;
-                    const stat = await vscode.workspace.fs.stat(vscode.Uri.joinPath(workspaceFolder.uri, relativeFolderPath));
-                    if (stat.type !== vscode.FileType.Directory) return actionValidationFailure('The specified path is not a directory.');
-                }
-                return actionValidationAccept();
-            }],
+            async: [
+                async (context: RCEContext) => {
+                    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+                    if (workspaceFolder === undefined)
+                        return actionValidationFailure('No open workspace to get files from.');
+                    let folder = context.data.params?.folder as string;
+                    if (folder) {
+                        folder = stripTailSlashes(folder);
+                        const relativeFolderPath = normalizePath(folder);
+                        const pathValidated = await validatePath(relativeFolderPath, true, 'folder');
+                        if (!pathValidated.success) return pathValidated;
+                        const stat = await vscode.workspace.fs.stat(
+                            vscode.Uri.joinPath(workspaceFolder.uri, relativeFolderPath),
+                        );
+                        if (stat.type !== vscode.FileType.Directory)
+                            return actionValidationFailure('The specified path is not a directory.');
+                    }
+                    return actionValidationAccept();
+                },
+            ],
         },
         cancelEvents: [
             (context: RCEContext) => {
@@ -331,7 +384,8 @@ export const fileActions = {
                 } else return null;
             },
         ],
-        promptGenerator: (context: RCEContext) => `${context.data.params?.recursive ? 'recursively get' : 'get'} a list of files in ${context.data.params?.folder ? `"${stripTailSlashes(context.data.params.folder)}"` : 'the workspace'}.`,
+        promptGenerator: (context: RCEContext) =>
+            `${context.data.params?.recursive ? 'recursively get' : 'get'} a list of files in ${context.data.params?.folder ? `"${stripTailSlashes(context.data.params.folder)}"` : 'the workspace'}.`,
     },
     switch_files: {
         name: 'switch_files',
@@ -340,15 +394,17 @@ export const fileActions = {
         schema: {
             type: 'object',
             properties: {
-                filePath: { type: 'string', description: 'The relative path to the file.', examples: ['src/index.ts', './main.py'] },
+                filePath: {
+                    type: 'string',
+                    description: 'The relative path to the file.',
+                    examples: ['src/index.ts', './main.py'],
+                },
             },
             required: ['filePath'],
             additionalProperties: false,
         },
         handler: handleOpenFile,
-        cancelEvents: [
-            (context: RCEContext) => targetedFileDeletedEvent(context.data.params?.filePath),
-        ],
+        cancelEvents: [(context: RCEContext) => targetedFileDeletedEvent(context.data.params?.filePath)],
         validators: {
             async: [neuroSafeValidation(true), validateIsAFile, binaryFileValidation],
         },
@@ -356,7 +412,7 @@ export const fileActions = {
         preview: (context: RCEContext) => {
             const workspaceUri = getWorkspaceUri();
             if (!workspaceUri || !context.data.params?.filePath) {
-                return { dispose: () => { } };
+                return { dispose: () => {} };
             }
             const fileUri = vscode.Uri.joinPath(workspaceUri, context.data.params.filePath);
             return filePreviewProvider.mark([fileUri], 'open this file');
@@ -364,13 +420,18 @@ export const fileActions = {
     },
     read_file: {
         name: 'read_file',
-        description: 'Read a file\'s contents without opening it.' +
+        description:
+            "Read a file's contents without opening it." +
             'If filePath is not specified, reads the currently open file. ',
         category: CATEGORY_FILE_ACTIONS,
         schema: {
             type: 'object',
             properties: {
-                filePath: { type: 'string', description: 'The relative path to the file. If omitted, reads the currently open file.', examples: ['./index.html', 'style.css', 'src/main.js'] },
+                filePath: {
+                    type: 'string',
+                    description: 'The relative path to the file. If omitted, reads the currently open file.',
+                    examples: ['./index.html', 'style.css', 'src/main.js'],
+                },
             },
             additionalProperties: false,
         },
@@ -378,7 +439,7 @@ export const fileActions = {
         preview: (context: RCEContext) => {
             const workspaceUri = getWorkspaceUri();
             if (!workspaceUri || !context.data.params?.filePath) {
-                return { dispose: () => { } };
+                return { dispose: () => {} };
             }
             const fileUri = vscode.Uri.joinPath(workspaceUri, context.data.params.filePath);
             return filePreviewProvider.mark([fileUri], 'read this file');
@@ -389,23 +450,22 @@ export const fileActions = {
                     // For current file, cancel on document change
                     return new RCECancelEvent({
                         reason: 'the active document was changed.',
-                        events: [
-                            [vscode.workspace.onDidChangeTextDocument, null],
-                        ],
+                        events: [[vscode.workspace.onDidChangeTextDocument, null]],
                     });
                 }
                 // it looks more readable this way okay
                 return null;
             },
-            (context: RCEContext) => context.data.params?.filePath ? targetedFileDeletedEvent(context.data.params.filePath) : null,
+            (context: RCEContext) =>
+                context.data.params?.filePath ? targetedFileDeletedEvent(context.data.params.filePath) : null,
         ],
         validators: {
             async: [
                 async (context: RCEContext) => {
                     // Some sub-validators don't understand an empty filePath and will crash unless passed a modified context
                     // Copy to avoid mutation (there shouldn't be any recursive properties possible on context.data)
-                    const contextCopy = Object.assign({}, context);     // Shallow copy
-                    const actionData = structuredClone(context.data);   // Deep copy
+                    const contextCopy = Object.assign({}, context); // Shallow copy
+                    const actionData = structuredClone(context.data); // Deep copy
                     contextCopy.data = actionData;
 
                     const workspaceUri = getWorkspaceUri();
@@ -417,7 +477,10 @@ export const fileActions = {
                     if (!actionData.params.filePath || actionData.params.filePath === '') {
                         const document = vscode.window.activeTextEditor?.document;
                         if (!document) {
-                            return actionValidationFailure('File path left empty and you are not in an active file to edit.', 'Not in editable file.');
+                            return actionValidationFailure(
+                                'File path left empty and you are not in an active file to edit.',
+                                'Not in editable file.',
+                            );
                         }
 
                         actionData.params.filePath = vscode.workspace.asRelativePath(document.uri, false);
@@ -445,7 +508,7 @@ export const fileActions = {
             if (context.data.params?.filePath) {
                 return `read the file "${context.data.params.filePath}" (without opening it).`;
             }
-            return 'get the current file\'s contents.';
+            return "get the current file's contents.";
         },
     },
     create_file: {
@@ -455,7 +518,11 @@ export const fileActions = {
         schema: {
             type: 'object',
             properties: {
-                filePath: { type: 'string', description: 'The relative path to the new file.', examples: ['./newfile.py', 'src/module.js'] },
+                filePath: {
+                    type: 'string',
+                    description: 'The relative path to the new file.',
+                    examples: ['./newfile.py', 'src/module.js'],
+                },
             },
             required: ['filePath'],
             additionalProperties: false,
@@ -464,16 +531,13 @@ export const fileActions = {
         cancelEvents: commonFileEvents,
         validators: {
             sync: [validateIllegalCharacters('filePath', '<>:"|?*'.split(''))],
-            async: [
-                neuroSafeValidation(),
-                validateNotTreatingFileAsFolder('filePath'),
-            ],
+            async: [neuroSafeValidation(), validateNotTreatingFileAsFolder('filePath')],
         },
         promptGenerator: (context: RCEContext) => `create the file "${context.data.params?.filePath}".`,
         preview: (context: RCEContext) => {
             const workspaceUri = getWorkspaceUri();
             if (!workspaceUri || !context.data.params?.filePath) {
-                return { dispose: () => { } };
+                return { dispose: () => {} };
             }
             const fileUri = vscode.Uri.joinPath(workspaceUri, context.data.params.filePath);
             return filePreviewProvider.mark([fileUri], 'create this file');
@@ -486,27 +550,26 @@ export const fileActions = {
         schema: {
             type: 'object',
             properties: {
-                folderPath: { type: 'string', description: 'The relative path to the folder.', examples: ['./src', 'public'] },
+                folderPath: {
+                    type: 'string',
+                    description: 'The relative path to the folder.',
+                    examples: ['./src', 'public'],
+                },
             },
             required: ['folderPath'],
             additionalProperties: false,
         },
         handler: handleCreateFolder,
-        cancelEvents: [
-            (context: RCEContext) => targetedFileCreatedEvent(context.data.params?.folderPath),
-        ],
+        cancelEvents: [(context: RCEContext) => targetedFileCreatedEvent(context.data.params?.folderPath)],
         validators: {
             sync: [validateIllegalCharacters('folderPath', '<>:"|?*'.split(''))],
-            async: [
-                neuroSafeValidation(),
-                validateNotTreatingFileAsFolder('folderPath'),
-            ],
+            async: [neuroSafeValidation(), validateNotTreatingFileAsFolder('folderPath')],
         },
         promptGenerator: (context: RCEContext) => `create the folder "${context.data.params?.folderPath}".`,
         preview: (context: RCEContext) => {
             const workspaceUri = getWorkspaceUri();
             if (!workspaceUri || !context.data.params?.folderPath) {
-                return { dispose: () => { } };
+                return { dispose: () => {} };
             }
             const folderUri = vscode.Uri.joinPath(workspaceUri, context.data.params.folderPath);
             return filePreviewProvider.mark([folderUri], 'create this folder');
@@ -519,8 +582,16 @@ export const fileActions = {
         schema: {
             type: 'object',
             properties: {
-                oldPath: { type: 'string', description: 'The relative path to the old directory.', examples: ['src', './main.py'] },
-                newPath: { type: 'string', description: 'The relative path to the new directory.', examples: ['wip', './new.py'] },
+                oldPath: {
+                    type: 'string',
+                    description: 'The relative path to the old directory.',
+                    examples: ['src', './main.py'],
+                },
+                newPath: {
+                    type: 'string',
+                    description: 'The relative path to the new directory.',
+                    examples: ['wip', './new.py'],
+                },
             },
             required: ['oldPath', 'newPath'],
             additionalProperties: false,
@@ -532,16 +603,14 @@ export const fileActions = {
         ],
         validators: {
             sync: [validateIllegalCharacters('newPath', '<>:"|?*'.split(''))],
-            async: [
-                neuroSafeRenameValidation,
-                validateNotTreatingFileAsFolder('newPath'),
-            ],
+            async: [neuroSafeRenameValidation, validateNotTreatingFileAsFolder('newPath')],
         },
-        promptGenerator: (context: RCEContext) => `rename "${context.data.params?.oldPath}" to "${context.data.params?.newPath}".`,
+        promptGenerator: (context: RCEContext) =>
+            `rename "${context.data.params?.oldPath}" to "${context.data.params?.newPath}".`,
         preview: (context: RCEContext) => {
             const workspaceUri = getWorkspaceUri();
             if (!workspaceUri || !context.data.params?.oldPath || !context.data.params?.newPath) {
-                return { dispose: () => { } };
+                return { dispose: () => {} };
             }
             const oldUri = vscode.Uri.joinPath(workspaceUri, context.data.params.oldPath);
             const newUri = vscode.Uri.joinPath(workspaceUri, context.data.params.newPath);
@@ -555,16 +624,21 @@ export const fileActions = {
         schema: {
             type: 'object',
             properties: {
-                path: { type: 'string', description: 'The relative path to the file/folder to delete.', examples: ['src/index.ts', './utils'] },
-                recursive: { type: 'boolean', description: 'If set to true, enables you to delete a folder and all its sub-folders.' },
+                path: {
+                    type: 'string',
+                    description: 'The relative path to the file/folder to delete.',
+                    examples: ['src/index.ts', './utils'],
+                },
+                recursive: {
+                    type: 'boolean',
+                    description: 'If set to true, enables you to delete a folder and all its sub-folders.',
+                },
             },
             required: ['path'],
             additionalProperties: false,
         },
         handler: handleDeleteFileOrFolder,
-        cancelEvents: [
-            (context: RCEContext) => targetedFileDeletedEvent(context.data.params?.path),
-        ],
+        cancelEvents: [(context: RCEContext) => targetedFileDeletedEvent(context.data.params?.path)],
         validators: {
             async: [neuroSafeDeleteValidation],
         },
@@ -572,7 +646,7 @@ export const fileActions = {
         preview: (context: RCEContext) => {
             const workspaceUri = getWorkspaceUri();
             if (!workspaceUri || !context.data.params?.path) {
-                return { dispose: () => { } };
+                return { dispose: () => {} };
             }
             const pathUri = vscode.Uri.joinPath(workspaceUri, context.data.params.path);
             return filePreviewProvider.mark([pathUri], 'delete this', true);
@@ -598,7 +672,10 @@ export function handleCreateFile(context: RCEContext): RCEHandlerReturns {
     const relativePath = normalizePath(relativePathParam).replace(/^\//, '');
     const absolutePath = getWorkspacePath() + '/' + relativePath;
     if (!isPathNeuroSafe(absolutePath)) {
-        return actionHandlerFailure(`You are not allowed to access ${relativePath}`, ACTION_FAIL_NOTES.noAccess.replace('directory', 'file'));
+        return actionHandlerFailure(
+            `You are not allowed to access ${relativePath}`,
+            ACTION_FAIL_NOTES.noAccess.replace('directory', 'file'),
+        );
     }
 
     return checkAndOpenFileAsync(absolutePath, relativePath);
@@ -611,14 +688,17 @@ export function handleCreateFile(context: RCEContext): RCEHandlerReturns {
         try {
             await vscode.workspace.fs.stat(fileUri);
             // If no error is thrown, the file already exists
-            return actionHandlerFailure(`File ${relativePath} already exists`, ACTION_FAIL_NOTES.alreadyExists.replace('path', 'file'));
+            return actionHandlerFailure(
+                `File ${relativePath} already exists`,
+                ACTION_FAIL_NOTES.alreadyExists.replace('path', 'file'),
+            );
         } catch (erm: unknown) {
             if (erm instanceof vscode.FileSystemError && erm.code !== 'FileNotFound') {
                 notifyOnCaughtException('create_file', erm);
                 return actionHandlerFailure(`Failed to create file ${relativePath}`, EXCEPTION_THROWN_STRING);
-            };
-            /* else, file does not exist, continue */
+            }
         }
+        /* else, file does not exist, continue */
 
         // Create the file
         try {
@@ -642,7 +722,10 @@ export function handleCreateFile(context: RCEContext): RCEHandlerReturns {
             return actionHandlerSuccess(`Created and opened file ${relativePath}`, 'File created and opened');
         } catch (erm: unknown) {
             logOutput('ERROR', `Failed to open new file ${relativePath}: ${erm}`);
-            return actionHandlerSuccess(`Created file ${relativePath} but failed to open`, 'File created but failed to open');
+            return actionHandlerSuccess(
+                `Created file ${relativePath} but failed to open`,
+                'File created but failed to open',
+            );
         }
     }
 }
@@ -653,7 +736,10 @@ export function handleCreateFolder(context: RCEContext): RCEHandlerReturns {
     const relativePath = normalizePath(relativePathParam).replace(/^\/|\/$/g, '');
     const absolutePath = getWorkspacePath() + '/' + relativePath;
     if (!isPathNeuroSafe(absolutePath)) {
-        return actionHandlerFailure(`You are not allowed to access ${relativePath}`, ACTION_FAIL_NOTES.noAccess.replace('directory', 'folder'));
+        return actionHandlerFailure(
+            `You are not allowed to access ${relativePath}`,
+            ACTION_FAIL_NOTES.noAccess.replace('directory', 'folder'),
+        );
     }
 
     return checkAndCreateFolderAsync(absolutePath, relativePath);
@@ -667,7 +753,10 @@ export function handleCreateFolder(context: RCEContext): RCEHandlerReturns {
         try {
             await vscode.workspace.fs.stat(folderUri);
             // If no error is thrown, the folder already exists
-            return actionHandlerFailure(`Folder ${relativePath} already exists`, ACTION_FAIL_NOTES.alreadyExists.replace('path', 'folder'));
+            return actionHandlerFailure(
+                `Folder ${relativePath} already exists`,
+                ACTION_FAIL_NOTES.alreadyExists.replace('path', 'folder'),
+            );
         } catch (erm: unknown) {
             if (erm instanceof vscode.FileSystemError && erm.code !== 'FileNotFound') {
                 notifyOnCaughtException('create_folder', erm);
@@ -716,26 +805,31 @@ export function handleRenameFileOrFolder(context: RCEContext): RCEHandlerReturns
             await vscode.workspace.fs.stat(oldUri);
         } catch (erm: unknown) {
             if (erm instanceof vscode.FileSystemError && erm.code === 'FileNotFound') {
-                return actionHandlerFailure(`${oldRelativePath} doesn't exist`, ACTION_FAIL_NOTES.doesntExist.replace('Targeted', 'Old'));
-            }
-            else {
+                return actionHandlerFailure(
+                    `${oldRelativePath} doesn't exist`,
+                    ACTION_FAIL_NOTES.doesntExist.replace('Targeted', 'Old'),
+                );
+            } else {
                 notifyOnCaughtException('rename_file_or_folder', erm);
                 return actionHandlerFailure(`Failed to rename ${oldRelativePath}`, EXCEPTION_THROWN_STRING);
-            };
+            }
         }
 
         // Check if the new path already exists
         try {
             await vscode.workspace.fs.stat(newUri);
             // If no error is thrown, the new path already exists
-            return actionHandlerFailure(`${newRelativePath} already exists`, ACTION_FAIL_NOTES.alreadyExists.replace('Targeted', 'New'));
+            return actionHandlerFailure(
+                `${newRelativePath} already exists`,
+                ACTION_FAIL_NOTES.alreadyExists.replace('Targeted', 'New'),
+            );
         } catch (erm: unknown) {
             if (erm instanceof vscode.FileSystemError && erm.code !== 'FileNotFound') {
                 notifyOnCaughtException('rename_file_or_folder', erm);
                 return actionHandlerFailure(`Failed to rename ${oldRelativePath}`, EXCEPTION_THROWN_STRING);
-            };
-            /* New path does not exist, continue */
+            }
         }
+        /* New path does not exist, continue */
 
         // Rename the file/folder
         try {
@@ -743,7 +837,10 @@ export function handleRenameFileOrFolder(context: RCEContext): RCEHandlerReturns
             await vscode.workspace.fs.rename(oldUri, newUri, { overwrite: false });
         } catch (erm: unknown) {
             notifyOnCaughtException('rename_file_or_folder', erm);
-            return actionHandlerFailure(`Failed to rename ${oldRelativePath} to ${newRelativePath}`, EXCEPTION_THROWN_STRING);
+            return actionHandlerFailure(
+                `Failed to rename ${oldRelativePath} to ${newRelativePath}`,
+                EXCEPTION_THROWN_STRING,
+            );
         }
 
         logOutput('INFO', `Renamed ${oldRelativePath} to ${newRelativePath}`);
@@ -782,7 +879,10 @@ export function handleDeleteFileOrFolder(context: RCEContext): RCEHandlerReturns
 
         // Check for correct recursive parameter
         if (stat.type === vscode.FileType.Directory && !recursive) {
-            return actionHandlerFailure(`${relativePath} requires recursive parameter because it is a directory`, 'Recursive parameter required for directory');
+            return actionHandlerFailure(
+                `${relativePath} requires recursive parameter because it is a directory`,
+                'Recursive parameter required for directory',
+            );
         }
 
         // Delete the file/folder
@@ -822,7 +922,10 @@ export function handleDeleteFileOrFolder(context: RCEContext): RCEHandlerReturns
         }
 
         logOutput('INFO', `Deleted ${relativePath}`);
-        return actionHandlerSuccess(`Deleted ${relativePath}`, stat.type === vscode.FileType.Directory ? 'Folder deleted' : 'File deleted');
+        return actionHandlerSuccess(
+            `Deleted ${relativePath}`,
+            stat.type === vscode.FileType.Directory ? 'Folder deleted' : 'File deleted',
+        );
     }
 }
 
@@ -840,7 +943,7 @@ export function handleGetWorkspaceFiles(context: RCEContext): RCEHandlerReturns 
         folderUri = vscode.Uri.joinPath(folderUri, ...relativeFolderPath.split('/').filter(Boolean));
     }
     return listWorkspace(folderUri).then(
-        (uris) => {
+        uris => {
             const paths = uris
                 .filter(uri => isPathNeuroSafe(uri[0].fsPath))
                 .map(uri => {
@@ -863,7 +966,10 @@ export function handleGetWorkspaceFiles(context: RCEContext): RCEHandlerReturns 
                 });
             const displayFolder = folder ? `"${stripTailSlashes(folder)}"` : 'workspace';
             logOutput('INFO', `Sending list of files in ${displayFolder} to Neuro`);
-            return actionHandlerSuccess(`Files in ${displayFolder}:\n\n${paths.join('\n')}`, `Listed ${paths.length} files`);
+            return actionHandlerSuccess(
+                `Files in ${displayFolder}:\n\n${paths.join('\n')}`,
+                `Listed ${paths.length} files`,
+            );
         },
         (erm: unknown) => {
             logOutput('ERROR', `Could not list workspace files: ${String(erm)}`);
@@ -873,7 +979,10 @@ export function handleGetWorkspaceFiles(context: RCEContext): RCEHandlerReturns 
 
     async function listWorkspace(uri: vscode.Uri): Promise<[vscode.Uri, vscode.FileType][]> {
         const entries: [string, vscode.FileType][] = await vscode.workspace.fs.readDirectory(uri);
-        const uriEntries: [vscode.Uri, vscode.FileType][] = entries.map(([name, type]) => [vscode.Uri.joinPath(uri, name), type]);
+        const uriEntries: [vscode.Uri, vscode.FileType][] = entries.map(([name, type]) => [
+            vscode.Uri.joinPath(uri, name),
+            type,
+        ]);
 
         const result: [vscode.Uri, vscode.FileType][] = [];
         for (const [childUri, fileType] of uriEntries) {
@@ -881,7 +990,7 @@ export function handleGetWorkspaceFiles(context: RCEContext): RCEHandlerReturns 
                 if (fileType === vscode.FileType.File) result.push([childUri, fileType]);
                 else if (fileType === vscode.FileType.Directory) {
                     if (actionData.params?.recursive) {
-                        result.push(...await listWorkspace(childUri));
+                        result.push(...(await listWorkspace(childUri)));
                     } else {
                         result.push([childUri, fileType]);
                     }
@@ -925,7 +1034,9 @@ export function handleOpenFile(context: RCEContext): RCEHandlerReturns {
                     // No cursor available yet: send entire document
                     const decodedContent = document.getText();
                     const fence = getFence(decodedContent);
-                    NEURO.client?.sendContext(`Contents of the file ${relativePath}:\n\n${fence}\n${decodedContent}\n${fence}`);
+                    NEURO.client?.sendContext(
+                        `Contents of the file ${relativePath}:\n\n${fence}\n${decodedContent}\n${fence}`,
+                    );
                 } else {
                     // Cursor available: send contextual snippet around the cursor
                     const cursorContext = getPositionContext(document, cursor);
@@ -951,7 +1062,12 @@ export function handleReadFile(context: RCEContext): RCEHandlerReturns {
         return actionHandlerFailure('No active text editor.', 'No active text editor.');
     }
     // If no filePath provided, read current file
-    if (!actionData.params.filePath || actionData.params.filePath === '' || vscode.workspace.asRelativePath(editor.document.uri) === vscode.workspace.asRelativePath(vscode.Uri.joinPath(getWorkspaceUri()!, actionData.params.filePath))) {
+    if (
+        !actionData.params.filePath ||
+        actionData.params.filePath === '' ||
+        vscode.workspace.asRelativePath(editor.document.uri) ===
+            vscode.workspace.asRelativePath(vscode.Uri.joinPath(getWorkspaceUri()!, actionData.params.filePath))
+    ) {
         const document = editor.document;
         const fileName = simpleFileName(document.fileName);
         const cursor = getVirtualCursor()!;
@@ -963,14 +1079,21 @@ export function handleReadFile(context: RCEContext): RCEHandlerReturns {
         // Manually construct context to include entire file
         const positionContext: NeuroPositionContext = {
             contextBefore: filterFileContents(document.getText(new vscode.Range(new vscode.Position(0, 0), cursor))),
-            contextAfter: filterFileContents(document.getText(new vscode.Range(cursor, document.lineAt(document.lineCount - 1).rangeIncludingLineBreak.end))),
+            contextAfter: filterFileContents(
+                document.getText(
+                    new vscode.Range(cursor, document.lineAt(document.lineCount - 1).rangeIncludingLineBreak.end),
+                ),
+            ),
             startLine: 0,
             endLine: document.lineCount - 1,
             totalLines: document.lineCount,
             cursorDefined: true,
         };
 
-        return actionHandlerSuccess(`Contents of the file ${fileName}:\n\n${formatContext(positionContext)}`, 'File read');
+        return actionHandlerSuccess(
+            `Contents of the file ${fileName}:\n\n${formatContext(positionContext)}`,
+            'File read',
+        );
     }
 
     // Original read_file logic for specific file
@@ -987,7 +1110,10 @@ export function handleReadFile(context: RCEContext): RCEHandlerReturns {
             (data: Uint8Array) => {
                 const decodedContent = new TextDecoder('utf-8').decode(data);
                 const fence = getFence(decodedContent);
-                return actionHandlerSuccess(`Contents of the file ${file}:\n\n${fence}\n${decodedContent}\n${fence}`, 'File contents sent');
+                return actionHandlerSuccess(
+                    `Contents of the file ${file}:\n\n${fence}\n${decodedContent}\n${fence}`,
+                    'File contents sent',
+                );
             },
             (erm: unknown) => {
                 logOutput('ERROR', `Couldn't read file ${absolute}: ${erm}`);
