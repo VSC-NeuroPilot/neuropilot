@@ -882,11 +882,11 @@
 	},
 	"dependencies": {
 		"@vscode/codicons": "^0.0.45",
-		"file-type": "^22.0.1",
+		"file-type": "^22.0.2",
 		"glob-to-regexp": "^0.4.1",
-		"ignore": "^7.0.6",
+		"ignore": "^7.0.7",
 		"jsonschema": "^1.5.0",
-		"neuro-game-sdk": "^1.1.2",
-		"preact": "^10.29.7"
+		"neuro-game-sdk": "^1.2.0",
+		"preact": "^10.29.8"
 	}
 }
