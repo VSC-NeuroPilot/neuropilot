@@ -67,4 +67,4 @@ jobs:
           with:
             persist-credentials: false
         
-        - uses: zizmorcore/zizmor-action@v0.5.7
+        - uses: zizmorcore/zizmor-action@v0.6.3
