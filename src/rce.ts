@@ -29,6 +29,7 @@ import type { RCECancelEvent } from '@events/utils';
 import { fireOnActionStart, updateActionStatus } from '@events/actions';
 import { RCEContext } from '@/context/rce';
 
+// oxlint-disable-next-line no-unused-vars
 import type { NeuroClient } from 'neuro-game-sdk';
 import type { JSONSchema7Object } from 'json-schema';
 
@@ -135,6 +136,7 @@ export function clearRceRequest(context: RCEContext | null = getActiveRequestCon
 export function createRceRequest(context: RCEContext): void {
     setActiveRequestContext(context);
 
+    // oxlint-disable-next-line no-unused-vars
     const promise = new Promise<void>(resolve => {
         // we can't add any buttons to progress, so we have to add the accept link
         if (!context.request) {
