@@ -851,7 +851,7 @@
 		"@types/glob-to-regexp": "^0.4.4",
 		"@types/json-schema": "^7.0.15",
 		"@types/mocha": "^10.0.10",
-		"@types/node": "^20",
+		"@types/node": "^22.20.1",
 		"@types/vscode": "^1.95.0",
 		"@types/vscode-webview": "^1.57.5",
 		"@typescript/native": "npm:typescript@^7.0.2",
