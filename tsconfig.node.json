@@ -1,8 +1,0 @@
-{
-    "compilerOptions": {
-        "types": ["node"],
-        "allowJs": true,
-        "composite": true
-    },
-    "include": ["*.config.mjs", "eslint.config.ts"]
-}
