@@ -15,6 +15,15 @@ Changes between each version before then will not be listed.
   - NeuroPilot actually accepts any TypeScript schema library that conforms to the [Standard JSON Schema specification](https://standardschema.dev/json-schema), however this is only relevant for the public API where companion developers can choose between schema libraries listed as compatible in the above list.
   - By default, NeuroPilot will attempt to convert these schemas to the `draft-07` JSON schema version. Failing that, it will try to convert to `draft-2020-12` instead, with a warning logged in console. NeuroPilot does *not* attempt conversion to `openapi-3.0`, as it uses keywords not in the official JSON schema specification.
 
+### Changes
+
+- Some actions have been further renamed, with automatic migration flows:
+  - `list_files_and_folders` -> `list_items`
+  - `rename_file_or_folder` -> `rename_item`
+  - `delete_file_or_folder` -> `delete_item`
+  - `create_file` and `create_folder` have been combined into `create_item`
+    - if permissions for both old actions are set, `create_file`'s permission will be the permission set for `create_item` when migrating.
+
 ## 2.5.0
 
 ### New settings
