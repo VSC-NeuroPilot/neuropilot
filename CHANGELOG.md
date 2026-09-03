@@ -21,11 +21,11 @@ Changes between each version before then will not be listed.
   - `list_files_and_folders` -> `list_items`
   - `rename_file_or_folder` -> `rename_item`
   - `delete_file_or_folder` -> `delete_item`
-  - `create_file` and `create_folder` have been combined into `create_item`
-    - if permissions for both old actions are set, `create_file`'s permission will be the permission set for `create_item` when migrating.
   - `highlight_lines` -> `highlight`
 - Some actions have been merged:
   - `replace_text` + `delete_text` + `find_text` = `find_and_replace`
+  - `create_file` and `create_folder` have been combined into `create_item`
+    - if permissions for both old actions are set, `create_file`'s permission will be the permission set for `create_item` when migrating.
 
 ## 2.5.0
 
