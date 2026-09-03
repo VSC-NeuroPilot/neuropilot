@@ -8,8 +8,6 @@ import type { ActionHandlerResult } from '@/utils/neuro_client';
 import {
     handleInsertText,
     handleInsertLines,
-    handleReplaceText,
-    handleDeleteText,
     handleUndo,
     handleRewriteAll,
     handleRewriteLines,
@@ -177,62 +175,62 @@ suite('Integration: Editing actions', () => {
         assert.strictEqual(lines[lines.length - 1], 'C');
     });
 
-    test('replace_text single match replaces', async function () {
+    test('find_and_replace single match replaces', async function () {
         // === Arrange ===
-        const actionData: ActionData = { id: 't', name: 'replace_text', params: { find: 'Alpha', replaceWith: 'A', match: 'firstInFile', useRegex: false } };
+        const actionData: ActionData = { id: 't', name: 'find_and_replace', params: { find: 'Alpha', replace: 'A', match: 'firstInFile', useRegex: false } };
 
         // === Act ===
-        await handleReplaceText(makeContext(actionData));
+        await handleFindText(makeContext(actionData));
 
         // === Assert ===
         const text = (await vscode.workspace.openTextDocument(docUri)).getText();
         assert.ok(text.startsWith('A\n'));
     });
 
-    test('replace_text supports regex substitution and allInFile', async () => {
+    test('find_and_replace supports regex substitution and allInFile', async () => {
         // === Arrange ===
         await setupDocument('foo1\nfoo2\nbar3');
-        const actionData: ActionData = { id: 't', name: 'replace_text', params: { find: '(foo)(\\d)', replaceWith: '$1X', match: 'allInFile', useRegex: true } };
+        const actionData: ActionData = { id: 't', name: 'find_and_replace', params: { find: '(foo)(\\d)', replace: '$1X', match: 'allInFile', useRegex: true } };
 
         // === Act ===
-        await handleReplaceText(makeContext(actionData));
+        await handleFindText(makeContext(actionData));
 
         // === Assert ===
         const text = (await vscode.workspace.openTextDocument(docUri)).getText();
         assert.strictEqual(text, ['fooX', 'fooX', 'bar3'].join('\n'));
     });
 
-    test('replace_text respects lineRange', async () => {
+    test('find_and_replace replace respects lineRange', async () => {
         // === Arrange ===
         await setupDocument('a\na\na');
 
         // === Act ===
-        await handleReplaceText(makeContext({ id: 't', name: 'replace_text', params: { find: 'a', replaceWith: 'b', match: 'allInFile', useRegex: false, lineRange: { startLine: 2, endLine: 3 } } } as ActionData));
+        await handleFindText(makeContext({ id: 't', name: 'find_and_replace', params: { find: 'a', replace: 'b', match: 'allInFile', useRegex: false, lineRange: { startLine: 2, endLine: 3 } } } as ActionData));
 
         // === Assert ===
         const text = (await vscode.workspace.openTextDocument(docUri)).getText();
         assert.strictEqual(text, ['a', 'b', 'b'].join('\n'));
     });
 
-    test('delete_text single match deletes', async function () {
+    test('find_and_replace single match deletes', async function () {
         // === Arrange ===
-        const actionData: ActionData = { id: 't', name: 'delete_text', params: { find: 'Delta', match: 'firstInFile', useRegex: false } };
+        const actionData: ActionData = { id: 't', name: 'find_and_replace', params: { find: 'Delta', replace: '', match: 'firstInFile', useRegex: false } };
 
         // === Act ===
-        await handleDeleteText(makeContext(actionData));
+        await handleFindText(makeContext(actionData));
 
         // === Assert ===
         const text = (await vscode.workspace.openTextDocument(docUri)).getText();
         assert.ok(!text.includes('Delta'));
     });
 
-    test('delete_text deletes multiple matches and can use lineRange', async function () {
+    test('find_and_replace deletes multiple matches and can use lineRange', async function () {
         // === Arrange ===
         // Multiple delete
         await setupDocument('x 1 x 2 x');
 
         // === Act ===
-        await handleDeleteText(makeContext({ id: 't', name: 'delete_text', params: { find: 'x', match: 'allInFile', useRegex: false } } as ActionData));
+        await handleFindText(makeContext({ id: 't', name: 'find_and_replace', params: { find: 'x', replace: '', match: 'allInFile', useRegex: false } } as ActionData));
 
         // === Assert ===
         // Poll document until content reflects deletions
@@ -248,7 +246,7 @@ suite('Integration: Editing actions', () => {
         await setupDocument('p\nq\np\nq');
 
         // === Act ===
-        await handleDeleteText(makeContext({ id: 't', name: 'delete_text', params: { find: 'p', match: 'allInFile', useRegex: false, lineRange: { startLine: 2, endLine: 3 } } } as ActionData));
+        await handleFindText(makeContext({ id: 't', name: 'find_and_replace', params: { find: 'p', replace: '', match: 'allInFile', useRegex: false, lineRange: { startLine: 2, endLine: 3 } } } as ActionData));
         const expected = ['p', 'q', '', 'q'].join('\n');
 
         // === Assert ===
@@ -267,21 +265,21 @@ suite('Integration: Editing actions', () => {
         assert.strictEqual(pCount, 1);
     });
 
-    test('find_text single match returns description string', async () => {
+    test('find_and_replace single match returns description string', async () => {
         // === Arrange ===
         await setupDocument('Echo\nZulu');
-        const actionData: ActionData = { id: 't', name: 'find_text', params: { find: 'Echo', match: 'firstInFile', useRegex: false, highlight: false } };
+        const actionData: ActionData = { id: 't', name: 'find_and_replace', params: { find: 'Echo', match: 'firstInFile', useRegex: false, highlight: false } };
         // === Act & Assert ===
         const result = handleFindText(makeContext(actionData)) as ActionHandlerResult;
         assert.ok(result?.message?.includes('Echo'));
     });
 
-    test('find_text multiple matches with highlight returns count and lines', async () => {
+    test('find_and_replace multiple matches with highlight returns count and lines', async () => {
         // === Arrange ===
         await setupDocument('z\nz\nz');
 
         // === Act & Assert ===
-        const result = handleFindText(makeContext({ id: 't', name: 'find_text', params: { find: 'z', match: 'allInFile', useRegex: false, highlight: true } } as ActionData)) as ActionHandlerResult;
+        const result = handleFindText(makeContext({ id: 't', name: 'find_and_replace', params: { find: 'z', match: 'allInFile', useRegex: false, highlight: true } } as ActionData)) as ActionHandlerResult;
         assert.ok(result?.message?.includes('z'));
     });
 
