@@ -181,9 +181,9 @@ export const readFileActions = {
         },
         promptGenerator: 'get your cursor position and surrounding text.',
     }),
-    highlight_lines: defineAction({
-        name: 'highlight_lines',
-        description: 'Highlight the specified lines.'
+    highlight: defineAction({
+        name: 'highlight',
+        description: 'Highlight a selection of text.'
             + ' Can be used to draw insert_turtle_here\'s or Chat\'s attention towards something.'
             + ' This will not move your cursor.'
             + ' Line numbers are one-based.',
@@ -299,7 +299,7 @@ export function addReadActions() {
         readFileActions.move_cursor_position,
         readFileActions.get_cursor_position,
         readFileActions.get_user_selection,
-        readFileActions.highlight_lines,
+        readFileActions.highlight,
         readFileActions.find_and_replace,
     ]);
 }
