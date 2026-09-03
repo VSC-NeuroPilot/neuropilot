@@ -196,6 +196,7 @@ const DEPRECATED_SETTINGS: DeprecatedSetting[] = [
     deprecatedAction('rename_file_or_folder', 'rename_item'),
     deprecatedAction('delete_file_or_folder', 'delete_item'),
     deprecatedAction('list_files_and_folders', 'list_items'),
+    deprecatedAction('find_text', 'find_and_replace'),
 ];
 
 function deprecatedPermission(oldKey: string, affectedActions: string[]): DeprecatedSetting {
