@@ -102,15 +102,9 @@ function validateIllegalCharacters(key: string, illegalChars: string[]) {
     };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const commonFileEvents: ((context: RCEContext<{ filePath: string }>) => RCECancelEvent<any> | null)[] = [
-    (context) => targetedFileCreatedEvent(context.data.params!.filePath),
-    (context) => targetedFileDeletedEvent(context.data.params!.filePath),
-];
-
 export const fileActions = {
-    list_files_and_folders: defineAction({
-        name: 'list_files_and_folders',
+    list_items: defineAction({
+        name: 'list_items',
         description: 'Get a list of files in the workspace. Will not return subdirectories by default, use `recursive` to do so.',
         schema: z.object({
             folder: z.string().meta({
@@ -119,6 +113,7 @@ export const fileActions = {
             recursive: z.boolean().meta({
                 description: 'Set this to `true` if you want to view all subfolders\' contents as well.',
             }).optional(),
+            page: z.int().optional(),
         }),
         category: CATEGORY_FILE_ACTIONS,
         handler: (ctx) => returnHandleGetWorkspaceFiles(ctx.updateStatus, ctx.data.params.folder, ctx.data.params.recursive),
@@ -195,68 +190,52 @@ export const fileActions = {
         ],
         promptGenerator: (context) => `${context.data.params.recursive ? 'recursively get' : 'get'} a list of files in ${context.data.params?.folder ? `"${stripTailSlashes(context.data.params.folder)}"` : 'the workspace'}.`,
     }),
-    create_file: defineAction({
-        name: 'create_file',
-        description: 'Create a new file at the specified path. The path should include the name of the new file.',
-        category: CATEGORY_FILE_ACTIONS,
+    create_item: defineAction({
+        name: 'create_item',
+        description: 'Creates a new file or folder.',
         schema: z.object({
-            filePath: z.string().meta({
-                description: 'The relative path to the new file.',
-                examples: ['./newfile.py', 'src/module.js'],
+            path: z.string().meta({
+                description: 'The relative path to the new file or folder.',
+                examples: ['./newfile.py', 'src/module.js', './src/', 'public/'],
             }),
+            recursive: z.boolean().meta({
+                description: 'Set to true if you want to create a folder',
+            }).optional(),
         }),
-        handler: (ctx) => returnHandleCreateFile(ctx.data.params.filePath, ctx.updateStatus),
-        cancelEvents: commonFileEvents,
         validators: {
-            sync: [validateIllegalCharacters('filePath', '<>:"|?*'.split(''))],
+            sync: [validateIllegalCharacters('path', '<>:"|?*'.split(''))],
             async: [
-                neuroSafeValidation(),
-                validateNotTreatingFileAsFolder('filePath'),
+                async ({ data: { params } }) => {
+                    const safePath = isPathNeuroSafe(params.path);
+                    return safePath ? actionValidationAccept() : actionValidationFailure('You are not allowed to access this path.');
+                },
             ],
         },
-        promptGenerator: (context) => `create the file "${context.data.params.filePath}".`,
-        preview: (context) => {
-            const workspaceUri = getWorkspaceUri();
-            if (!workspaceUri || !context.data.params.filePath) {
-                return { dispose: () => { } };
-            }
-            const fileUri = vscode.Uri.joinPath(workspaceUri, context.data.params.filePath);
-            return filePreviewProvider.mark([fileUri], 'create this file');
-        },
-    }),
-    create_folder: defineAction({
-        name: 'create_folder',
-        description: 'Create a new folder at the specified path. The path should include the name of the new folder.',
-        category: CATEGORY_FILE_ACTIONS,
-        schema: z.object({
-            folderPath: z.string().meta({
-                description: 'The relative path to the folder.',
-                examples: ['./src', 'public'],
-            }),
-        }),
-        handler: (ctx) => returnHandleCreateFolder(ctx.data.params.folderPath, ctx.updateStatus),
         cancelEvents: [
-            (context) => targetedFileCreatedEvent(context.data.params.folderPath!),
+            (context) => targetedFileCreatedEvent(context.data.params.path),
+            (context) => targetedFileDeletedEvent(context.data.params.path),
         ],
-        validators: {
-            sync: [validateIllegalCharacters('folderPath', '<>:"|?*'.split(''))],
-            async: [
-                neuroSafeValidation(),
-                validateNotTreatingFileAsFolder('folderPath'),
-            ],
+        handler: (ctx) => { // ideally we refactor in the logic into one function here but this is a start
+            const { params } = ctx.data;
+            if (!params.recursive) {
+                return returnHandleCreateFile(params.path, ctx.updateStatus);
+            } else {
+                return returnHandleCreateFolder(params.path, ctx.updateStatus);
+            }
         },
-        promptGenerator: (context) => `create the folder "${context.data.params.folderPath}".`,
+        promptGenerator: (ctx) => `create the ${ctx.data.params.recursive ? 'folder' : 'file'} "${ctx.data.params.path}".`,
+        category: 'Filesystem',
         preview: (context) => {
             const workspaceUri = getWorkspaceUri();
-            if (!workspaceUri || !context.data.params.folderPath) {
+            if (!workspaceUri || !context.data.params.path) {
                 return { dispose: () => { } };
             }
-            const folderUri = vscode.Uri.joinPath(workspaceUri, context.data.params.folderPath);
-            return filePreviewProvider.mark([folderUri], 'create this folder');
+            const uri = vscode.Uri.joinPath(workspaceUri, context.data.params.path);
+            return filePreviewProvider.mark([uri], `create this ${context.data.params.recursive ? 'folder' : 'file'}`);
         },
     }),
-    rename_file_or_folder: defineAction({
-        name: 'rename_file_or_folder',
+    rename_item: defineAction({
+        name: 'rename_item',
         description: 'Rename a file or folder. Specify the full relative path for both the old and new names.',
         category: CATEGORY_FILE_ACTIONS,
         schema: z.object({
@@ -292,8 +271,8 @@ export const fileActions = {
             return filePreviewProvider.mark([oldUri, newUri], 'rename this', true);
         },
     }),
-    delete_file_or_folder: defineAction({
-        name: 'delete_file_or_folder',
+    delete_item: defineAction({
+        name: 'delete_item',
         description: 'Delete a file or folder. If you want to delete a folder, set the "recursive" parameter to true.',
         category: CATEGORY_FILE_ACTIONS,
         schema: z.object({
@@ -346,11 +325,10 @@ export const fileActions = {
 
 export function addFileActions() {
     addActions([
-        fileActions.list_files_and_folders,
-        fileActions.create_file,
-        fileActions.create_folder,
-        fileActions.rename_file_or_folder,
-        fileActions.delete_file_or_folder,
+        fileActions.list_items,
+        fileActions.create_item,
+        fileActions.rename_item,
+        fileActions.delete_item,
     ]);
     addActions([fileActions.save]);
 }

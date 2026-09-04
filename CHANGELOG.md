@@ -15,6 +15,21 @@ Changes between each version before then will not be listed.
   - NeuroPilot actually accepts any TypeScript schema library that conforms to the [Standard JSON Schema specification](https://standardschema.dev/json-schema), however this is only relevant for the public API where companion developers can choose between schema libraries listed as compatible in the above list.
   - By default, NeuroPilot will attempt to convert these schemas to the `draft-07` JSON schema version. Failing that, it will try to convert to `draft-2020-12` instead, with a warning logged in console. NeuroPilot does *not* attempt conversion to `openapi-3.0`, as it uses keywords not in the official JSON schema specification.
 
+### Changes
+
+- Some actions have been further renamed, with automatic migration flows:
+  - `list_files_and_folders` -> `list_items`
+  - `rename_file_or_folder` -> `rename_item`
+  - `delete_file_or_folder` -> `delete_item`
+  - `highlight_lines` -> `highlight`
+- Some actions have been merged:
+  - `replace_text` + `delete_text` + `find_text` = `find_and_replace`
+    - `find_text`'s permissions will be the permission set for `find_and_replace` when migrating.
+  - `create_file` + `create_folder` = `create_item`
+    - `create_file`'s permission will be the permission set for `create_item` when migrating, if permissions for both `create_file` and `create_folder` is set.
+  - `get_file_lint_problems` + `get_folder_lint_problems` + `get_workspace_lint_problems` = `get_lint_problems`
+    - If multiple of the old action names have permissions set, `get_lint_problems` will inherit from `get_file_lint_problems` first, then `get_folder_lint_problems`, then `get_workspace_lint_problems`.
+
 ## 2.5.0
 
 ### New settings

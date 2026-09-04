@@ -191,6 +191,16 @@ const DEPRECATED_SETTINGS: DeprecatedSetting[] = [
     deprecatedAction('place_cursor', 'move_cursor_position'),
     deprecatedAction('get_cursor', 'get_cursor_position'),
     deprecatedAction('diff_patch', 'edit_with_diff'),
+    deprecatedAction('create_folder', 'create_item'),
+    deprecatedAction('create_file', 'create_item'),
+    deprecatedAction('rename_file_or_folder', 'rename_item'),
+    deprecatedAction('delete_file_or_folder', 'delete_item'),
+    deprecatedAction('list_files_and_folders', 'list_items'),
+    deprecatedAction('find_text', 'find_and_replace'),
+    deprecatedAction('highlight_lines', 'highlight'),
+    deprecatedAction('get_workspace_lint_problems', 'get_lint_problems'),
+    deprecatedAction('get_folder_lint_problems', 'get_lint_problems'),
+    deprecatedAction('get_file_lint_problems', 'get_lint_problems'),
 ];
 
 function deprecatedPermission(oldKey: string, affectedActions: string[]): DeprecatedSetting {
