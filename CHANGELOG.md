@@ -24,9 +24,11 @@ Changes between each version before then will not be listed.
   - `highlight_lines` -> `highlight`
 - Some actions have been merged:
   - `replace_text` + `delete_text` + `find_text` = `find_and_replace`
-    - `find_text`'s permissions will be the permission used for `find_and_replace` when migrating.
+    - `find_text`'s permissions will be the permission set for `find_and_replace` when migrating.
   - `create_file` + `create_folder` = `create_item`
-    - if permissions for both old actions are set, `create_file`'s permission will be the permission set for `create_item` when migrating.
+    - `create_file`'s permission will be the permission set for `create_item` when migrating, if permissions for both `create_file` and `create_folder` is set.
+  - `get_file_lint_problems` + `get_folder_lint_problems` + `get_workspace_lint_problems` = `get_lint_problems`
+    - If multiple of the old action names have permissions set, `get_lint_problems` will inherit from `get_file_lint_problems` first, then `get_folder_lint_problems`, then `get_workspace_lint_problems`.
 
 ## 2.5.0
 
