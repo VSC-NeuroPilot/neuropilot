@@ -197,6 +197,7 @@ const DEPRECATED_SETTINGS: DeprecatedSetting[] = [
     deprecatedAction('delete_file_or_folder', 'delete_item'),
     deprecatedAction('list_files_and_folders', 'list_items'),
     deprecatedAction('find_text', 'find_and_replace'),
+    deprecatedAction('highlight_lines', 'highlight'),
     deprecatedAction('get_workspace_lint_problems', 'get_lint_problems'),
     deprecatedAction('get_folder_lint_problems', 'get_lint_problems'),
     deprecatedAction('get_file_lint_problems', 'get_lint_problems'),
