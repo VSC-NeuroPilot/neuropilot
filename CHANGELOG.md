@@ -29,6 +29,8 @@ Changes between each version before then will not be listed.
     - `create_file`'s permission will be the permission set for `create_item` when migrating, if permissions for both `create_file` and `create_folder` is set.
   - `get_file_lint_problems` + `get_folder_lint_problems` + `get_workspace_lint_problems` = `get_lint_problems`
     - If multiple of the old action names have permissions set, `get_lint_problems` will inherit from `get_file_lint_problems` first, then `get_folder_lint_problems`, then `get_workspace_lint_problems`.
+  - `rewrite_all` + `rewrite_lines` = `edit_by_lines` <!-- TODO: finish this -->
+    - Inherits from `rewrite_lines`, then `rewrite_all`.
 
 ## 2.5.0
 

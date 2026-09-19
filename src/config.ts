@@ -201,6 +201,8 @@ const DEPRECATED_SETTINGS: DeprecatedSetting[] = [
     deprecatedAction('get_workspace_lint_problems', 'get_lint_problems'),
     deprecatedAction('get_folder_lint_problems', 'get_lint_problems'),
     deprecatedAction('get_file_lint_problems', 'get_lint_problems'),
+    deprecatedAction('rewrite_all', 'edit_by_lines'),
+    deprecatedAction('rewrite_lines', 'edit_by_lines'),
 ];
 
 function deprecatedPermission(oldKey: string, affectedActions: string[]): DeprecatedSetting {

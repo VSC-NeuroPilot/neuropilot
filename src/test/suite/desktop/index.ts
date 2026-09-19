@@ -62,8 +62,6 @@ import '../../unit-test/insert_lines.simple.test';
 import '../../unit-test/insert_text.simple.test';
 import '../../unit-test/lint_problems.simple.test';
 import '../../unit-test/place_cursor.simple.test';
-import '../../unit-test/rewrite_all.simple.test';
-import '../../unit-test/rewrite_lines.simple.test';
 import '../../unit-test/tasks.simple.test';
 import '../../unit-test/rce.simple.test';
 import '../../unit-test/terminal.simple.test';

@@ -9,9 +9,9 @@ import {
     handleInsertText,
     handleInsertLines,
     handleUndo,
-    handleRewriteAll,
-    handleRewriteLines,
+    handleRewrite,
     handleDeleteLines,
+    editFileActions,
 } from '@/edit_files';
 import { handleSave } from '@/file_operations';
 import {
@@ -317,48 +317,48 @@ suite('Integration: Editing actions', () => {
         assert.strictEqual(document.isDirty, false);
     });
 
-    test('rewrite_all replaces all content', async () => {
+    test('rewrite replaces all content when range spans the entire file', async () => {
         // === Arrange ===
         const newContent = ['One', 'Two', 'Three'].join('\n');
 
         // === Act ===
-        await handleRewriteAll(makeContext({ id: 't', name: 'rewrite_all', params: { content: newContent } } as ActionData));
+        await handleRewrite(makeContext({ id: 't', name: 'rewrite', params: { range: { startLine: 1, endLine: 4 }, content: newContent } } as ActionData));
 
         // === Assert ===
         const text = (await vscode.workspace.openTextDocument(docUri)).getText();
         assert.strictEqual(text, newContent);
     });
 
-    test('rewrite_all moves cursor to start of file', async () => {
+    test('rewrite moves cursor to start of file when range spans the entire file', async () => {
         // === Arrange ===        
         const newContent = ['X1', 'X2'].join('\n');
 
         // === Act ===
-        await handleRewriteAll(makeContext({ id: 't', name: 'rewrite_all', params: { content: newContent } } as ActionData));
+        await handleRewrite(makeContext({ id: 't', name: 'rewrite', params: { range: { startLine: 1, endLine: 4 }, content: newContent } } as ActionData));
 
         // === Assert ===
         const cursorInfo = handleGetCursor()! as ActionHandlerResult;
         assert.ok(cursorInfo?.message?.includes('1:1'));
     });
 
-    test('rewrite_all handles empty content', async () => {
+    test('rewrite handles empty content when range spans the entire file', async () => {
         // === Arrange ===
         const newContent = '';
 
         // === Act ===
-        await handleRewriteAll(makeContext({ id: 't', name: 'rewrite_all', params: { content: newContent } } as ActionData));
+        await handleRewrite(makeContext({ id: 't', name: 'rewrite', params: { range: { startLine: 1, endLine: 4 }, content: newContent } } as ActionData));
 
         // === Assert ===
         const text = (await vscode.workspace.openTextDocument(docUri)).getText();
         assert.strictEqual(text, newContent);
     });
 
-    test('rewrite_all handles large content', async () => {
+    test('rewrite handles large content when range spans the entire file', async () => {
         // === Arrange ===
         const newContent = Array.from({ length: 500 }, (_, i) => `L ${i + 1}`).join('\n');
 
         // === Act ===
-        await handleRewriteAll(makeContext({ id: 't', name: 'rewrite_all', params: { content: newContent } } as ActionData));
+        await handleRewrite(makeContext({ id: 't', name: 'rewrite', params: { range: { startLine: 1, endLine: 4 }, content: newContent } } as ActionData));
 
         // === Assert ===
         const text = (await vscode.workspace.openTextDocument(docUri)).getText();
@@ -366,12 +366,12 @@ suite('Integration: Editing actions', () => {
         assert.strictEqual(text.split('\n').length, 500);
     });
 
-    test('rewrite_lines replaces a range; delete_lines removes a range', async () => {
+    test('rewrite replaces a range; delete_lines removes a range', async () => {
         // === Arrange ===
         await setupDocument('L1\nL2\nL3\nL4\nL5');
 
         // === Act ===
-        await handleRewriteLines(makeContext({ id: 't', name: 'rewrite_lines', params: { lineRange: { startLine: 2, endLine: 3 }, content: 'X\nY' } } as ActionData));
+        await handleRewrite(makeContext({ id: 't', name: 'rewrite', params: { range: { startLine: 2, endLine: 3 }, content: 'X\nY' } } as ActionData));
 
         // === Assert ===
         let text = (await vscode.workspace.openTextDocument(docUri)).getText();
@@ -389,10 +389,10 @@ suite('Integration: Editing actions', () => {
         assert.ok(!text.includes('L4'));
     });
 
-    test('rewrite_lines cursor position depends on trailing newline', async () => {
+    test('rewrite cursor position depends on trailing newline when range is a subset of the file', async () => {
         // With trailing newline: logicalLines = 1, cursor ends on line 2
         // === Act ===
-        await handleRewriteLines(makeContext({ id: 't', name: 'rewrite_lines', params: { lineRange: { startLine: 2, endLine: 3 }, content: 'X\n' } } as ActionData));
+        await handleRewrite(makeContext({ id: 't', name: 'rewrite', params: { range: { startLine: 2, endLine: 3 }, content: 'X\n' } } as ActionData));
 
         // === Assert ===
         let info = handleGetCursor()! as ActionHandlerResult;
@@ -403,11 +403,36 @@ suite('Integration: Editing actions', () => {
         reset(mockedClient);
 
         // === Act ===
-        await handleRewriteLines(makeContext({ id: 't', name: 'rewrite_lines', params: { lineRange: { startLine: 2, endLine: 3 }, content: 'Y\nZ' } } as ActionData));
+        await handleRewrite(makeContext({ id: 't', name: 'rewrite', params: { range: { startLine: 2, endLine: 3 }, content: 'Y\nZ' } } as ActionData));
 
         // === Assert ===
         info = handleGetCursor()! as ActionHandlerResult;
         assert.ok(info?.message?.includes('3:'));
+    });
+
+    test('rewrite promptGenerator describes the entire file when the range spans it', async () => {
+        // === Arrange ===
+        await setupDocument('A\nB\nC');
+        assert.ok(editFileActions.edit_by_lines.promptGenerator && typeof editFileActions.edit_by_lines.promptGenerator !== 'string');
+
+        // === Act ===
+        const prompt = editFileActions.edit_by_lines.promptGenerator(makeContext({ id: 't', name: 'rewrite', params: { range: { startLine: 1, endLine: 3 }, content: 'X\nY' } } as ActionData));
+
+        // === Assert ===
+        assert.ok(typeof prompt === 'string' && prompt.includes('the entire file'));
+        assert.ok(prompt.includes('2'));
+    });
+
+    test('rewrite promptGenerator describes a line range when it is a subset of the file', async () => {
+        // === Arrange ===
+        await setupDocument('A\nB\nC\nD');
+        assert.ok(editFileActions.edit_by_lines.promptGenerator && typeof editFileActions.edit_by_lines.promptGenerator !== 'string');
+
+        // === Act ===
+        const prompt = editFileActions.edit_by_lines.promptGenerator(makeContext({ id: 't', name: 'rewrite', params: { range: { startLine: 2, endLine: 3 }, content: 'X' } } as ActionData));
+
+        // === Assert ===
+        assert.ok(typeof prompt === 'string' && prompt.includes('lines 2-3'));
     });
 
     test('delete_lines from first line moves cursor to start of file', async () => {
