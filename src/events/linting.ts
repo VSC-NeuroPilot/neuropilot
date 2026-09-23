@@ -17,7 +17,7 @@ export function targetedFileLintingResolvedEvent(file: string): RCECancelEvent<v
     return new RCECancelEvent<vscode.DiagnosticChangeEvent>({
         reason: `the file ${file} no longer has linting issues.`,
         events: [
-            [vscode.languages.onDidChangeDiagnostics, async () => {
+            [vscode.languages.onDidChangeDiagnostics, () => {
                 return new Promise<boolean>((resolve) => {
                     setTimeout(() => {
                         const currentDiagnostics = vscode.languages.getDiagnostics(fileUri);
@@ -58,8 +58,8 @@ export function targetedFolderLintingResolvedEvent(folder: string): RCECancelEve
     return new RCECancelEvent<vscode.DiagnosticChangeEvent>({
         reason: `the folder ${folder} no longer has any linting issues.`,
         events: [
-            [vscode.languages.onDidChangeDiagnostics, async (event) => {
-                const changedUris = (event as vscode.DiagnosticChangeEvent).uris;
+            [vscode.languages.onDidChangeDiagnostics, (event) => {
+                const changedUris = event.uris;
                 const hasRelevantChanges = changedUris.some(uri => uri.fsPath.startsWith(folderUri.fsPath));
 
                 if (!hasRelevantChanges) {
@@ -109,7 +109,7 @@ export function workspaceLintingResolvedEvent(): RCECancelEvent<vscode.Diagnosti
     return new RCECancelEvent({
         reason: 'the workspace no longer has any linting issues.',
         events: [
-            [vscode.languages.onDidChangeDiagnostics, async () => {
+            [vscode.languages.onDidChangeDiagnostics, () => {
                 return new Promise<boolean>((resolve) => {
                     setTimeout(() => {
                         const currentDiagnostics = vscode.languages.getDiagnostics();

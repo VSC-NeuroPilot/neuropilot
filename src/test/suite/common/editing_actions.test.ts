@@ -8,12 +8,10 @@ import type { ActionHandlerResult } from '@/utils/neuro_client';
 import {
     handleInsertText,
     handleInsertLines,
-    handleReplaceText,
-    handleDeleteText,
     handleUndo,
-    handleRewriteAll,
-    handleRewriteLines,
+    handleRewrite,
     handleDeleteLines,
+    editFileActions,
 } from '@/edit_files';
 import { handleSave } from '@/file_operations';
 import {
@@ -177,62 +175,62 @@ suite('Integration: Editing actions', () => {
         assert.strictEqual(lines[lines.length - 1], 'C');
     });
 
-    test('replace_text single match replaces', async function () {
+    test('find_and_replace single match replaces', async function () {
         // === Arrange ===
-        const actionData: ActionData = { id: 't', name: 'replace_text', params: { find: 'Alpha', replaceWith: 'A', match: 'firstInFile', useRegex: false } };
+        const actionData: ActionData = { id: 't', name: 'find_and_replace', params: { find: 'Alpha', replace: 'A', match: 'firstInFile', useRegex: false } };
 
         // === Act ===
-        await handleReplaceText(makeContext(actionData));
+        await handleFindText(makeContext(actionData));
 
         // === Assert ===
         const text = (await vscode.workspace.openTextDocument(docUri)).getText();
         assert.ok(text.startsWith('A\n'));
     });
 
-    test('replace_text supports regex substitution and allInFile', async () => {
+    test('find_and_replace supports regex substitution and allInFile', async () => {
         // === Arrange ===
         await setupDocument('foo1\nfoo2\nbar3');
-        const actionData: ActionData = { id: 't', name: 'replace_text', params: { find: '(foo)(\\d)', replaceWith: '$1X', match: 'allInFile', useRegex: true } };
+        const actionData: ActionData = { id: 't', name: 'find_and_replace', params: { find: '(foo)(\\d)', replace: '$1X', match: 'allInFile', useRegex: true } };
 
         // === Act ===
-        await handleReplaceText(makeContext(actionData));
+        await handleFindText(makeContext(actionData));
 
         // === Assert ===
         const text = (await vscode.workspace.openTextDocument(docUri)).getText();
         assert.strictEqual(text, ['fooX', 'fooX', 'bar3'].join('\n'));
     });
 
-    test('replace_text respects lineRange', async () => {
+    test('find_and_replace replace respects lineRange', async () => {
         // === Arrange ===
         await setupDocument('a\na\na');
 
         // === Act ===
-        await handleReplaceText(makeContext({ id: 't', name: 'replace_text', params: { find: 'a', replaceWith: 'b', match: 'allInFile', useRegex: false, lineRange: { startLine: 2, endLine: 3 } } } as ActionData));
+        await handleFindText(makeContext({ id: 't', name: 'find_and_replace', params: { find: 'a', replace: 'b', match: 'allInFile', useRegex: false, lineRange: { startLine: 2, endLine: 3 } } } as ActionData));
 
         // === Assert ===
         const text = (await vscode.workspace.openTextDocument(docUri)).getText();
         assert.strictEqual(text, ['a', 'b', 'b'].join('\n'));
     });
 
-    test('delete_text single match deletes', async function () {
+    test('find_and_replace single match deletes', async function () {
         // === Arrange ===
-        const actionData: ActionData = { id: 't', name: 'delete_text', params: { find: 'Delta', match: 'firstInFile', useRegex: false } };
+        const actionData: ActionData = { id: 't', name: 'find_and_replace', params: { find: 'Delta', replace: '', match: 'firstInFile', useRegex: false } };
 
         // === Act ===
-        await handleDeleteText(makeContext(actionData));
+        await handleFindText(makeContext(actionData));
 
         // === Assert ===
         const text = (await vscode.workspace.openTextDocument(docUri)).getText();
         assert.ok(!text.includes('Delta'));
     });
 
-    test('delete_text deletes multiple matches and can use lineRange', async function () {
+    test('find_and_replace deletes multiple matches and can use lineRange', async function () {
         // === Arrange ===
         // Multiple delete
         await setupDocument('x 1 x 2 x');
 
         // === Act ===
-        await handleDeleteText(makeContext({ id: 't', name: 'delete_text', params: { find: 'x', match: 'allInFile', useRegex: false } } as ActionData));
+        await handleFindText(makeContext({ id: 't', name: 'find_and_replace', params: { find: 'x', replace: '', match: 'allInFile', useRegex: false } } as ActionData));
 
         // === Assert ===
         // Poll document until content reflects deletions
@@ -248,7 +246,7 @@ suite('Integration: Editing actions', () => {
         await setupDocument('p\nq\np\nq');
 
         // === Act ===
-        await handleDeleteText(makeContext({ id: 't', name: 'delete_text', params: { find: 'p', match: 'allInFile', useRegex: false, lineRange: { startLine: 2, endLine: 3 } } } as ActionData));
+        await handleFindText(makeContext({ id: 't', name: 'find_and_replace', params: { find: 'p', replace: '', match: 'allInFile', useRegex: false, lineRange: { startLine: 2, endLine: 3 } } } as ActionData));
         const expected = ['p', 'q', '', 'q'].join('\n');
 
         // === Assert ===
@@ -267,21 +265,21 @@ suite('Integration: Editing actions', () => {
         assert.strictEqual(pCount, 1);
     });
 
-    test('find_text single match returns description string', async () => {
+    test('find_and_replace single match returns description string', async () => {
         // === Arrange ===
         await setupDocument('Echo\nZulu');
-        const actionData: ActionData = { id: 't', name: 'find_text', params: { find: 'Echo', match: 'firstInFile', useRegex: false, highlight: false } };
+        const actionData: ActionData = { id: 't', name: 'find_and_replace', params: { find: 'Echo', match: 'firstInFile', useRegex: false, highlight: false } };
         // === Act & Assert ===
         const result = handleFindText(makeContext(actionData)) as ActionHandlerResult;
         assert.ok(result?.message?.includes('Echo'));
     });
 
-    test('find_text multiple matches with highlight returns count and lines', async () => {
+    test('find_and_replace multiple matches with highlight returns count and lines', async () => {
         // === Arrange ===
         await setupDocument('z\nz\nz');
 
         // === Act & Assert ===
-        const result = handleFindText(makeContext({ id: 't', name: 'find_text', params: { find: 'z', match: 'allInFile', useRegex: false, highlight: true } } as ActionData)) as ActionHandlerResult;
+        const result = handleFindText(makeContext({ id: 't', name: 'find_and_replace', params: { find: 'z', match: 'allInFile', useRegex: false, highlight: true } } as ActionData)) as ActionHandlerResult;
         assert.ok(result?.message?.includes('z'));
     });
 
@@ -319,48 +317,48 @@ suite('Integration: Editing actions', () => {
         assert.strictEqual(document.isDirty, false);
     });
 
-    test('rewrite_all replaces all content', async () => {
+    test('rewrite replaces all content when range spans the entire file', async () => {
         // === Arrange ===
         const newContent = ['One', 'Two', 'Three'].join('\n');
 
         // === Act ===
-        await handleRewriteAll(makeContext({ id: 't', name: 'rewrite_all', params: { content: newContent } } as ActionData));
+        await handleRewrite(makeContext({ id: 't', name: 'rewrite', params: { range: { startLine: 1, endLine: 4 }, content: newContent } } as ActionData));
 
         // === Assert ===
         const text = (await vscode.workspace.openTextDocument(docUri)).getText();
         assert.strictEqual(text, newContent);
     });
 
-    test('rewrite_all moves cursor to start of file', async () => {
+    test('rewrite moves cursor to start of file when range spans the entire file', async () => {
         // === Arrange ===        
         const newContent = ['X1', 'X2'].join('\n');
 
         // === Act ===
-        await handleRewriteAll(makeContext({ id: 't', name: 'rewrite_all', params: { content: newContent } } as ActionData));
+        await handleRewrite(makeContext({ id: 't', name: 'rewrite', params: { range: { startLine: 1, endLine: 4 }, content: newContent } } as ActionData));
 
         // === Assert ===
         const cursorInfo = handleGetCursor()! as ActionHandlerResult;
         assert.ok(cursorInfo?.message?.includes('1:1'));
     });
 
-    test('rewrite_all handles empty content', async () => {
+    test('rewrite handles empty content when range spans the entire file', async () => {
         // === Arrange ===
         const newContent = '';
 
         // === Act ===
-        await handleRewriteAll(makeContext({ id: 't', name: 'rewrite_all', params: { content: newContent } } as ActionData));
+        await handleRewrite(makeContext({ id: 't', name: 'rewrite', params: { range: { startLine: 1, endLine: 4 }, content: newContent } } as ActionData));
 
         // === Assert ===
         const text = (await vscode.workspace.openTextDocument(docUri)).getText();
         assert.strictEqual(text, newContent);
     });
 
-    test('rewrite_all handles large content', async () => {
+    test('rewrite handles large content when range spans the entire file', async () => {
         // === Arrange ===
         const newContent = Array.from({ length: 500 }, (_, i) => `L ${i + 1}`).join('\n');
 
         // === Act ===
-        await handleRewriteAll(makeContext({ id: 't', name: 'rewrite_all', params: { content: newContent } } as ActionData));
+        await handleRewrite(makeContext({ id: 't', name: 'rewrite', params: { range: { startLine: 1, endLine: 4 }, content: newContent } } as ActionData));
 
         // === Assert ===
         const text = (await vscode.workspace.openTextDocument(docUri)).getText();
@@ -368,12 +366,12 @@ suite('Integration: Editing actions', () => {
         assert.strictEqual(text.split('\n').length, 500);
     });
 
-    test('rewrite_lines replaces a range; delete_lines removes a range', async () => {
+    test('rewrite replaces a range; delete_lines removes a range', async () => {
         // === Arrange ===
         await setupDocument('L1\nL2\nL3\nL4\nL5');
 
         // === Act ===
-        await handleRewriteLines(makeContext({ id: 't', name: 'rewrite_lines', params: { lineRange: { startLine: 2, endLine: 3 }, content: 'X\nY' } } as ActionData));
+        await handleRewrite(makeContext({ id: 't', name: 'rewrite', params: { range: { startLine: 2, endLine: 3 }, content: 'X\nY' } } as ActionData));
 
         // === Assert ===
         let text = (await vscode.workspace.openTextDocument(docUri)).getText();
@@ -391,10 +389,10 @@ suite('Integration: Editing actions', () => {
         assert.ok(!text.includes('L4'));
     });
 
-    test('rewrite_lines cursor position depends on trailing newline', async () => {
+    test('rewrite cursor position depends on trailing newline when range is a subset of the file', async () => {
         // With trailing newline: logicalLines = 1, cursor ends on line 2
         // === Act ===
-        await handleRewriteLines(makeContext({ id: 't', name: 'rewrite_lines', params: { lineRange: { startLine: 2, endLine: 3 }, content: 'X\n' } } as ActionData));
+        await handleRewrite(makeContext({ id: 't', name: 'rewrite', params: { range: { startLine: 2, endLine: 3 }, content: 'X\n' } } as ActionData));
 
         // === Assert ===
         let info = handleGetCursor()! as ActionHandlerResult;
@@ -405,11 +403,36 @@ suite('Integration: Editing actions', () => {
         reset(mockedClient);
 
         // === Act ===
-        await handleRewriteLines(makeContext({ id: 't', name: 'rewrite_lines', params: { lineRange: { startLine: 2, endLine: 3 }, content: 'Y\nZ' } } as ActionData));
+        await handleRewrite(makeContext({ id: 't', name: 'rewrite', params: { range: { startLine: 2, endLine: 3 }, content: 'Y\nZ' } } as ActionData));
 
         // === Assert ===
         info = handleGetCursor()! as ActionHandlerResult;
         assert.ok(info?.message?.includes('3:'));
+    });
+
+    test('rewrite promptGenerator describes the entire file when the range spans it', async () => {
+        // === Arrange ===
+        await setupDocument('A\nB\nC');
+        assert.ok(editFileActions.edit_by_lines.promptGenerator && typeof editFileActions.edit_by_lines.promptGenerator !== 'string');
+
+        // === Act ===
+        const prompt = editFileActions.edit_by_lines.promptGenerator(makeContext({ id: 't', name: 'rewrite', params: { range: { startLine: 1, endLine: 3 }, content: 'X\nY' } } as ActionData));
+
+        // === Assert ===
+        assert.ok(typeof prompt === 'string' && prompt.includes('the entire file'));
+        assert.ok(prompt.includes('2'));
+    });
+
+    test('rewrite promptGenerator describes a line range when it is a subset of the file', async () => {
+        // === Arrange ===
+        await setupDocument('A\nB\nC\nD');
+        assert.ok(editFileActions.edit_by_lines.promptGenerator && typeof editFileActions.edit_by_lines.promptGenerator !== 'string');
+
+        // === Act ===
+        const prompt = editFileActions.edit_by_lines.promptGenerator(makeContext({ id: 't', name: 'rewrite', params: { range: { startLine: 2, endLine: 3 }, content: 'X' } } as ActionData));
+
+        // === Assert ===
+        assert.ok(typeof prompt === 'string' && prompt.includes('lines 2-3'));
     });
 
     test('delete_lines from first line moves cursor to start of file', async () => {

@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { RCEContext } from '@ctx/rce';
 import { EXCEPTION_THROWN_STRING, NEURO, PROMISE_REJECTION_STRING } from './constants';
 import { previewCursorMovement } from './edit_files';
-import { isPathNeuroSafe, getVirtualCursor, setVirtualCursor, getPositionContext, logOutput, formatContext, getFence, escapeRegExp, filterFileContents, indexFromPosition, positionFromIndex, getWorkspacePath, getWorkspaceUri, NeuroPositionContext, normalizePath, notifyOnCaughtException, simpleFileName } from './utils/misc';
+import { isPathNeuroSafe, getVirtualCursor, setVirtualCursor, getPositionContext, logOutput, formatContext, getFence, escapeRegExp, filterFileContents, indexFromPosition, positionFromIndex, getWorkspacePath, getWorkspaceUri, NeuroPositionContext, normalizePath, notifyOnCaughtException, simpleFileName, substituteMatch, DiffRangeType, getDiffRanges, showDiffRanges } from './utils/misc';
 import { RCEHandlerReturns, actionHandlerFailure, actionHandlerSuccess, actionValidationAccept, actionValidationFailure, defineAction } from './utils/neuro_client';
 import { _LINE_RANGE_SCHEMA, _POSITION_SCHEMA, ACTION_FAIL_NOTES, binaryFileValidation, cancelOnDidChangeActiveTextEditor, checkCurrentFile, commonCancelEvents, commonCancelEventsWithCursor, CONTEXT_NO_ACCESS, CONTEXT_NO_ACTIVE_DOCUMENT, createLineRangeValidator, createPositionValidator, createStringValidator, findAndFilter, LineRange, MATCH_OPTIONS, MatchOptions, neuroSafeValidation, previewFindFunctions, STATUS_NO_ACCESS, STATUS_NO_ACTIVE_DOCUMENT, STATUS_NO_MATCHES_FOUND, validateIsAFile, validateRegex } from './utils/action_components';
 import { CONFIG, CONNECTION } from './config';
@@ -181,9 +181,9 @@ export const readFileActions = {
         },
         promptGenerator: 'get your cursor position and surrounding text.',
     }),
-    highlight_lines: defineAction({
-        name: 'highlight_lines',
-        description: 'Highlight the specified lines.'
+    highlight: defineAction({
+        name: 'highlight',
+        description: 'Highlight a selection of text.'
             + ' Can be used to draw insert_turtle_here\'s or Chat\'s attention towards something.'
             + ' This will not move your cursor.'
             + ' Line numbers are one-based.',
@@ -201,18 +201,22 @@ export const readFileActions = {
         },
         promptGenerator: (context) => `highlight lines ${context.data.params.startLine}-${context.data.params.endLine}.`,
     }),
-    find_text: defineAction({
-        name: 'find_text',
+    find_and_replace: defineAction({
+        name: 'find_and_replace',
         description: 'Find text in the active document.'
-            + ' If you set "useRegex" to true, you can use a Regex in the "find" parameter.'
-            + ' This will place your cursor directly before or after the found text (depending on "moveCursor"), unless you searched for multiple instances.'
+            + ' This will place your cursor directly before or after the found text (depending on "moveCursor"), unless you found multiple instances.'
+            + ' If you set "useRegex" to true, you can use a regex pattern in the "find" parameter.'
             + ' Set "highlight" to true to highlight the found text, if you want to draw insert_turtle_here\'s or Chat\'s attention to it.'
+            + ' Use the "replace" parameter to replace or delete matched text.'
             + ' If you search for multiple matches, the numbers at the start of each line are the one-based line numbers and not part of the code.',
         category: CATEGORY_READING,
         schema: z.object({
             find: z.string().meta({
                 description: 'The search text or RegEx pattern to search for text to replace.',
             }),
+            replace: z.string().meta({
+                description: 'The text string to replace matches. If omitted, will only search for matches and not modify matches. If left empty, will delete matches.',
+            }).optional(),
             useRegex: z.boolean().meta({
                 description: 'Whether or not the find pattern is a RegEx pattern.',
             }).optional(),
@@ -228,8 +232,8 @@ export const readFileActions = {
             }).optional(),
         }),
         handler(ctx) {
-            const { find, match, highlight, useRegex, lineRange, moveCursor } = ctx.data.params;
-            return returnHandleFindText(find, match, useRegex, lineRange, moveCursor, highlight);
+            const { find, match, highlight, useRegex, lineRange, moveCursor, replace } = ctx.data.params;
+            return returnHandleFindText(find, match, useRegex, lineRange, moveCursor, highlight, replace);
         },
         preview: (context) => previewFindFunctions(context.data, 'find'),
         cancelEvents: [cancelOnDidChangeActiveTextEditor],
@@ -269,6 +273,15 @@ export const readFileActions = {
                 const lineRange = actionData.params.lineRange;
                 text += ` within lines ${lineRange.startLine}-${lineRange.endLine}`;
             }
+            if (actionData.params.replace) {
+                text += ', ';
+                if (actionData.params.replace === '') {
+                    text += 'delete any matches that occur';
+                } else {
+                    text += `replace any matches with "${actionData.params.replace}"`;
+                }
+                text += ',';
+            }
             if (actionData.params.moveCursor) {
                 text += ' and move her cursor to the result';
                 if (actionData.params.match === 'allInFile') text += ' (unless there are multiple matches)';
@@ -286,8 +299,8 @@ export function addReadActions() {
         readFileActions.move_cursor_position,
         readFileActions.get_cursor_position,
         readFileActions.get_user_selection,
-        readFileActions.highlight_lines,
-        readFileActions.find_text,
+        readFileActions.highlight,
+        readFileActions.find_and_replace,
     ]);
 }
 
@@ -535,7 +548,7 @@ export function handleHighlightLines(context: RCEContext<{ startLine: number, en
     return returnHandleHighlightLines(params.startLine, params.endLine);
 }
 
-function returnHandleFindText(find: string, match: MatchOptions, useRegex = false, lineRange?: LineRange, moveCursor: 'start' | 'end' = 'start', highlight = false) {
+function returnHandleFindText(find: string, match: MatchOptions, useRegex = false, lineRange?: LineRange, moveCursor: 'start' | 'end' = 'start', highlight = false, replace?: string) {
     const document = vscode.window.activeTextEditor?.document;
     if (document === undefined) {
         return actionHandlerFailure(CONTEXT_NO_ACTIVE_DOCUMENT, STATUS_NO_ACTIVE_DOCUMENT);
@@ -554,46 +567,105 @@ function returnHandleFindText(find: string, match: MatchOptions, useRegex = fals
         return actionHandlerFailure('No matches found for the given parameters.', STATUS_NO_MATCHES_FOUND);
     }
 
-    if (matches.length === 1) {
-        // Single match
-        const startPosition = positionFromIndex(documentText, matches[0].index);
-        const endPosition = positionFromIndex(documentText, matches[0].index + matches[0][0].length);
-        if (moveCursor) setVirtualCursor(moveCursor === 'start' ? startPosition : endPosition);
-        if (highlight) {
-            const range = new vscode.Range(startPosition, endPosition);
-            vscode.window.activeTextEditor!.setDecorations(NEURO.highlightDecorationType!, [{
-                range,
-                hoverMessage: `**Highlighted by ${CONNECTION.nameOfAPI} via finding text**`,
-            }]);
-            vscode.window.activeTextEditor!.revealRange(range, vscode.TextEditorRevealType.InCenterIfOutsideViewport);
+    if (replace === undefined) {
+        if (matches.length === 1) {
+            // Single match
+            const startPosition = positionFromIndex(documentText, matches[0].index);
+            const endPosition = positionFromIndex(documentText, matches[0].index + matches[0][0].length);
+            if (moveCursor) setVirtualCursor(moveCursor === 'start' ? startPosition : endPosition);
+            if (highlight) {
+                const range = new vscode.Range(startPosition, endPosition);
+                vscode.window.activeTextEditor!.setDecorations(NEURO.highlightDecorationType!, [{
+                    range,
+                    hoverMessage: `**Highlighted by ${CONNECTION.nameOfAPI} via finding text**`,
+                }]);
+                vscode.window.activeTextEditor!.revealRange(range, vscode.TextEditorRevealType.InCenterIfOutsideViewport);
+            }
+            const cursorContext = getPositionContext(document, startPosition);
+            logOutput('INFO', `Placed cursor at (${endPosition.line + 1}:${endPosition.character + 1})`);
+            return actionHandlerSuccess(`Found match ${moveCursor ? 'and placed your cursor ' : ''}at (${endPosition.line + 1}:${endPosition.character + 1})\n\n${formatContext(cursorContext)}`, 'Found 1 match');
         }
-        const cursorContext = getPositionContext(document, startPosition);
-        logOutput('INFO', `Placed cursor at (${endPosition.line + 1}:${endPosition.character + 1})`);
-        return actionHandlerSuccess(`Found match ${moveCursor ? 'and placed your cursor ' : ''}at (${endPosition.line + 1}:${endPosition.character + 1})\n\n${formatContext(cursorContext)}`, 'Found 1 match');
-    }
-    else {
-        // Multiple matches
-        const positions = matches.map(m => positionFromIndex(documentText, m.index));
-        const lines = positions.map(p => document.lineAt(p.line).text);
-        // max(1, ...) because log10(0) is -Infinity
-        // const padding = Math.max(1, Math.log10(positions[positions.length - 1].line + 1) + 1); // Space for the line number
-        logOutput('INFO', `Found ${positions.length} matches`);
-        // const text = lines.map((line, i) => `L. ${(positions[i].line + 1).toString().padStart(padding)}: ${line}`).join('\n');
-        if (highlight) {
-            vscode.window.activeTextEditor!.setDecorations(NEURO.highlightDecorationType!, matches.map((match, i) => ({
-                range: new vscode.Range(positions[i], positionFromIndex(documentText, match.index + match[0].length)),
-                hoverMessage: `**Highlighted by ${CONNECTION.nameOfAPI} via finding text**`,
-            })));
+        else {
+            // Multiple matches
+            const positions = matches.map(m => positionFromIndex(documentText, m.index));
+            const lines = positions.map(p => document.lineAt(p.line).text);
+            // max(1, ...) because log10(0) is -Infinity
+            // const padding = Math.max(1, Math.log10(positions[positions.length - 1].line + 1) + 1); // Space for the line number
+            logOutput('INFO', `Found ${positions.length} matches`);
+            // const text = lines.map((line, i) => `L. ${(positions[i].line + 1).toString().padStart(padding)}: ${line}`).join('\n');
+            if (highlight) {
+                vscode.window.activeTextEditor!.setDecorations(NEURO.highlightDecorationType!, matches.map((match, i) => ({
+                    range: new vscode.Range(positions[i], positionFromIndex(documentText, match.index + match[0].length)),
+                    hoverMessage: `**Highlighted by ${CONNECTION.nameOfAPI} via finding text**`,
+                })));
+            }
+            const lineNumberContextFormat = CONFIG.lineNumberContextFormat || '{n}|';
+            const text = lines.map((line, i) => lineNumberContextFormat.replace('{n}', (positions[i].line + 1).toString()) + line).join('\n');
+            const fence = getFence(text);
+            return actionHandlerSuccess(`Found ${positions.length} matches:\n\n${fence}\n${text}\n${fence}`, `Found ${positions.length} matches`);
         }
-        const lineNumberContextFormat = CONFIG.lineNumberContextFormat || '{n}|';
-        const text = lines.map((line, i) => lineNumberContextFormat.replace('{n}', (positions[i].line + 1).toString()) + line).join('\n');
-        const fence = getFence(text);
-        return actionHandlerSuccess(`Found ${positions.length} matches:\n\n${fence}\n${text}\n${fence}`, `Found ${positions.length} matches`);
     }
+
+    // Replace/delete matched text
+    const isDelete = replace === '';
+    const edit = new vscode.WorkspaceEdit();
+    for (const m of matches) {
+        const range = new vscode.Range(positionFromIndex(documentText, m.index), positionFromIndex(documentText, m.index + m[0].length));
+        if (isDelete) {
+            edit.delete(document.uri, range);
+        } else {
+            try {
+                const replacement = useRegex ? substituteMatch(m, replace) : replace;
+                edit.replace(document.uri, range, replacement);
+            } catch (erm) {
+                logOutput('ERROR', `Error while substituting match: ${erm}`);
+                return actionHandlerFailure(erm instanceof Error ? erm.message : 'Unknown error while substituting match', 'Error while substituting match');
+            }
+        }
+    }
+
+    return vscode.workspace.applyEdit(edit).then(success => {
+        if (!success) {
+            return actionHandlerFailure(`Failed to ${isDelete ? 'delete' : 'replace'} text`, `Failed to ${isDelete ? 'delete' : 'replace'} text`);
+        }
+        logOutput('INFO', `${isDelete ? 'Deleting' : 'Replacing'} text in document`);
+        const document = vscode.window.activeTextEditor!.document;
+        const newText = filterFileContents(document.getText());
+
+        if (matches.length === 1) {
+            const startPosition = positionFromIndex(newText, matches[0].index);
+            if (isDelete) {
+                setVirtualCursor(startPosition);
+                showDiffRanges(vscode.window.activeTextEditor!, {
+                    range: new vscode.Range(startPosition, startPosition),
+                    type: DiffRangeType.Removed,
+                    removedText: matches[0][0],
+                });
+                const cursorContext = getPositionContext(document, startPosition);
+                return actionHandlerSuccess(`Deleted text from document\n\n${formatContext(cursorContext)}`, 'Deleted 1 occurrence');
+            }
+            else {
+                const replacementText = useRegex ? substituteMatch(matches[0], replace) : replace;
+                const endPosition = positionFromIndex(newText, matches[0].index + replacementText.length);
+                setVirtualCursor(moveCursor === 'start' ? startPosition : endPosition);
+                const diffRanges = getDiffRanges(startPosition, matches[0][0], filterFileContents(document.getText(new vscode.Range(startPosition, endPosition))));
+                showDiffRanges(vscode.window.activeTextEditor!, ...diffRanges);
+                const cursorContext = getPositionContext(document, { cursorPosition: getVirtualCursor()!, position: startPosition, position2: endPosition });
+                return actionHandlerSuccess(`Replaced text in document\n\n${formatContext(cursorContext)}`, 'Replaced 1 occurrence');
+            }
+        }
+        else {
+            // Multiple matches
+            const diffRanges = getDiffRanges(new vscode.Position(0, 0), documentText, newText);
+            showDiffRanges(vscode.window.activeTextEditor!, ...diffRanges);
+            const cursorContext = getPositionContext(document, { cursorPosition: getVirtualCursor()! });
+            return actionHandlerSuccess(`${isDelete ? 'Deleted' : 'Replaced'} ${matches.length} occurrences from the document\n\n${formatContext(cursorContext)}`, `${isDelete ? 'Deleted' : 'Replaced'} ${matches.length} occurrences`);
+        }
+    });
 }
 
 /** @deprecated Functions should now be inlined */
-export function handleFindText(context: RCEContext<{ find: string, match: MatchOptions, useRegex?: boolean, lineRange?: LineRange, moveCursor?: 'start' | 'end', highlight?: boolean }>): RCEHandlerReturns {
+export function handleFindText(context: RCEContext<{ find: string, match: MatchOptions, useRegex?: boolean, lineRange?: LineRange, moveCursor?: 'start' | 'end', highlight?: boolean, replace?: string }>): RCEHandlerReturns {
     const { data: actionData } = context;
     assert(actionData.params);
     const find: string = actionData.params.find;
@@ -602,5 +674,6 @@ export function handleFindText(context: RCEContext<{ find: string, match: MatchO
     const lineRange: LineRange | undefined = actionData.params.lineRange;
     const moveCursor: 'start' | 'end' = actionData.params.moveCursor ?? 'start';
     const highlight: boolean = actionData.params.highlight ?? false;
-    return returnHandleFindText(find, match, useRegex, lineRange, moveCursor, highlight);
+    const replace: string | undefined = actionData.params.replace;
+    return returnHandleFindText(find, match, useRegex, lineRange, moveCursor, highlight, replace);
 }
