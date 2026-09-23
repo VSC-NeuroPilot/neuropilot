@@ -12,6 +12,18 @@ import { addActions } from '@/rce';
 
 export const CATEGORY_LINTING = 'Linting';
 
+/** Number of linting problems returned per page by `get_lint_problems`. */
+const ITEMS_PER_PAGE = 100;
+
+/** Clamps `page` into range and slices `items` into the requested page. */
+function paginate<T>(items: T[], page?: number): { paged: T[]; currentPage: number; totalPages: number; total: number } {
+    const total = items.length;
+    const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
+    const currentPage = Math.min(Math.max(page ?? 1, 1), totalPages);
+    const paged = items.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+    return { paged, currentPage, totalPages, total };
+}
+
 /**
  * The path validator.
  * @param path The relative path to the file/folder.
@@ -61,12 +73,15 @@ export const lintActions = {
             recursive: z.string().meta({
                 description: 'If "path" is specified and is a folder path, set this to "true".',
             }).optional(),
+            page: z.int().min(1).meta({
+                description: `Which page of results to view, starting at 1. Each page contains up to ${ITEMS_PER_PAGE} problems. Defaults to 1.`,
+            }).optional(),
         }),
         handler(context) {
-            const { path, recursive } = context.data.params;
-            if (!path) return handleGetWorkspaceLintProblems();
-            if (recursive === 'true') return returnHandleGetFolderLintProblems(path);
-            return returnHandleGetFileLintProblems(path);
+            const { path, recursive, page } = context.data.params;
+            if (!path) return handleGetWorkspaceLintProblems(page);
+            if (recursive === 'true') return returnHandleGetFolderLintProblems(path, page);
+            return returnHandleGetFileLintProblems(path, page);
         },
         cancelEvents: [
             (context) => {
@@ -218,7 +233,24 @@ export function getFormattedDiagnosticsForFile(filePath: string, diagnostics: vs
     return '\n' + formattedLines.join('\n');
 }
 
-function returnHandleGetFileLintProblems(relativePath: string) {
+/** Flattens per-file diagnostic groups into one entry per diagnostic, for pagination. */
+function groupedToFlatEntries(grouped: [vscode.Uri, vscode.Diagnostic[]][]): [vscode.Uri, vscode.Diagnostic][] {
+    return grouped.flatMap(([uri, diags]) => diags.map((diag): [vscode.Uri, vscode.Diagnostic] => [uri, diag]));
+}
+
+/** Formats flat diagnostic entries back into one line per diagnostic, grouped by file. */
+function formatFlatEntries(entries: [vscode.Uri, vscode.Diagnostic][]): string[] {
+    const byFile = new Map<string, vscode.Diagnostic[]>();
+    for (const [uri, diag] of entries) {
+        const relative = vscode.workspace.asRelativePath(uri.fsPath);
+        const diags = byFile.get(relative) ?? [];
+        diags.push(diag);
+        byFile.set(relative, diags);
+    }
+    return Array.from(byFile.entries()).map(([relative, diags]) => getFormattedDiagnosticsForFile(relative, diags));
+}
+
+function returnHandleGetFileLintProblems(relativePath: string, page?: number) {
     const workspaceUri = getWorkspaceUri();
     assert(workspaceUri);
 
@@ -230,15 +262,16 @@ function returnHandleGetFileLintProblems(relativePath: string) {
             return actionHandlerSuccess(`No linting problems found for file ${relativePath}.`, 'No linting issues found');
         }
 
-        const formattedDiagnostics = getFormattedDiagnosticsForFile(relativePath, rawDiagnostics);
-        return actionHandlerSuccess(`Linting problems for file ${relativePath}:${formattedDiagnostics}`, `${rawDiagnostics.length} linting issues sent`);
+        const { paged, currentPage, totalPages, total } = paginate(rawDiagnostics, page);
+        const formattedDiagnostics = getFormattedDiagnosticsForFile(relativePath, paged);
+        return actionHandlerSuccess(`Linting problems for file ${relativePath} (page ${currentPage} of ${totalPages}, ${total} total):${formattedDiagnostics}`, `Sent ${paged.length} of ${total} linting issues`);
     } catch (erm) {
         logOutput('ERROR', `Getting diagnostics for ${relativePath} failed: ${erm}`);
         return actionHandlerFailure(`Failed to get linting diagnostics for "${relativePath}".`, EXCEPTION_THROWN_STRING);
     }
 }
 
-function returnHandleGetFolderLintProblems(relativeFolder: string) {
+function returnHandleGetFolderLintProblems(relativeFolder: string, page?: number) {
     const workspacePath = getWorkspacePath();
     assert(workspacePath);
 
@@ -257,12 +290,10 @@ function returnHandleGetFolderLintProblems(relativeFolder: string) {
             return actionHandlerSuccess(`No linting problems found for folder "${relativeFolder}".`, 'No linting issues found');
         }
 
-        const formattedDiagnostics = folderDiagnostics.map(([uri, diags]) => {
-            const relative = vscode.workspace.asRelativePath(uri.fsPath);
-            return getFormattedDiagnosticsForFile(relative, diags);
-        }).join('\n');
+        const { paged, currentPage, totalPages, total } = paginate(groupedToFlatEntries(folderDiagnostics), page);
+        const formattedDiagnostics = formatFlatEntries(paged).join('\n');
 
-        return actionHandlerSuccess(`Linting problems for folder "${relativeFolder}":\n${formattedDiagnostics}`, `${folderDiagnostics.length} linting issues sent`);
+        return actionHandlerSuccess(`Linting problems for folder "${relativeFolder}" (page ${currentPage} of ${totalPages}, ${total} total):\n${formattedDiagnostics}`, `Sent ${paged.length} of ${total} linting issues`);
     } catch (erm) {
         logOutput('ERROR', `Getting diagnostics for folder ${relativeFolder} failed: ${erm}`);
         return actionHandlerFailure(`Failed to get linting diagnostics for folder "${relativeFolder}".`, EXCEPTION_THROWN_STRING);
@@ -270,7 +301,7 @@ function returnHandleGetFolderLintProblems(relativeFolder: string) {
 }
 
 // Handle diagnostics for the entire workspace
-export function handleGetWorkspaceLintProblems(): ActionHandlerResult {
+export function handleGetWorkspaceLintProblems(page?: number): ActionHandlerResult {
     const workspacePath = getWorkspacePath();
     assert(workspacePath);
 
@@ -285,12 +316,10 @@ export function handleGetWorkspaceLintProblems(): ActionHandlerResult {
             return actionHandlerSuccess('No linting problems found for the current workspace.', 'No linting issues found');
         }
 
-        const formattedDiagnostics = safeDiagnostics.map(([uri, diags]) => {
-            const relative = vscode.workspace.asRelativePath(uri.fsPath);
-            return getFormattedDiagnosticsForFile(relative, diags);
-        }).join('\n\n');
+        const { paged, currentPage, totalPages, total } = paginate(groupedToFlatEntries(safeDiagnostics), page);
+        const formattedDiagnostics = formatFlatEntries(paged).join('\n');
 
-        return actionHandlerSuccess(`Linting problems for the current workspace:\n${formattedDiagnostics}`, `${safeDiagnostics.length} linting issues found`);
+        return actionHandlerSuccess(`Linting problems for the current workspace (page ${currentPage} of ${totalPages}, ${total} total):\n${formattedDiagnostics}`, `Sent ${paged.length} of ${total} linting issues`);
     } catch (erm) {
         logOutput('ERROR', `Failed to get diagnostics for workspace: ${erm}`);
         return actionHandlerFailure("Couldn't get diagnostics for the workspace.", EXCEPTION_THROWN_STRING);

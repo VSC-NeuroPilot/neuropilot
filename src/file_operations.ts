@@ -16,6 +16,9 @@ import { readFileActions } from './read_files';
 
 export const CATEGORY_FILE_ACTIONS = 'File System';
 
+/** Number of items returned per page by `list_items`. */
+const ITEMS_PER_PAGE = 100;
+
 async function neuroSafeDeleteValidation(path: string, recursive?: boolean): Promise<ActionValidationResult> {
     const check = await validatePath(path, true, recursive ? 'folder' : 'file');
     if (!check.success) return check;
@@ -113,10 +116,12 @@ export const fileActions = {
             recursive: z.boolean().meta({
                 description: 'Set this to `true` if you want to view all subfolders\' contents as well.',
             }).optional(),
-            page: z.int().optional(),
+            page: z.int().min(1).meta({
+                description: `Which page of results to view, starting at 1. Each page contains up to ${ITEMS_PER_PAGE} items. Defaults to 1.`,
+            }).optional(),
         }),
         category: CATEGORY_FILE_ACTIONS,
-        handler: (ctx) => returnHandleGetWorkspaceFiles(ctx.updateStatus, ctx.data.params.folder, ctx.data.params.recursive),
+        handler: (ctx) => returnHandleGetWorkspaceFiles(ctx.updateStatus, ctx.data.params.folder, ctx.data.params.recursive, ctx.data.params.page),
         preview: (context) => {
             const workspaceUri = getWorkspaceUri();
             if (!workspaceUri) {
@@ -585,7 +590,7 @@ export function handleDeleteFileOrFolder(context: RCEContext<{ path: string; rec
     return returnHandleDeleteFileOrFolder(updateStatus, relativePathParam, recursive);
 }
 
-function returnHandleGetWorkspaceFiles(updateStatus: RCEContext['updateStatus'], folder?: string, recursive?: boolean) {
+function returnHandleGetWorkspaceFiles(updateStatus: RCEContext['updateStatus'], folder?: string, recursive?: boolean, page?: number) {
     // Start tracking execution
     updateStatus('pending', 'Listing workspace files...');
 
@@ -618,8 +623,11 @@ function returnHandleGetWorkspaceFiles(updateStatus: RCEContext['updateStatus'],
                     return aParts.length - bParts.length;
                 });
             const displayFolder = folder ? `"${stripTailSlashes(folder)}"` : 'workspace';
+            const totalPages = Math.max(1, Math.ceil(paths.length / ITEMS_PER_PAGE));
+            const currentPage = Math.min(Math.max(page ?? 1, 1), totalPages);
+            const pagedPaths = paths.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
             logOutput('INFO', `Sending list of files in ${displayFolder} to Neuro`);
-            return actionHandlerSuccess(`Files in ${displayFolder}:\n\n${paths.join('\n')}`, `Listed ${paths.length} files`);
+            return actionHandlerSuccess(`Files in ${displayFolder} (page ${currentPage} of ${totalPages}, ${paths.length} total):\n\n${pagedPaths.join('\n')}`, `Listed ${pagedPaths.length} of ${paths.length} files`);
         },
         (erm: unknown) => {
             logOutput('ERROR', `Could not list workspace files: ${String(erm)}`);
