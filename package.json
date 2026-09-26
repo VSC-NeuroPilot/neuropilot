@@ -887,9 +887,9 @@
 	},
 	"dependencies": {
 		"@vscode/codicons": "^0.0.45",
-		"file-type": "^22.0.2",
+		"file-type": "^22.1.1",
 		"glob-to-regexp": "^0.4.1",
-		"ignore": "^7.0.7",
+		"ignore": "^7.0.10",
 		"jsonschema": "^1.5.0",
 		"neuro-game-sdk": "^1.2.0",
 		"preact": "^10.29.8"
