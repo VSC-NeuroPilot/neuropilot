@@ -229,7 +229,7 @@ export const fileActions = {
             }
         },
         promptGenerator: (ctx) => `create the ${ctx.data.params.recursive ? 'folder' : 'file'} "${ctx.data.params.path}".`,
-        category: 'Filesystem',
+        category: 'File System',
         preview: (context) => {
             const workspaceUri = getWorkspaceUri();
             if (!workspaceUri || !context.data.params.path) {
@@ -621,13 +621,13 @@ function returnHandleGetWorkspaceFiles(updateStatus: RCEContext['updateStatus'],
                         }
                     }
                     return aParts.length - bParts.length;
-                });
+                }).sort((a, b) => a.localeCompare(b));
             const displayFolder = folder ? `"${stripTailSlashes(folder)}"` : 'workspace';
             const totalPages = Math.max(1, Math.ceil(paths.length / ITEMS_PER_PAGE));
             const currentPage = Math.min(Math.max(page ?? 1, 1), totalPages);
             const pagedPaths = paths.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
             logOutput('INFO', `Sending list of files in ${displayFolder} to Neuro`);
-            return actionHandlerSuccess(`Files in ${displayFolder} (page ${currentPage} of ${totalPages}, ${paths.length} total):\n\n${pagedPaths.join('\n')}`, `Listed ${pagedPaths.length} of ${paths.length} files`);
+            return actionHandlerSuccess(`Files in ${displayFolder} (page ${currentPage} of ${totalPages}, ${paths.length} paths total):\n\n${pagedPaths.join('\n')}`, `Listed ${pagedPaths.length} of ${paths.length} files`);
         },
         (erm: unknown) => {
             logOutput('ERROR', `Could not list workspace files: ${String(erm)}`);
