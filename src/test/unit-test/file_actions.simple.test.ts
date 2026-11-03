@@ -6,18 +6,18 @@ import { fakeContext } from '@test/test_utils';
 // Tests for file action prompt generators using real logic with loose checks
 suite('file Actions', () => {
     test('get_workspace_files has a non-empty prompt', () => {
-        assert.ok(fileActions.list_files_and_folders.promptGenerator && typeof fileActions.list_files_and_folders.promptGenerator !== 'string');
+        assert.ok(fileActions.list_items.promptGenerator && typeof fileActions.list_items.promptGenerator !== 'string');
         // === Arrange & Act ===
-        const prompt = fileActions.list_files_and_folders.promptGenerator(fakeContext('list_files_and_folders', {}));
+        const prompt = fileActions.list_items.promptGenerator(fakeContext('list_files_and_folders', {}));
 
         // === Assert ===
         assert.ok(typeof prompt === 'string' && prompt.length > 0);
     });
 
     test('get_workspace_files correctly includes the folder in prompt', () => {
-        assert.ok(fileActions.list_files_and_folders.promptGenerator && typeof fileActions.list_files_and_folders.promptGenerator !== 'string');
+        assert.ok(fileActions.list_items.promptGenerator && typeof fileActions.list_items.promptGenerator !== 'string');
         // === Arrange & Act ===
-        const prompt = fileActions.list_files_and_folders.promptGenerator(fakeContext('list_files_and_folders', { folder: 'src/' }));
+        const prompt = fileActions.list_items.promptGenerator(fakeContext('list_files_and_folders', { folder: 'src/' }));
 
         // === Assert ===
         assert.ok(typeof prompt === 'string' && prompt.length > 0);
@@ -25,9 +25,9 @@ suite('file Actions', () => {
     });
 
     test('get_workspace_files correctly states if Neuro asked for recursive', () => {
-        assert.ok(fileActions.list_files_and_folders.promptGenerator && typeof fileActions.list_files_and_folders.promptGenerator !== 'string');
+        assert.ok(fileActions.list_items.promptGenerator && typeof fileActions.list_items.promptGenerator !== 'string');
         // === Arrange & Act ===
-        const prompt = fileActions.list_files_and_folders.promptGenerator(fakeContext('list_files_and_folders', { recursive: true }));
+        const prompt = fileActions.list_items.promptGenerator(fakeContext('list_files_and_folders', { recursive: true }));
 
         // === Assert ===
         assert.ok(typeof prompt === 'string' && prompt.length > 0);
@@ -35,9 +35,9 @@ suite('file Actions', () => {
     });
 
     test('get_workspace_files correctly omits recursive if Neuro didn\'t ask', () => {
-        assert.ok(fileActions.list_files_and_folders.promptGenerator && typeof fileActions.list_files_and_folders.promptGenerator !== 'string');
+        assert.ok(fileActions.list_items.promptGenerator && typeof fileActions.list_items.promptGenerator !== 'string');
         // === Arrange & Act ===
-        const prompt = fileActions.list_files_and_folders.promptGenerator(fakeContext('list_files_and_folders', { recursive: false }));
+        const prompt = fileActions.list_items.promptGenerator(fakeContext('list_files_and_folders', { recursive: false }));
 
         // === Assert ===
         assert.ok(typeof prompt === 'string' && prompt.length > 0);
@@ -65,9 +65,9 @@ suite('file Actions', () => {
     });
 
     test('create_file prompt formats path', () => {
-        assert.ok(fileActions.create_file.promptGenerator && typeof fileActions.create_file.promptGenerator !== 'string');
+        assert.ok(fileActions.create_item.promptGenerator && typeof fileActions.create_item.promptGenerator !== 'string');
         // === Arrange & Act ===
-        const prompt = fileActions.create_file.promptGenerator(fakeContext('create_file', { filePath: 'new/file.txt' }));
+        const prompt = fileActions.create_item.promptGenerator(fakeContext('create_item', { path: 'new/file.txt' }));
 
         // === Assert ===
         assert.ok(typeof prompt === 'string' && prompt.length > 0);
@@ -75,9 +75,9 @@ suite('file Actions', () => {
     });
 
     test('create_folder prompt formats path', () => {
-        assert.ok(fileActions.create_folder.promptGenerator && typeof fileActions.create_folder.promptGenerator !== 'string');
+        assert.ok(fileActions.create_item.promptGenerator && typeof fileActions.create_item.promptGenerator !== 'string');
         // === Arrange & Act ===
-        const prompt = fileActions.create_folder.promptGenerator(fakeContext('create_folder', { folderPath: 'new/folder' }));
+        const prompt = fileActions.create_item.promptGenerator(fakeContext('create_item', { path: 'new/folder', recursive: true }));
 
         // === Assert ===
         assert.ok(typeof prompt === 'string' && prompt.length > 0);
@@ -85,9 +85,9 @@ suite('file Actions', () => {
     });
 
     test('rename_file_or_folder prompt formats paths', () => {
-        assert.ok(fileActions.rename_file_or_folder.promptGenerator && typeof fileActions.rename_file_or_folder.promptGenerator !== 'string');
+        assert.ok(fileActions.rename_item.promptGenerator && typeof fileActions.rename_item.promptGenerator !== 'string');
         // === Arrange & Act ===
-        const prompt = fileActions.rename_file_or_folder.promptGenerator(fakeContext('rename_file_or_folder', { oldPath: 'old/a.txt', newPath: 'new/a.txt' }));
+        const prompt = fileActions.rename_item.promptGenerator(fakeContext('rename_file_or_folder', { oldPath: 'old/a.txt', newPath: 'new/a.txt' }));
 
         // === Assert ===
         assert.ok(typeof prompt === 'string' && prompt.length > 0);
@@ -96,9 +96,9 @@ suite('file Actions', () => {
     });
 
     test('delete_file_or_folder prompt formats path', () => {
-        assert.ok(fileActions.delete_file_or_folder.promptGenerator && typeof fileActions.delete_file_or_folder.promptGenerator !== 'string');
+        assert.ok(fileActions.delete_item.promptGenerator && typeof fileActions.delete_item.promptGenerator !== 'string');
         // === Arrange & Act ===
-        const prompt = fileActions.delete_file_or_folder.promptGenerator(fakeContext('delete_file_or_folder', { path: 'old/file.txt' }));
+        const prompt = fileActions.delete_item.promptGenerator(fakeContext('delete_file_or_folder', { path: 'old/file.txt' }));
 
         // === Assert ===
         assert.ok(typeof prompt === 'string' && prompt.length > 0);

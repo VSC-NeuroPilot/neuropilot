@@ -17,6 +17,7 @@ package-lock.json
 
 # build output
 dist/
+playground/paginate/
 
 # logs
 npm-debug.log*

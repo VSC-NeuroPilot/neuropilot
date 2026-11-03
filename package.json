@@ -246,12 +246,12 @@
 					},
 					"neuropilot.beforeContext": {
 						"type": "integer",
-						"default": 500,
+						"default": 50,
 						"description": "The number of lines before the cursor position to include as context when editing a file or sending a completion request"
 					},
 					"neuropilot.afterContext": {
 						"type": "integer",
-						"default": 500,
+						"default": 50,
 						"description": "The number of lines after the cursor position to include as context when editing a file or sending a completion request"
 					},
 					"neuropilot.maxCompletions": {
@@ -417,7 +417,7 @@
 					},
 					"neuropilot.sendContentsOnFileChange": {
 						"type": "boolean",
-						"default": true,
+						"default": false,
 						"markdownDescription": "Send contents of a file to Neuro when you switch to it? If false, Neuro will still know what file you switched to, but won't get the contents. Neuro will never get the contents or the name of files that aren't Neuro-safe."
 					},
 					"neuropilot.cursorPositionContextStyle": {

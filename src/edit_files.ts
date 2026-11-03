@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { z } from 'zod';
 
 import { NEURO } from '@/constants';
-import { DiffRangeType, escapeRegExp, getDiffRanges, getFence, getPositionContext, getVirtualCursor, showDiffRanges, isPathNeuroSafe, logOutput, setVirtualCursor, simpleFileName, substituteMatch, clearDecorations, formatContext, filterFileContents, positionFromIndex, indexFromPosition, NeuroPositionContext } from '@/utils/misc';
+import { DiffRangeType, getDiffRanges, getFence, getPositionContext, getVirtualCursor, showDiffRanges, isPathNeuroSafe, logOutput, setVirtualCursor, simpleFileName, clearDecorations, formatContext, filterFileContents, positionFromIndex, NeuroPositionContext } from '@/utils/misc';
 import { actionValidationAccept, actionValidationFailure, RCEHandlerReturns, actionHandlerSuccess, actionHandlerFailure, defineAction } from '@/utils/neuro_client';
 import { CONFIG, CONNECTION } from '@/config';
 import { createCursorPositionChangedEvent } from '@events/cursor';
@@ -10,7 +10,7 @@ import { RCECancelEvent } from '@events/utils';
 import { addActions } from '@/rce';
 import { createPreviewCursor, createPreviewHighlight } from '@previews/edits';
 import { RCEContext } from '@/context/rce';
-import { commonCancelEvents, cancelOnDidChangeActiveTextEditor, checkCurrentFile, createPositionValidator, CONTEXT_NO_ACCESS, CONTEXT_NO_ACTIVE_DOCUMENT, STATUS_NO_ACCESS, STATUS_NO_ACTIVE_DOCUMENT, STATUS_NO_MATCHES_FOUND, LineRange, MATCH_OPTIONS, MatchOptions, _POSITION_SCHEMA, createLineRangeValidator, createStringValidator, validateRegex, findAndFilter, _LINE_RANGE_SCHEMA, previewFindFunctions, previewLineHighlights } from './utils/action_components';
+import { commonCancelEvents, checkCurrentFile, createPositionValidator, CONTEXT_NO_ACCESS, CONTEXT_NO_ACTIVE_DOCUMENT, STATUS_NO_ACCESS, STATUS_NO_ACTIVE_DOCUMENT, LineRange, _POSITION_SCHEMA, createLineRangeValidator, createStringValidator, _LINE_RANGE_SCHEMA, previewLineHighlights } from './utils/action_components';
 
 export const CATEGORY_EDITING = 'Edit Files';
 
@@ -88,7 +88,7 @@ export const editFileActions = {
             return text;
         },
     }),
-    insert_lines: defineAction({
+    insert_lines: defineAction({ // TODO: merge with edit_by_lines
         name: 'insert_lines',
         description: 'Insert code below a certain line.'
             + ' Defaults to your current cursor\'s location'
@@ -147,131 +147,6 @@ export const editFileActions = {
             return `insert ${lines} line${lines !== 1 ? 's' : ''} of code below ${insertUnder ? `line ${insertUnder}` : 'her cursor'}.`;
         },
     }),
-    replace_text: defineAction({
-        name: 'replace_text',
-        description: 'Replace text in the active document.'
-            + ' If you set "useRegex" to true, you can use a Regex in the "find" parameter and a substitution pattern in the "replaceWith" parameter.'
-            + ' This will place your cursor at the end of the replaced text, unless you replaced multiple instances.',
-        category: CATEGORY_EDITING,
-        schema: z.object({
-            find: z.string().meta({
-                description: 'The search text or RegEx pattern to search for text to replace.',
-            }),
-            replaceWith: z.string().meta({
-                description: 'The text to replace the search result(s) with. If using RegEx, you can use substitution patterns here.',
-            }),
-            useRegex: z.boolean().meta({
-                description: 'Whether or not the pattern(s) are RegEx patterns.',
-            }).optional(),
-            match: z.enum(MATCH_OPTIONS).meta({
-                description: 'The method to match text to delete.',
-            }),
-            lineRange: _LINE_RANGE_SCHEMA.optional(),
-        }),
-        handler: ({ data: { params } }) => returnHandleReplaceText(params.find, params.replaceWith, params.match, params.useRegex, params.lineRange),
-        preview: (context) => previewFindFunctions(context.data, 'replace'),
-        cancelEvents: [cancelOnDidChangeActiveTextEditor],
-        validators: {
-            sync: [checkCurrentFile, createStringValidator(['find', 'replaceWith']), createLineRangeValidator('lineRange'), validateRegex('find', 'useRegex')],
-        },
-        promptGenerator: (context) => {
-            const actionData = context.data;
-            let text = 'replace ';
-            const target = actionData.params.find;
-            switch (actionData.params.match as MatchOptions) {
-                case 'allInFile':
-                    text += 'all matches ';
-                    break;
-                case 'firstAfterCursor':
-                    text += 'the first match (after her cursor) ';
-                    break;
-                case 'firstInFile':
-                    text += 'the first match (in the file) ';
-                    break;
-                case 'lastBeforeCursor':
-                    text += 'the last match (before her cursor) ';
-                    break;
-                case 'lastInFile':
-                    text += 'the last match (in the file) ';
-                    break;
-            }
-            text += `of "${target}" with "${actionData.params.replaceWith}"`;
-            if (actionData.params.useRegex) {
-                text += ' (using RegEx)';
-            }
-            if (actionData.params.lineRange) {
-                const lineRange = actionData.params.lineRange;
-                text += ` within lines ${lineRange.startLine}-${lineRange.endLine}`;
-            }
-            text += ' and move her cursor to the replaced text';
-            if (actionData.params.match === 'allInFile') text += ' (unless there were multiple matches)';
-            text += '.';
-            return text;
-        },
-    }),
-    delete_text: defineAction({
-        name: 'delete_text',
-        description: 'Delete text in the active document.'
-            + ' If you set "useRegex" to true, you can use a Regex in the "find" parameter.'
-            + ' This will place your cursor where the deleted text was, unless you deleted multiple instances.'
-            + ' Line numbers are one-based.',
-        category: CATEGORY_EDITING,
-        schema: z.object({
-            find: z.string().meta({
-                description: 'The glob/RegEx pattern to search for text to delete.',
-            }),
-            useRegex: z.boolean().meta({
-                description: 'Whether or not the find pattern is a RegEx pattern.',
-            }).optional(),
-            match: z.enum(MATCH_OPTIONS).meta({
-                description: 'The method to match text to delete.',
-            }),
-            lineRange: _LINE_RANGE_SCHEMA.optional(),
-        }),
-        handler: ({ data: { params: { find, useRegex, match, lineRange } } }) => returnHandleDeleteText(find, match, useRegex, lineRange),
-        preview: (context) => previewFindFunctions(context.data, 'delete'),
-        cancelEvents: [cancelOnDidChangeActiveTextEditor],
-        validators: {
-            sync: [checkCurrentFile, createStringValidator(['find']), createLineRangeValidator('lineRange'), validateRegex('find', 'useRegex')],
-        },
-        promptGenerator: (context) => {
-            const actionData = context.data;
-            let text = 'delete ';
-            const target = actionData.params.find;
-            switch (actionData.params.match as MatchOptions) {
-                case 'allInFile':
-                    text += 'all matches ';
-                    break;
-                case 'firstAfterCursor':
-                    text += 'the first match (after her cursor) ';
-                    break;
-                case 'firstInFile':
-                    text += 'the first match (in the file) ';
-                    break;
-                case 'lastBeforeCursor':
-                    text += 'the last match (before her cursor) ';
-                    break;
-                case 'lastInFile':
-                    text += 'the last match (in the file) ';
-                    break;
-                default:
-                    text += 'unknown matches ';
-                    break;
-            }
-            text += `of "${target}"`;
-            if (actionData.params.useRegex) {
-                text += ' (using RegEx)';
-            }
-            if (actionData.params.lineRange) {
-                const lineRange = actionData.params.lineRange;
-                text += ` within lines ${lineRange.startLine}-${lineRange.endLine}`;
-            }
-            text += ' and move her cursor to the deleted text';
-            if (actionData.params.match === 'allInFile') text += ' (unless there were multiple matches)';
-            text += '.';
-            return text;
-        },
-    }),
     undo: defineAction({
         name: 'undo',
         description: 'Undo the last change made to the active document.'
@@ -285,66 +160,45 @@ export const editFileActions = {
         },
         promptGenerator: 'undo the last action.',
     }),
-    rewrite_all: defineAction({
-        name: 'rewrite_all',
-        description: 'Rewrite the entire contents of the file. Your cursor will be moved to the start of the file.',
-        category: CATEGORY_EDITING,
-        schema: z.object({
-            content: z.string().meta({
-                description: 'The content to rewrite the file with.',
-            }),
-        }),
-        handler: (ctx) => returnHandleRewriteAll(ctx.data.params.content),
-        preview: () => {
-            const editor = vscode.window.activeTextEditor!;
-            const fullRange = new vscode.Range(
-                new vscode.Position(0, 0),
-                editor.document.lineAt(editor.document.lineCount - 1).range.end,
-            );
-            const highlight = createPreviewHighlight();
-            editor.setDecorations(highlight, [
-                {
-                    range: fullRange,
-                    hoverMessage: `(Preview) ${NEURO.currentController} wants to rewrite this entire file. Good luck!`,
-                },
-            ]);
-            return highlight;
-        },
-        cancelEvents: [cancelOnDidChangeActiveTextEditor],
-        validators: {
-            sync: [checkCurrentFile, createStringValidator(['content'])],
-        },
-        promptGenerator: (context) => {
-            const actionData = context.data;
-            const lineCount = actionData.params.content.trim().split('\n').length;
-            return `rewrite the entire file with ${lineCount} line${lineCount === 1 ? '' : 's'} of content.`;
-        },
-    }),
-    rewrite_lines: defineAction({
-        name: 'rewrite_lines',
-        description: 'Rewrite everything in the specified line range.'
-            + ' After rewriting, your cursor will be placed at the end of the last inserted line.'
+    edit_by_lines: defineAction({
+        name: 'edit_by_lines',
+        description: 'Edit everything in the specified line range. Make no mistakes.'
+            + ' If the range spans the entire file, your cursor will be moved to the start of the file, otherwise it will be placed at the end of the last inserted line.'
             + ' Line numbers are one-based.',
         category: CATEGORY_EDITING,
         schema: z.object({
-            lineRange: _LINE_RANGE_SCHEMA,
+            range: _LINE_RANGE_SCHEMA.meta({ // todo: schema change
+                description: 'The line range to target. You can also use * in the `endLine` property if you want to use the final line number of the file.',
+            }),
             content: z.string().meta({
-                description: 'The content to replace the selected range of lines with.',
+                description: 'The content to replace the specified line range.',
             }),
         }),
-        handler: ({ data: { params } }) => returnHandleRewriteLines(params.lineRange, params.content),
-        preview: (context) => previewLineHighlights(context.data.params.lineRange, 'rewrite these lines.'),
-        cancelEvents: commonCancelEvents,
         validators: {
-            sync: [checkCurrentFile, createLineRangeValidator(), createStringValidator(['content'])],
+            sync: [checkCurrentFile, createLineRangeValidator('range'), createStringValidator(['content'])],
         },
-        promptGenerator: (context) => {
-            const actionData = context.data;
-            const lineCount = actionData.params.content.trim().split('\n').length;
-            return `rewrite lines ${actionData.params.lineRange.startLine}-${actionData.params.lineRange.endLine} with ${lineCount} line${lineCount === 1 ? '' : 's'} of content.`;
+        cancelEvents: commonCancelEvents,
+        promptGenerator(ctx) {
+            let text = 'rewrite ';
+            const lineRange = ctx.data.params.range;
+            if (lineRange.startLine === 1 && lineRange.endLine === vscode.window.activeTextEditor!.document.lineCount) {
+                text += 'the entire file';
+            } else {
+                text += `lines ${lineRange.startLine}-${lineRange.endLine}`;
+            }
+            const contentLength = ctx.data.params.content.split('\n').length;
+            text += ` with ${contentLength} line${contentLength === 1 ? '' : 's'} of content.`;
+            return text;
         },
+        preview(context) {
+            const lineRange = context.data.params.range;
+            const document = vscode.window.activeTextEditor!.document;
+            const isEntireFile = lineRange.startLine === 1 && lineRange.endLine === document.lineCount;
+            return previewLineHighlights(context.data.params.range, `edit these lines with something else.${isEntireFile ? ' Good luck!' : ''}`);
+        },
+        handler: ({ data: { params } }) => returnHandleRewrite(params.range.startLine, params.range.endLine, params.content),
     }),
-    delete_lines: defineAction({
+    delete_lines: defineAction({ // TODO: merge with `edit_by_lines`
         name: 'delete_lines',
         description: 'Delete everything in the specified line range.'
             + ' After deleting, your cursor will be placed at the end of the line before the deleted lines, if possible.'
@@ -477,11 +331,8 @@ export function addEditingActions() {
     addActions([
         editFileActions.insert_text,
         editFileActions.insert_lines,
-        editFileActions.replace_text,
-        editFileActions.delete_text,
         editFileActions.undo,
-        editFileActions.rewrite_all,
-        editFileActions.rewrite_lines,
+        editFileActions.edit_by_lines,
         editFileActions.delete_lines,
         editFileActions.replace_user_selection,
         editFileActions.edit_with_diff,
@@ -602,140 +453,6 @@ export function handleInsertLines(context: RCEContext<{ text: string; insertUnde
     return returnHandleInsertLines(actionData.params!.text, actionData.params!.insertUnder);
 }
 
-function returnHandleReplaceText(find: string, replaceWith: string, match: string, useRegex = false, lineRange?: LineRange) {
-    const document = vscode.window.activeTextEditor?.document;
-    if (document === undefined) {
-        return actionHandlerFailure(CONTEXT_NO_ACTIVE_DOCUMENT, STATUS_NO_ACTIVE_DOCUMENT);
-    }
-    if (!isPathNeuroSafe(document.fileName)) {
-        return actionHandlerFailure(CONTEXT_NO_ACCESS, STATUS_NO_ACCESS);
-    }
-
-    const originalText = filterFileContents(document.getText());
-    const regex = new RegExp(useRegex ? find : escapeRegExp(find), 'gm');
-    const cursorOffset = indexFromPosition(originalText, getVirtualCursor()!);
-
-    const matches = findAndFilter(regex, originalText, cursorOffset, match, lineRange);
-    if (matches.length === 0) {
-        return actionHandlerFailure('No matches found for the given parameters.', STATUS_NO_MATCHES_FOUND);
-    }
-
-    const edit = new vscode.WorkspaceEdit();
-    for (const m of matches) {
-        try {
-            const replacement = useRegex ? substituteMatch(m, replaceWith) : replaceWith;
-            edit.replace(document.uri, new vscode.Range(positionFromIndex(originalText, m.index), positionFromIndex(originalText, m.index + m[0].length)), replacement);
-        } catch (erm) {
-            logOutput('ERROR', `Error while substituting match: ${erm}`);
-            return actionHandlerFailure(erm instanceof Error ? erm.message : 'Unknown error while substituting match', 'Error while substituting match');
-        }
-    }
-    return vscode.workspace.applyEdit(edit).then(success => {
-        if (success) {
-            logOutput('INFO', 'Replacing text in document');
-            const document = vscode.window.activeTextEditor!.document;
-            const newText = filterFileContents(document.getText());
-            if (matches.length === 1) {
-                // Single match
-                const startPosition = positionFromIndex(newText, matches[0].index);
-                const endPosition = positionFromIndex(newText, matches[0].index + substituteMatch(matches[0], replaceWith).length);
-                setVirtualCursor(endPosition);
-                const diffRanges = getDiffRanges(startPosition, matches[0][0], filterFileContents(document.getText(new vscode.Range(startPosition, endPosition))));
-                showDiffRanges(vscode.window.activeTextEditor!, ...diffRanges);
-                const cursorContext = getPositionContext(document, { cursorPosition: endPosition, position: startPosition, position2: endPosition });
-                return actionHandlerSuccess(`Replaced text in document\n\n${formatContext(cursorContext)}`, `Replaced ${matches.length} occurrence`);
-            }
-            else {
-                // Multiple matches
-                const diffRanges = getDiffRanges(new vscode.Position(0, 0), originalText, newText);
-                showDiffRanges(vscode.window.activeTextEditor!, ...diffRanges);
-                const cursorContext = getPositionContext(document, { cursorPosition: getVirtualCursor()! });
-                return actionHandlerSuccess(`Deleted ${matches.length} occurrences from the document\n\n${formatContext(cursorContext)}`, `Replaced ${matches.length} occurrences`);
-            }
-        }
-        else {
-            return actionHandlerFailure('Failed to replace text', 'Failed to replace text');
-        }
-    });
-}
-
-/** @deprecated Functions should now be inlined */
-export function handleReplaceText(context: RCEContext<{ find: string; replaceWith: string; match: string; useRegex?: boolean; lineRange?: LineRange }>): RCEHandlerReturns {
-    const { data: actionData } = context;
-    const find = actionData.params!.find;
-    const replaceWith = actionData.params!.replaceWith;
-    const match = actionData.params!.match;
-    const useRegex = actionData.params!.useRegex;
-    const lineRange = actionData.params!.lineRange;
-
-    return returnHandleReplaceText(find, replaceWith, match, useRegex, lineRange);
-}
-
-function returnHandleDeleteText(find: string, match: string, useRegex = false, lineRange?: LineRange) {
-    const document = vscode.window.activeTextEditor?.document;
-    if (document === undefined) {
-        return actionHandlerFailure(CONTEXT_NO_ACTIVE_DOCUMENT, STATUS_NO_ACTIVE_DOCUMENT);
-    }
-    if (!isPathNeuroSafe(document.fileName)) {
-        return actionHandlerFailure(CONTEXT_NO_ACCESS, STATUS_NO_ACCESS);
-    }
-
-    const originalText = filterFileContents(document.getText());
-
-    const regex = new RegExp(useRegex ? find : escapeRegExp(find), 'gm');
-    const cursorOffset = indexFromPosition(originalText, getVirtualCursor()!);
-
-    const matches = findAndFilter(regex, originalText, cursorOffset, match, lineRange);
-    if (matches.length === 0) {
-        return actionHandlerFailure('No matches found for the given parameters.', STATUS_NO_MATCHES_FOUND);
-    }
-
-    const edit = new vscode.WorkspaceEdit();
-    for (const m of matches) {
-        edit.delete(document.uri, new vscode.Range(positionFromIndex(originalText, m.index), positionFromIndex(originalText, m.index + m[0].length)));
-    }
-    return vscode.workspace.applyEdit(edit).then(success => {
-        if (success) {
-            logOutput('INFO', 'Deleting text from document');
-            const document = vscode.window.activeTextEditor!.document;
-            const newText = filterFileContents(document.getText());
-            if (matches.length === 1) {
-                // Single match
-                const position = positionFromIndex(newText, matches[0].index);
-                setVirtualCursor(position);
-                showDiffRanges(vscode.window.activeTextEditor!, {
-                    range: new vscode.Range(position, position),
-                    type: DiffRangeType.Removed,
-                    removedText: matches[0][0],
-                });
-                const cursorContext = getPositionContext(document, position);
-                return actionHandlerSuccess(`Deleted text from document\n\n${formatContext(cursorContext)}`, `Deleted ${matches.length} occurrence`);
-            }
-            else {
-                // Multiple matches
-                const diffRanges = getDiffRanges(new vscode.Position(0, 0), originalText, newText);
-                showDiffRanges(vscode.window.activeTextEditor!, ...diffRanges);
-                const cursorContext = getPositionContext(document, { cursorPosition: getVirtualCursor()! });
-                return actionHandlerSuccess(`Deleted ${matches.length} occurrences from the document\n\n${formatContext(cursorContext)}`, `Deleted ${matches.length} occurrences`);
-            }
-        }
-        else {
-            return actionHandlerFailure('Failed to delete text', 'Failed to delete text');
-        }
-    });
-}
-
-/** @deprecated Functions should now be inlined */
-export function handleDeleteText(context: RCEContext<{ find: string; match: string; useRegex?: boolean; lineRange?: LineRange }>): RCEHandlerReturns {
-    const { data: actionData } = context;
-    const find = actionData.params!.find;
-    const match = actionData.params!.match;
-    const useRegex = actionData.params!.useRegex;
-    const lineRange = actionData.params!.lineRange;
-
-    return returnHandleDeleteText(find, match, useRegex, lineRange);
-}
-
 export function handleUndo(): RCEHandlerReturns {
     const document = vscode.window.activeTextEditor?.document;
     if (document === undefined) {
@@ -762,7 +479,7 @@ export function handleUndo(): RCEHandlerReturns {
     );
 }
 
-function returnHandleRewriteAll(content: string) {
+function returnHandleRewrite(startLine: number, endLine: number, content: string) {
     const document = vscode.window.activeTextEditor?.document;
     if (document === undefined) {
         return actionHandlerFailure(CONTEXT_NO_ACTIVE_DOCUMENT, STATUS_NO_ACTIVE_DOCUMENT);
@@ -771,43 +488,80 @@ function returnHandleRewriteAll(content: string) {
         return actionHandlerFailure(CONTEXT_NO_ACCESS, STATUS_NO_ACCESS);
     }
 
-    const originalText = document.getText();
+    if (startLine === 1 && endLine === document.lineCount) {
+        const originalText = document.getText();
+
+        const edit = new vscode.WorkspaceEdit();
+        const fullRange = new vscode.Range(
+            document.positionAt(0),
+            document.positionAt(document.getText().length),
+        );
+        edit.replace(document.uri, fullRange, content);
+
+        return vscode.workspace.applyEdit(edit).then(success => {
+            if (success) {
+                logOutput('INFO', 'Rewrote entire document content');
+                const document = vscode.window.activeTextEditor!.document;
+                const relativePath = vscode.workspace.asRelativePath(document.uri);
+                const lineCount = content.trim().split('\n').length;
+
+                // Set cursor to beginning of file
+                const startPosition = new vscode.Position(0, 0);
+                setVirtualCursor(startPosition);
+
+                // No need to filter content here, as both texts are directly from the document
+                const diffRanges = getDiffRanges(new vscode.Position(0, 0), originalText, document.getText());
+                showDiffRanges(vscode.window.activeTextEditor!, ...diffRanges);
+
+                const cursorContext = getPositionContext(document, startPosition);
+                return actionHandlerSuccess(`Rewrote entire file ${relativePath} with ${lineCount} line${lineCount === 1 ? '' : 's'} of content\n\n${formatContext(cursorContext)}`, `Rewrote entire file with ${lineCount} lines`);
+            } else {
+                return actionHandlerFailure('Failed to rewrite document content', 'Failed to rewrite document');
+            }
+        });
+    }
 
     const edit = new vscode.WorkspaceEdit();
-    const fullRange = new vscode.Range(
-        document.positionAt(0),
-        document.positionAt(document.getText().length),
-    );
-    edit.replace(document.uri, fullRange, content);
+    const startPosition = new vscode.Position(startLine - 1, 0);
+    const endLineZero = endLine - 1;
+    // Preserve the following line's newline by ending at the end of endLine
+    const endPosition = document.lineAt(endLineZero).range.end;
+    const originalText = document.getText(new vscode.Range(startPosition, endPosition));
+    edit.replace(document.uri, new vscode.Range(startPosition, endPosition), content);
 
     return vscode.workspace.applyEdit(edit).then(success => {
         if (success) {
-            logOutput('INFO', 'Rewrote entire document content');
-            const document = vscode.window.activeTextEditor!.document;
-            const relativePath = vscode.workspace.asRelativePath(document.uri);
-            const lineCount = content.trim().split('\n').length;
-
-            // Set cursor to beginning of file
-            const startPosition = new vscode.Position(0, 0);
-            setVirtualCursor(startPosition);
-
+            const relativePath = vscode.workspace.asRelativePath(vscode.window.activeTextEditor!.document.uri);
+            // Defer cursor update until edits have fully settled
+            const documentPost = vscode.window.activeTextEditor!.document;
+            // Move cursor to end of the last inserted line
+            const hasTrailingNewline = content.endsWith('\n');
+            const contentLines = content.split('\n');
+            const logicalLines = hasTrailingNewline ? contentLines.length - 1 : contentLines.length;
+            const lastInsertedLineZero = Math.min(
+                documentPost.lineCount - 1,
+                Math.max(0, startLine - 1 + (logicalLines - 1)),
+            );
+            const cursorPosition = new vscode.Position(lastInsertedLineZero, documentPost.lineAt(lastInsertedLineZero).text.length);
+            setVirtualCursor(cursorPosition);
             // No need to filter content here, as both texts are directly from the document
-            const diffRanges = getDiffRanges(new vscode.Position(0, 0), originalText, document.getText());
+            const diffRanges = getDiffRanges(startPosition, originalText, document.getText(new vscode.Range(startPosition, cursorPosition)));
             showDiffRanges(vscode.window.activeTextEditor!, ...diffRanges);
-
-            const cursorContext = getPositionContext(document, startPosition);
-            return actionHandlerSuccess(`Rewrote entire file ${relativePath} with ${lineCount} line${lineCount === 1 ? '' : 's'} of content\n\n${formatContext(cursorContext)}`, `Rewrote entire file with ${lineCount} lines`);
+            const cursorContext = getPositionContext(documentPost, { cursorPosition: cursorPosition, position: startPosition, position2: cursorPosition });
+            logOutput('INFO', `Rewrote lines ${startLine}-${endLine} with ${logicalLines} line${logicalLines === 1 ? '' : 's'} of content and moved cursor to end of line ${lastInsertedLineZero + 1}`);
+            return actionHandlerSuccess(`Rewrote lines ${startLine}-${endLine} in file ${relativePath}\n\n${formatContext(cursorContext)}`, `Rewrote lines ${startLine}-${endLine}`);
         } else {
-            return actionHandlerFailure('Failed to rewrite document content', 'Failed to rewrite document');
+            return actionHandlerFailure('Failed to rewrite lines', 'Failed to rewrite lines');
         }
     });
 }
 
 /** @deprecated Functions should now be inlined */
-export function handleRewriteAll(context: RCEContext<{ content: string }>): RCEHandlerReturns {
+export function handleRewrite(context: RCEContext<{ range: LineRange, content: string }>): RCEHandlerReturns {
     const { data: actionData } = context;
+    const { range, content } = actionData.params!;
 
-    return returnHandleRewriteAll(actionData.params!.content);
+    return returnHandleRewrite(range.startLine, range.endLine, content);
 }
 
 function returnHandleDeleteLines(startLine: number, endLine: number) {
@@ -883,61 +637,6 @@ export function handleDeleteLines(context: RCEContext<{ startLine: number; endLi
     const endLine = actionData.params!.endLine;
 
     return returnHandleDeleteLines(startLine, endLine);
-}
-
-function returnHandleRewriteLines(lineRange: LineRange, content: string) {
-    const startLine = lineRange.startLine;
-    const endLine = lineRange.endLine;
-
-    const document = vscode.window.activeTextEditor?.document;
-    if (document === undefined) {
-        return actionHandlerFailure(CONTEXT_NO_ACTIVE_DOCUMENT, STATUS_NO_ACTIVE_DOCUMENT);
-    }
-    if (!isPathNeuroSafe(document.fileName)) {
-        return actionHandlerFailure(CONTEXT_NO_ACCESS, STATUS_NO_ACCESS);
-    }
-
-    const edit = new vscode.WorkspaceEdit();
-    const startPosition = new vscode.Position(startLine - 1, 0);
-    const endLineZero = endLine - 1;
-    // Preserve the following line's newline by ending at the end of endLine
-    const endPosition = document.lineAt(endLineZero).range.end;
-    const originalText = document.getText(new vscode.Range(startPosition, endPosition));
-    edit.replace(document.uri, new vscode.Range(startPosition, endPosition), content);
-
-    return vscode.workspace.applyEdit(edit).then(success => {
-        if (success) {
-            const relativePath = vscode.workspace.asRelativePath(vscode.window.activeTextEditor!.document.uri);
-            // Defer cursor update until edits have fully settled
-            const documentPost = vscode.window.activeTextEditor!.document;
-            // Move cursor to end of the last inserted line
-            const hasTrailingNewline = content.endsWith('\n');
-            const contentLines = content.split('\n');
-            const logicalLines = hasTrailingNewline ? contentLines.length - 1 : contentLines.length;
-            const lastInsertedLineZero = Math.min(
-                documentPost.lineCount - 1,
-                Math.max(0, startLine - 1 + (logicalLines - 1)),
-            );
-            const cursorPosition = new vscode.Position(lastInsertedLineZero, documentPost.lineAt(lastInsertedLineZero).text.length);
-            setVirtualCursor(cursorPosition);
-            // No need to filter content here, as both texts are directly from the document
-            const diffRanges = getDiffRanges(startPosition, originalText, document.getText(new vscode.Range(startPosition, cursorPosition)));
-            showDiffRanges(vscode.window.activeTextEditor!, ...diffRanges);
-            const cursorContext = getPositionContext(documentPost, { cursorPosition: cursorPosition, position: startPosition, position2: cursorPosition });
-            logOutput('INFO', `Rewrote lines ${startLine}-${endLine} with ${logicalLines} line${logicalLines === 1 ? '' : 's'} of content and moved cursor to end of line ${lastInsertedLineZero + 1}`);
-            return actionHandlerSuccess(`Rewrote lines ${startLine}-${endLine} in file ${relativePath}\n\n${formatContext(cursorContext)}`, `Rewrote lines ${startLine}-${endLine}`);
-        } else {
-            return actionHandlerFailure('Failed to rewrite lines', 'Failed to rewrite lines');
-        }
-    });
-}
-
-/** @deprecated Functions should now be inlined */
-export function handleRewriteLines(context: RCEContext<{ lineRange: LineRange, content: string }>): RCEHandlerReturns {
-    const { data: actionData } = context;
-    const { lineRange, content } = actionData.params!;
-
-    return returnHandleRewriteLines(lineRange, content);
 }
 
 function returnHandleDiffPatch(diff: string, moveCursor = false) {
